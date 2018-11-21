@@ -1,29 +1,45 @@
-# README #
+# NEPI-API #
 
-This README would normally document whatever steps are necessary to get your application up and running.
+The NEPI-API is responsible for:
 
-### What is this repository for? ###
+* Handling all business logic required by user interface actions & events that require access to back-end resources (e.g. Kafka topics, persisted data such as file or database).
+* Sending status & data provided by NEPI-Server to NEPI-Portal.
+* Sending user initiated data (e.g. updated configuratoin) from NEPI-Portal to NEPI-Server.
 
-* Quick summary
-* Version
-* [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
+The bi-directional communication between NEPI-Server and NEPI-Portal is faciliated by an Apache Kafka cluster.  Thus, the NEPI-API subscribes to topics published by the Numurus Floats and the Numurus Floats can receive data (via Iridium) to topics published by the NEPI-API.
 
-### How do I get set up? ###
+## NEPI-API Assets
 
-* Summary of set up
-* Configuration
-* Dependencies
-* Database configuration
-* How to run tests
-* Deployment instructions
+The NEPI-API implementation details ... TBD
 
-### Contribution guidelines ###
+## Development Apache Kafka Instance
 
-* Writing tests
-* Code review
-* Other guidelines
+A development Apache Kafka instance has been created to provide the team a sandbox for developing the patterns needed for implementing bi-directional communication between NEPI-API and NEPI-Server.
 
-### Who do I talk to? ###
+|  Key  |  Value  |
+|---|---|
+|  Region | US West (Oregon) |
+|  AMI Name |  Ubuntu Server 18.04 LTS (HVM), SSD Volume Type |
+|  AMI Description |  Ubuntu Server 18.04 LTS (HVM),EBS General Purpose (SSD) Volume Type. Support available from Canonical (http://www.ubuntu.com/cloud/services). |
+| Type | t2.micro (Free tier eligible) |
+| vCPUs | 1 |
+| Memory | 2 GB |
+| Instance Storage | EBS only |
+| IPv6 Support | Yes |
+| VPC | vpc-b5a7acd |
+| Storage | Root, 8 GB, General Purpose SSD (gp2), IOPS: 100/3000
+| Security Group | nepi-kafka-security-group | 
+| Key pair | nepi-kafka | 
+| Elastic IP | 52.26.24.209 |
 
-* Repo owner or admin
-* Other community or team contact
+__Connecting to the Development Kafka Instance__
+
+Connecting to the Kafka Development Instance is available through SSH for server administration.  To connect, you must have access to the key pair (nepi-api.pem) and a custom rule needs to be created for your developer machine in the security group.
+
+The Kafka Development Instance will be stopped after business hours or when not in use.
+
+
+
+## Contact
+
+* This repository is maintained by [Clint Cabanero](clint.cabanero@critigen.com) and [Tim Kearns](tkearns@numurus.com)
