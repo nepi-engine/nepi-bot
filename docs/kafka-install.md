@@ -1,6 +1,6 @@
 # Kafka Installation Procedure
 
-This provides a procedure for installing Apache Kafka on an Ubuntu Linux EC2 instance.
+This provides a procedure for installing Apache Kafka on an Amazon Linux EC2 instance.
 
 ### Install Java 8
 
@@ -34,15 +34,86 @@ Java(TM) SE Runtime Environment (build 1.8.0_141-b15)
 Java HotSpot(TM) 64-Bit Server VM (build 25.141-b15, mixed mode)
 ````
 
+Imagme: __Image Snapshot: 1\_Kafka\_AfterJava8__
+
+
+#### Download and Extract Kafka
+
+Download:
+
+````
+wget https://www-eu.apache.org/dist/kafka/2.1.0/kafka_2.12-2.1.0.tgz 
+````
+
+Extract: 
+
+````
+tar -xzf kafka_2.12-2.1.0.tgz
+````
+
+Remove Zip:
+
+````
+rm kafka_2.12-2.1.0.tgz
+````
+
+Image: __Image Snapshot: 2\_Kafka\_AfterKafkaExtract__
+
 
 ### Starting Zookeeper
 
-TBD
+We start a single-node Zookeeper instance using the convenience script packaged with Kafka. 
+
+Set the KAFKA\_HEAP_OPTS environment variable:
+
+````
+nano .bashrc
+````
+
+Then set the following environmental variable for 50% of our system's RAM (which is 1GB):
+
+````
+export KAFKA_HEAP_OPTS="-Xmx500M -Xms500M"
+````
+
+Then soure the .baschrc with:
+
+````
+source .bashrc
+````
+
+Start Zookeeper:
+
+````
+cd kafka_2.12-2.1.0
+nohup bin/zookeeper-server-start.sh config/zookeeper.properties > ~/zookeeper-logs &
+````
 
 ### Starting Kafka
 
+````
+cd kafka_2.12-2.1.0
+nohup bin/kafka-server-start.sh config/server.properties > ~/kafka-logs &
+````
+
+### Access Kafka-Server via Kafka-Scala or Kafka-Java API
+
 TBD
+
+### Stopping Kafka & Zookeeper
+
+````
+cd kafka_2.12-0.10.2.0
+bin/kafka-server-stop.sh
+bin/zookeeper-server-stop.sh
+````
 
 ### Prepare Kafka as a Docker Image
 
 TBD
+
+### Source
+
+This procedure used the following:
+
+* [Installing and Running Kafka on an AWS Instance](https://dzone.com/articles/installing-and-running-kafka-on-an-aws-instance)
