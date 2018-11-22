@@ -21,7 +21,7 @@ A development Apache Kafka instance has been created to provide the team a sandb
 |  Region | US West (Oregon) |
 |  AMI Name |  Amazon Linux AMI 2018.03.0 (HVM), SSD Volume Type (ami-0bb5806b2e825a199)|
 |  AMI Description |  The Amazon Linux AMI is an EBS-backed, AWS-supported image. The default image includes AWS command line tools, Python, Ruby, Perl, and Java. The repositories include Docker, PHP, MySQL, PostgreSQL, and other packages. |
-| Type | t2.micro (Free tier eligible) |
+| Type | t2.small|
 | vCPUs | 1 |
 | Memory | 2 GB |
 | Instance Storage | EBS only |
