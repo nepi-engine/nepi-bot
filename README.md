@@ -38,7 +38,7 @@ Connecting to the Kafka Development Instance is available through SSH for server
 
 The Kafka Development Instance will be stopped after business hours or when not in use.
 
-
+The Administration notes for instlaling Apache Kafka on an Amazon EC2 Linux can be found [here](/docs/kafka-install.md)
 
 ## Contact
 
