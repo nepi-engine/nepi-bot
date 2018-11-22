@@ -19,8 +19,8 @@ A development Apache Kafka instance has been created to provide the team a sandb
 |  Key  |  Value  |
 |---|---|
 |  Region | US West (Oregon) |
-|  AMI Name |  Ubuntu Server 18.04 LTS (HVM), SSD Volume Type |
-|  AMI Description |  Ubuntu Server 18.04 LTS (HVM),EBS General Purpose (SSD) Volume Type. Support available from Canonical (http://www.ubuntu.com/cloud/services). |
+|  AMI Name |  Amazon Linux AMI 2018.03.0 (HVM), SSD Volume Type (ami-0bb5806b2e825a199)|
+|  AMI Description |  The Amazon Linux AMI is an EBS-backed, AWS-supported image. The default image includes AWS command line tools, Python, Ruby, Perl, and Java. The repositories include Docker, PHP, MySQL, PostgreSQL, and other packages. |
 | Type | t2.micro (Free tier eligible) |
 | vCPUs | 1 |
 | Memory | 2 GB |
@@ -35,6 +35,10 @@ A development Apache Kafka instance has been created to provide the team a sandb
 __Connecting to the Development Kafka Instance__
 
 Connecting to the Kafka Development Instance is available through SSH for server administration.  To connect, you must have access to the key pair (nepi-api.pem) and a custom rule needs to be created for your developer machine in the security group.
+
+````
+ssh -i nepi-kafka.pem ec2-user@52.39.250.140
+````
 
 The Kafka Development Instance will be stopped after business hours or when not in use.
 
