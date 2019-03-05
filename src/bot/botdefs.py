@@ -45,7 +45,7 @@ class Machines:
     ALPHA, TEST, FLOAT = range(1, 4)
 
 Machine = Machines.ALPHA    # Set default to ALPHA local.
-#Machine = Machines.TEST     # Set default to TEST remote.
+Machine = Machines.TEST     # Set default to TEST remote.
 #Machine = Machines.FLOAT    # Set default to FLOAT live.
 
 # Directory and File Locations.  NEPI Home should be /usr/nepi-usr on
