@@ -101,10 +101,19 @@ class BotComm(object):
 
         if self.typ == 'Iridium':
             try:
-                return self.serialport.readline()
+                response = self.acquire_response(b'AT+SBDRT')
+                if response is False:
+                    print "Connection Error. MT Message couldn't be transferred."
+                else:
+                    print response
+                    response = response.strip("OK\r")
+                    response = response.split("+SBDRT:\r")[1]
+                    print response
+
+                return response
+
             except Exception as err:
                 print "Error: ", err
-                return b''
 
 
     #-------------------------------------------------------------------
@@ -128,8 +137,7 @@ class BotComm(object):
                     if mo_buffer == True:
                         self.initiate_sbd(lev)
                 else:
-                    print "Connection Error. SBD Modem Cannot Receive Message"
-
+                    print "Connection Error. SBD modem didn't get any response."
 
                 ### Condition for +SBDWB
                 # msg = self.acquire_response(b'AT+SBDWB={message size}')
@@ -185,7 +193,7 @@ class BotComm(object):
 
                     message += self.serialport.readline()
 
-                    # print("Message:", message)
+                    print("Message:", message)
 
                     if "OK" in message:
                         if command in message:
@@ -245,7 +253,7 @@ class BotComm(object):
                     elif mt_status == 1:      
                         self.log.track(lev, "MT SBD Message Status:", True)
                         self.log.track(lev+1, "MT SBD message successfully received to MT buffer from the Iridium Gateway.", True)
-                        # mt_msg = self.receive()
+                        mt_msg = self.receive(lev)
 
                         if mtMsg:
                             mt_msg_list.append(mt_msg)
@@ -352,14 +360,21 @@ if __name__ == '__main__':
     start_time = time.time()
     bc = BotComm(cfg, log, 'Iridium', 1)
     bc.getconn(1)
+    startup_time = time.time() - start_time
+    print "Startup Time: " + str(startup_time)
 
     # Testing sending data to MO buffer
-    for i in range(10):
-        temp_start = time.time()
-        sbdmsg = str(i)
-        bc.send(1,sbdmsg)
-        temp_end = time.time()
-        print "Time Transfer message " + str(i) + ": " + str(temp_end - temp_start)
+    # for i in range(10):
+    #     temp_start = time.time()
+    #     sbdmsg = str(i)
+    #     bc.send(1,sbdmsg)
+    #     temp_end = time.time()
+    #     print "Time Transfer message " + str(i) + ": " + str(temp_end - temp_start)
+    temp_start = time.time()
+    sbdmsg = ""
+    bc.send(1,sbdmsg)
+    temp_end = time.time()
+    print "Time Transfer message: " + str(temp_end - temp_start)
     end_time = time.time()
     total_time = end_time - start_time
     print "Total Time: " + str(total_time)
