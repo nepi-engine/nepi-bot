@@ -14,6 +14,11 @@
 ##  Revision History
 ##  ----------------
 ##  
+##  Revision:   1.3 2019/03/12  10:40:00
+##  Comment:    Add Message Types as pseudo-Class.
+##  Developer:  John benJohn, Leonardo, New Jersey
+##  Platform:   Ubuntu 16.05; Python 2.7.12
+##
 ##  Revision:   1.2 2019/02/22  11:30:00
 ##  Comment:    Revised primary file lcoations and logging flag.
 ##  Developer:  John benJohn, Leonardo, New Jersey
@@ -47,6 +52,9 @@ class Machines:
 Machine = Machines.ALPHA    # Set default to ALPHA local.
 Machine = Machines.TEST     # Set default to TEST remote.
 #Machine = Machines.FLOAT    # Set default to FLOAT live.
+
+class Messages:
+    STATUS, META, STANDARD, CHANGE = range(1, 5)
 
 # Directory and File Locations.  NEPI Home should be /usr/nepi-usr on
 # the Float itself (per the "NumSDK - NEPI-Bot ICD"). For a variety of

@@ -14,6 +14,16 @@
 ##  Revision History
 ##  ----------------
 ##  
+##  Revision:   1.7 2019/03/22  13:30:00
+##  Comment:    Fix getconn() success return codes.
+##  Developer:  John benJohn, Leonardo, New Jersey
+##  Platform:   Ubuntu 16.05; Python 2.7.12
+##
+##  Revision:   1.6 2019/03/14  10:20:00
+##  Comment:    Added S/W Rev increment management.
+##  Developer:  John benJohn, Leonardo, New Jersey
+##  Platform:   Ubuntu 16.05; Python 2.7.12
+##
 ##  Revision:   1.5 2019/02/21  12:20:00
 ##  Comment:    Added 'admin' Table management.
 ##  Developer:  John benJohn, Leonardo, New Jersey
@@ -89,7 +99,7 @@ class BotDB(object):
                 self.log.track(2, "DB File NOT Found: " + str(self.cfg.db_file), True)
             success = self.reset()
             if not success:
-                return success, None
+                return [ False, None, None ], None
 
         try:
             self.dbc = sqlite3.connect(self.cfg.db_file)
@@ -99,10 +109,10 @@ class BotDB(object):
         except Exception as e:
             if self.cfg.tracking:
                 self.log.errtrack("DB001", "Connection FAILED: " + str(e) + "]" )
-            return [ "DB001", "Connection FAILED: " + str(e) + "]" ]
+            return [ False, "DB001", "Connection FAILED: " + str(e) + "]" ], None
 
     #-------------------------------------------------------------------
-    def popstat(self, lev, statjson):
+    def pushstat(self, lev, statjson):
         # INSERT a 'status' record into the Float DB.  This Module is
         # designed to insert the exact number of columns by picking
         # apart the 'statjson' JSON-formatted 'Status' record as
@@ -118,7 +128,7 @@ class BotDB(object):
         # values from the SDK's Status File in the Data Folder PLUS a
         # handfull of seeded control values for columns (fields) that
         # will be used later.
-        sql = "INSERT INTO status VALUES (0,0,0,NULL,NULL,%.15f,'%s','%s',%.15f,%.15f,%15f,%.15f,%.15f,%.15f,%.15f,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,NULL,NULL)" % (
+        sql = "INSERT INTO status VALUES (0,0,0,NULL,NULL,%.15f,'%s','%s',0,%.15f,%.15f,%15f,%.15f,%.15f,%.15f,%.15f,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,NULL,NULL)" % (
             float(statjson['timestamp']),
             str(statjson['serial_num']),
             str(statjson["sw_rev"]),
@@ -167,8 +177,9 @@ class BotDB(object):
     # INSERT a 'Data' record into the Float DB. This Module is designed
     # to insert the exact number of columns by picking apart the
     # 'datajson' JSON-formatted 'Meta' record as retrieved from the
-    # Data Folder and subjected to a json.load.
-    def popdata(self, lev, datajson, state, status, trigger, numerator, stdsize, chgsize, norm, pipo, metafile):
+    # Data Folder and subjected to a json.load.  In addition, the
+    # mandatory "standard" and optional "change" files are included.
+    def pushmeta(self, lev, datajson, state, status, trigger, numerator, stdsize, chgsize, norm, pipo, metafile, stdfile, chgfile):
         if self.cfg.logging:
             self.log.track(lev, "Entering 'popdata()' Module.", True)
             self.log.track(lev+1, "Log Level:   " + str(lev), True)
@@ -182,6 +193,8 @@ class BotDB(object):
             self.log.track(lev+1, "Normalize:   " + str(norm), True)
             self.log.track(lev+1, "PIPO Rating: " + str(pipo), True)
             self.log.track(lev+1, "MetaFile:    " + str(metafile), True)
+            self.log.track(lev+1, "StdFile:     " + str(stdfile), True)
+            self.log.track(lev+1, "ChgFile:     " + str(chgfile), True)
 
         #---------------------------------------------------------------
         # Create the SQL statement for inserting the Data Record into
@@ -190,7 +203,7 @@ class BotDB(object):
         # handfull of seeded control values for columns (fields) that
         # will be used later and specific values passed to this function
         # as arguments.
-        sql = "INSERT INTO data VALUES (%i,0,%i,%.15f,%.15f,%.15f,NULL,NULL,'%s',%i,%.15f,%.15f,%.15f,%.15f,'%s','%s','%s',%i,%i,%i,NULL,NULL)" % (
+        sql = "INSERT INTO meta VALUES (%i,0,%i,%.15f,%.15f,%.15f,'%s',%i,%.15f,%.15f,%.15f,%.15f,'%s','%s','%s',%i,%i,%i,'%s','%s')" % (
             state,
             status,
             numerator,
@@ -207,7 +220,9 @@ class BotDB(object):
             str(datajson["change_file"]),
             stdsize,
             chgsize,
-            norm
+            norm,
+            stdfile,
+            chgfile
         )
 
         #---------------------------------------------------------------
@@ -427,15 +442,16 @@ class BotDB(object):
                     reserved1 BLOB,
                     reserved2 BLOB,
                     timestamp DOUBLE PRECISION,
-                    serial_num CHARACTER(8),
-                    sw_rev CHARACTER(8), 
+                    serial_num TEXT,
+                    sw_rev TEXT,
+                    sw_rev_increment TINYINT, 
                     navsat_fix_time DOUBLE PRECISION,
                     latitude DOUBLE PRECISION,
                     longitude DOUBLE PRECISION,
                     heading DOUBLE PRECISION,
-                    batt_charge FLOAT,
-                    bus_voltage FLOAT,
-                    temperature FLOAT,
+                    batt_charge DOUBLE PRECISION,
+                    bus_voltage DOUBLE PRECISION,
+                    temperature DOUBLE PRECISION,
                     trig_wake_count SMALLINT,
                     wake_event_type TINYINT,
                     wake_event_id SMALLINT,
@@ -458,20 +474,18 @@ class BotDB(object):
                 return [ False, "DB105", "Failed to Create the 'status' Table." ], None
 
             #-----------------------------------------------------------
-            # Create the 'data' Table.
+            # Create the 'meta' Table.
             try:
-                cursor.execute("""CREATE TABLE data
+                cursor.execute("""CREATE TABLE meta
                     (state TINYINT,
                     base BOOLEAN,
                     status BIGINT,
-                    numerator FLOAT,
+                    numerator DOUBLE PRECISION,
                     trigger INTEGER,
-                    pipo FLOAT,
-                    reserved1 BLOB,
-                    reserved2 BLOB,
-                    type CHARACTER(3),
+                    pipo DOUBLE PRECISION,
+                    type TEXT,
                     instance SMALLINT,
-                    timestamp FLOAT,
+                    timestamp DOUBLE PRECISION,
                     heading DOUBLE PRECISION,
                     quality TINYINT,
                     score INTEGER,
@@ -481,16 +495,18 @@ class BotDB(object):
                     stdsize INTEGER,
                     chgsize INTEGER,
                     norm INTEGER,
-                    reserved3 BLOB,
-                    reserved4 BLOB) 
+                    std TEXT,
+                    chg TEXT)
                     """)
 
                 if self.cfg.tracking:
-                    self.log.track(3, "Created the 'data' Table.", True)
-            except:
+                    self.log.track(3, "Created the 'meta' Table.", True)
+            except  Exception as e:
+                enum = "DB106"
+                emsg = "reset(): [" + str(e)  + "]"
                 if self.cfg.tracking:
-                    self.log.errtrack("DB106", "Failed to Create the 'data' Table.")
-                return [ False, "DB106", "Failed to Create the 'data' Table." ], None
+                    self.log.errtrack(str(enum), str(emsg))
+                return [ False, str(enum), str(emsg) ], None
 
             #-----------------------------------------------------------
             # Instantiate the 'admin' Table.

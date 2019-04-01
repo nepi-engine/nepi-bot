@@ -14,6 +14,16 @@
 ##  Revision History
 ##  ----------------
 ##  
+##  Revision:   1.5 2019/03/26  09:30:00
+##  Comment:    Added support for writeFloatFile() method.
+##  Developer:  John benJohn, Leonardo, New Jersey
+##  Platform:   Ubuntu 16.05; Python 2.7.12
+##
+##  Revision:   1.4 2019/03/06  16:15:00
+##  Comment:    Added Error support and return to readFloatFile.
+##  Developer:  John benJohn, Leonardo, New Jersey
+##  Platform:   Ubuntu 16.05; Python 2.7.12
+##
 ##  Revision:   1.3 2019/02/19  09:10:00
 ##  Comment:    Added Config File value restting functionality.
 ##  Developer:  John benJohn, Leonardo, New Jersey
@@ -123,9 +133,10 @@ def getAllFileNames(cfg, log, lev, dir, sortem, revem):
 ########################################################################
 
 def readFloatFile(ffile, lockflag, jsonflag):
-
+    success = False
+    enum = None
+    emsg = None
     ffdata = None
-    acquired = False
     # Create Locker instance.
     if botdefs.locking and lockflag:
         FL = Locker(filePath=ffile, lockPass=botdefs.lockpass, mode='r')
@@ -140,15 +151,21 @@ def readFloatFile(ffile, lockflag, jsonflag):
             # been returned; 'None' will be returned in the 'fd' if the fd
             # hasn't been successfully created.  Not clear from File Locker
             # documentation if this 'double check' is actually redundant.
-            ffdata = None
             if acquired and fd is not None:
                 try:
                     ffdata = fd.read()
-                except:
-                    acquired = False
+                    success = True
+                    enum = None
+                    emsg = None
+                except Exception as e:
+                    success = False
+                    enum = "RFF-101"
+                    emsg = "readFloatFile(): " + str(e)
                     ffdata = None
             else:
-                acquired = False
+                success = False
+                enum = "RFF-102"
+                emsg = "readFloatFile(): " + str(e)
                 ffdata = None
     else:
         try:
@@ -156,12 +173,39 @@ def readFloatFile(ffile, lockflag, jsonflag):
             ffdata = fd.read()
             if jsonflag:
                 ffdata = json.loads(ffdata)
-            acquired = True
-        except:
-            acquired = False
+            success = True
+            enum = None
+            emsg = None
+        except Exception as e:
+            success = False
+            enum = "RFF-103"
+            emsg = "readFloatFile(): " + str(e)
             ffdata = None
 
-    return acquired, ffdata
+    return [success, enum, emsg], ffdata
+
+########################################################################
+##  Write a File from the Float's SD drive.
+########################################################################
+
+def writeFloatFile(ffile, fdata):
+    success = False
+    enum = None
+    emsg = None
+
+    try:
+        with open(ffile, 'w') as f:
+            f.write(fdata)
+
+        success = True
+        enum = None
+        emsg = None
+    except Exception as e:
+        success = False
+        enum = "WFF103"
+        emsg = "writeFloatFile(): " + str(e)
+
+    return [success, enum, emsg]
 
 ########################################################################
 ##  Trigger Score Lookup Table.

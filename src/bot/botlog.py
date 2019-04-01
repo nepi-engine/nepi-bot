@@ -14,6 +14,16 @@
 ##  Revision History
 ##  ----------------
 ##  
+##  Revision:   1.7 2019/03/22  14:15:00
+##  Comment:    Fixed no new line in debugging titles.
+##  Developer:  John benJohn, Leonardo, New Jersey
+##  Platform:   Ubuntu 16.05; Python 2.7.12
+##  
+##  Revision:   1.6 2019/03/18  09:40:00
+##  Comment:    Make sure no debugging/logging when botcfg < 0.
+##  Developer:  John benJohn, Leonardo, New Jersey
+##  Platform:   Ubuntu 16.05; Python 2.7.12
+##  
 ##  Revision:   1.5 2019/02/21  09:50:00
 ##  Comment:    Add database configuration management.
 ##  Developer:  John benJohn, Leonardo, New Jersey
@@ -53,33 +63,38 @@ from botdefs import Machines, nepi_home, bot_cfg_file, bot_db_file
 
 class BotLog(object):
 
-    def __init__(self, cfg, lev, recv):
-        self.cfg = cfg
-        self.lev = lev
-        self.recv = recv
-        self.send = not recv
+    def __init__(self, _cfg, _lev, _recv):
+        self.cfg = _cfg
+        self.lev = _lev
+        self.recv = False
+        self.send = False
+        self.name = str(_recv)
+        self.file = None
         self.indent = "                     "
 
-        if self.recv:
-            self.recvfile = cfg.br_log_file
+        if str(_recv) == "BOT-RECV":
+            self.recv = True
+            self.file = self.cfg.br_log_file
+
+            self.recvfile = self.cfg.br_log_file
             self.recvname = "BOT-RECV"
-        elif self.send:
-            self.sendfile = cfg.bs_log_file
+        elif str(_recv) == "BOT-SEND":
+            self.send = True
+            self.file = self.cfg.bs_log_file
+
+            self.sendfile = self.cfg.bs_log_file
             self.sendname = "BOT-SEND"
 
     def initlog(self):
         if self.cfg.debugging:
-            if self.recv:
-                self.name = self.recvname
+            if self.recv or self.send:
+                sys.stdout.write(str(time.ctime() + ": STARTING " + str(self.name) + " DEBUGGING:\n"))
             else:
-                self.name = self.sendname
+                sys.stdout.write(str(time.ctime() + ": INVALID " + str(self.name) + " DEBUGGING TERMINATED.\n"))
+                sys.stdout.write(str(time.ctime() + ": MUST BE EITHER 'BOT-RECV' or 'BOT-SEND.\n"))
 
-            sys.stdout.write(str(time.ctime() + ": STARTING " + str(self.name) + " DEBUGGING:"))
-            sys.stdout.write(time.ctime() + ":")
+            sys.stdout.write(time.ctime() + ":\n")
             sys.stdout.flush()
-
-            #print(str(time.ctime() + ": STARTING " + str(self.name) + " DEBUGGING:"))
-            #print(str(time.ctime() + ":"))
 
         if self.cfg.logging:
             if self.recv:
@@ -92,7 +107,8 @@ class BotLog(object):
                 if self.recv:
                     try:
                         self.log = open(self.cfg.br_log_file, 'w')
-                        self.log.write(str(time.ctime() + ": STARTING THE " +          self.recvname + " LOG FILE.\n"))
+                        self.log.write(str(time.ctime() + ": STARTING " + str(self.recvname) + " LOGGING:\n"))
+                        self.log.write(str(time.ctime() + "\n"))
                         self.log.flush()
                         self.log.close()
                         self.cfg.recv = True
@@ -115,7 +131,8 @@ class BotLog(object):
                     finally:
                         try:
                             self.log = open(self.cfg.bs_log_file, 'w')
-                            self.log.write(str(time.ctime() + ": STARTING THE " + self.sendname + " LOG FILE.\n"))
+                            self.log.write(str(time.ctime() + ": STARTING " + self.sendname + " LOGGING.\n"))
+                            self.log.write(str(time.ctime() + "\n"))
                             self.log.flush()
                             self.log.close()
                             self.cfg.send = True
@@ -163,16 +180,22 @@ class BotLog(object):
     def track(self, lev, msg, new):
         yesdbg = True
         yeslog = True
-        if lev < 0 or lev > self.cfg.debugging:
+        if lev < 0:
+            lev = 0
+
+        if lev > 11:
+            lev = 11
+            
+        if (self.cfg.debugging < 0) or (lev > self.cfg.debugging):
             yesdbg = False
         
-        if lev < 0 or lev > self.cfg.logging:
+        if (self.cfg.logging < 0) or (lev > self.cfg.logging):
             yeslog = False
 
         if yesdbg or yeslog:
             inum = lev
             if lev > 5:
-                inum = 11 - lev
+                inum = lev - 6
 
             if self.cfg.timing:
                 self.ti = str(time.ctime()) + ": "

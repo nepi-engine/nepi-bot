@@ -30,6 +30,7 @@ import os
 #import sys
 import math
 import time 
+from bothelp import readFloatFile
 
 ########################################################################
 ##  The Float PIPO Class
@@ -83,6 +84,7 @@ class BotPIPO(object):
             self.log.track(lev, "Compute 'Standard' Data File size.", True)
 
         sfile_size = 0
+        stdfile = ""
         try:
             sf = str(metajson['data_file'])
         except:
@@ -103,6 +105,12 @@ class BotPIPO(object):
                 self.log.errtrack("PIPO101", "CAN'T ACCESS 'STANDARD' DATA FILE.", True)
             return [ False, "PIPO101", "CAN'T ACCESS 'STANDARD' DATA FILE."], None
 
+        acquired, stdfile = readFloatFile(sf, False, False)
+        if not acquired:
+            if self.cfg.tracking:
+                self.log.errtrack("PIPO111", "CAN'T ACQUIRE 'STANDARD' DATA FILE.", True)
+            return [ False, "PIPO111", "CAN'T ACQUIRE 'STANDARD' DATA FILE."], None
+            
         if self.cfg.tracking:
             self.log.track(lev+1, "Std File: " + str(sf), True)
             self.log.track(lev+1, "Std Size: " + str(sfile_size), True)
@@ -113,6 +121,7 @@ class BotPIPO(object):
             self.log.track(lev, "Compute 'Change' Data File size.", True)
 
         cfile_size = 0
+        chgfile = ""
         try:
             cf = str(metajson['change_file'])
         except:
@@ -132,7 +141,15 @@ class BotPIPO(object):
                     try:
                         cfile_size = os.path.getsize(cf)
                     except:
+                        cfile_size = 0
                         self.log.track(lev+2, "OPTIONAL 'CHANGE' DATA FILE NOT ACCESSIBLE.", True)
+
+                    if cfile_size > 0:
+                        acquired, chgfile = readFloatFile(cf, False, False)
+                        if not acquired:
+                            if self.cfg.tracking:
+                                self.log.errtrack("PIPO112", "CAN'T ACQUIRE 'CHANGE' DATA FILE.", True)
+                            return [ False, "PIPO112", "CAN'T ACQUIRE 'CHANGE' DATA FILE."], None  
                 else:
                     self.log.track(lev+2, False, "OPTIONAL 'CHANGE' DATA FILE NOT A FILE.", True)
 
@@ -188,7 +205,7 @@ class BotPIPO(object):
         if self.cfg.tracking:
             self.log.track(lev+1, "PIPO Rating: " + str(pipo_rating), True)
 
-        return [ True, None, None], [ numerator, sfile_size, cfile_size, dstate, norm, pipo_rating ]
+        return [ True, None, None], [ numerator, sfile_size, cfile_size, dstate, norm, pipo_rating, stdfile, chgfile ]
 
     #---------------------------------------------------------------
     # computeNormalized() class module.
