@@ -14,6 +14,11 @@
 ##  Revision History
 ##  ----------------
 ##  
+##  Revision:   1.8 2019/04/02  14:15:00
+##  Comment:    Re-write; simplify tracking; make robust.
+##  Developer:  John benJohn, Leonardo, New Jersey
+##  Platform:   Ubuntu 16.05; Python 2.7.12
+##  
 ##  Revision:   1.7 2019/03/22  14:15:00
 ##  Comment:    Fixed no new line in debugging titles.
 ##  Developer:  John benJohn, Leonardo, New Jersey
@@ -63,119 +68,98 @@ from botdefs import Machines, nepi_home, bot_cfg_file, bot_db_file
 
 class BotLog(object):
 
-    def __init__(self, _cfg, _lev, _recv):
+    def __init__(self, _cfg, _which):
         self.cfg = _cfg
-        self.lev = _lev
-        self.recv = False
-        self.send = False
-        self.name = str(_recv)
+        self.name = str(_which)
         self.file = None
         self.indent = "                     "
 
-        if str(_recv) == "BOT-RECV":
+        if str(_which) == "BOT-RECV":
             self.recv = True
             self.file = self.cfg.br_log_file
-
-            self.recvfile = self.cfg.br_log_file
-            self.recvname = "BOT-RECV"
-        elif str(_recv) == "BOT-SEND":
+        elif str(_which) == "BOT-SEND":
             self.send = True
             self.file = self.cfg.bs_log_file
 
-            self.sendfile = self.cfg.bs_log_file
-            self.sendname = "BOT-SEND"
-
-    def initlog(self):
+    def initlog(self, _lev):
+        # If debugging, we're writing to the console.
         if self.cfg.debugging:
-            if self.recv or self.send:
-                sys.stdout.write(str(time.ctime() + ": STARTING " + str(self.name) + " DEBUGGING:\n"))
+            # Bomb if any configuration errors.
+            if self.cfg.enum != None:
+                sys.stdout.write(time.ctime() + ":\n")
+                sys.stdout.write(str(time.ctime()) + ": FATAL CONFIGURATION ERROR: " + str(self.cfg.enum) + "\n")
+                sys.stdout.write(str(time.ctime()) + ": " + str(self.cfg.emsg) + "\n")
+                sys.stdout.write(time.ctime() + ":\n")
+                sys.stdout.flush()
+                sys.exit(1)
             else:
-                sys.stdout.write(str(time.ctime() + ": INVALID " + str(self.name) + " DEBUGGING TERMINATED.\n"))
-                sys.stdout.write(str(time.ctime() + ": MUST BE EITHER 'BOT-RECV' or 'BOT-SEND.\n"))
+                sys.stdout.write(str(time.ctime()) + ": STARTING '" + str(self.name) + "' DEBUGGING:\n")
+                if not self.recv and not self.send:
+                    sys.stdout.write(str(time.ctime()) + ":    ERROR: LOG001: Name should be either 'BOT-RECV' or 'BOT-SEND.\n")
 
             sys.stdout.write(time.ctime() + ":\n")
             sys.stdout.flush()
 
         if self.cfg.logging:
-            if self.recv:
-                if not os.path.exists(os.path.dirname(self.cfg.br_log_file)):
-                    try:
-                        os.makedirs(os.path.dirname(self.cfg.br_log_file))
-                    except OSError as exc: # Guard against race condition and file errors
-                        self.recv = False
-
-                if self.recv:
-                    try:
-                        self.log = open(self.cfg.br_log_file, 'w')
-                        self.log.write(str(time.ctime() + ": STARTING " + str(self.recvname) + " LOGGING:\n"))
-                        self.log.write(str(time.ctime() + "\n"))
-                        self.log.flush()
-                        self.log.close()
-                        self.cfg.recv = True
-                    except:
-                        self.cfg.recv = False
-
-            if self.send:
-                if not os.path.exists(os.path.dirname(self.cfg.bs_log_file)):
-                    try:
-                        os.makedirs(os.path.dirname(self.cfg.bs_log_file))
-                    except OSError as exc: # Guard against race condition and file errors
-                        self.send = False
-
-                if self.send:
-                    try:
-                        os.makedirs(os.path.dirname(self.cfg.bs_log_file))
-                    except OSError as exc: # Guard against race condition and file errors
-                        if exc.errno != errno.EEXIST:
-                            raise
-                    finally:
-                        try:
-                            self.log = open(self.cfg.bs_log_file, 'w')
-                            self.log.write(str(time.ctime() + ": STARTING " + self.sendname + " LOGGING.\n"))
-                            self.log.write(str(time.ctime() + "\n"))
-                            self.log.flush()
-                            self.log.close()
-                            self.cfg.send = True
-                        except:
-                            self.cfg.send = False
+            if not os.path.exists(os.path.dirname(self.file)):
+                try:
+                    os.makedirs(os.path.dirname(self.file))
+                    self.log = open(self.file, 'w')
+                    self.log.write(str(time.ctime() + ": STARTING " + str(self.name) + " LOGGING:\n"))
+                    self.log.write(str(time.ctime() + "\n"))
+                    self.log.flush()
+                    self.log.close()
+                except Exception as e:
+                    if self.cfg.debugging:
+                        self.errtrack("LOG002", "Can't Initialize Logging.")
+                        self.errtrack("LOG002", str(e))
+                        self.errtrack("LOG002", "Logging Turned OFF")
+                        self.cfg.logging = False
 
         if self.cfg.tracking:
-            if not self.cfg.nodb:
-                self.track(self.lev, "Using Float DB for Config:" + str(bot_db_file), True)
-            elif self.cfg.factory:
-                self.track(self.lev, "Can't Open Bot Cfg File: " + str(bot_cfg_file), True)
-                self.track(self.lev, "Using Factory Def Cfg: " + str(self.cfg.machine), True)
+            if self.cfg.factory:
+                self.track(_lev, "Could Not Open Bot Cfg File: " + str(bot_cfg_file), True)
+                self.track(_lev, "Using Factory Def Cfg: " + str(self.cfg.state), True)
             else:
-                self.track(self.lev, "Using Bot Config File: " + str(bot_cfg_file), True)
-                self.track(self.lev+7, "JSON Format: " + str(self.cfg.bot_cfg_json), True)
+                self.track(_lev, "Using Bot Config File: " + str(bot_cfg_file), True)
+                self.track(_lev+6, "JSON Format: " + str(self.cfg.bot_cfg_json), True)
 
-            self.track(self.lev+1, "machine: " + str(self.cfg.machine), True)
-            self.track(self.lev+1, "debugging: " + str(self.cfg.debugging), True)
-            self.track(self.lev+1, "logging: " + str(self.cfg.logging), True)
-            self.track(self.lev+1, "tracking: " + str(self.cfg.tracking), True)
-            self.track(self.lev+1, "timing: " + str(self.cfg.timing), True)
-            self.track(self.lev+1, "locking: " + str(self.cfg.logging), True)
-            self.track(self.lev+1, "type: " + str(self.cfg.type), True)
-            self.track(self.lev+1, "host: " + str(self.cfg.host), True)
-            self.track(self.lev+1, "port: " + str(self.cfg.port), True)
-            self.track(self.lev+1, "protocol: " + str(self.cfg.protocol), True)
-            self.track(self.lev+1, "packet_size: " + str(self.cfg.packet_size), True)
-            self.track(self.lev+1, "sys_status_file: " + str(self.cfg.sys_status_file), True)
-            self.track(self.lev+1, "data_dir: " + str(self.cfg.data_dir), True)
-            self.track(self.lev+1, "data_dir_path: " + str(self.cfg.data_dir_path), True)
-            self.track(self.lev+1, "db_file: " + str(self.cfg.db_file), True)
-            self.track(self.lev+1, "log_dir: " + str(self.cfg.log_dir), True)
-            self.track(self.lev+1, "br_log_name: " + str(self.cfg.br_log_name), True)
-            self.track(self.lev+1, "br_log_file: " + str(self.cfg.br_log_file), True)
-            self.track(self.lev+1, "bs_log_name: " + str(self.cfg.bs_log_name), True)
-            self.track(self.lev+1, "bs_log_file: " + str(self.cfg.bs_log_file), True)
-            self.track(self.lev+1, "wt_changed: " + str(self.cfg.wt_changed), True)
-            self.track(self.lev+1, "pipo_scor_wt: " + str(self.cfg.pipo_trig_wt), True)
-            self.track(self.lev+1, "pipo_qual_wt: " + str(self.cfg.pipo_qual_wt), True)
-            self.track(self.lev+1, "pipo_trig_wt: " + str(self.cfg.pipo_trig_wt), True)
-            self.track(self.lev+1, "pipo_time_wt: " + str(self.cfg.pipo_time_wt), True)
-            self.track(self.lev+1, "purge_rating: " + str(self.cfg.purge_rating), True)
-            self.track(self.lev+1, "max_msg_size: " + str(self.cfg.max_msg_size), True)
+            self.track(_lev+1, "machine: " + str(self.cfg.machine), True)
+            self.track(_lev+1, "platform: " + str(self.cfg.platform), True)
+            self.track(_lev+1, "release: " + str(self.cfg.release), True)
+            self.track(_lev+1, "system: " + str(self.cfg.system), True)
+            self.track(_lev+1, "version: " + str(self.cfg.version), True)
+            self.track(_lev+1, "processor: " + str(self.cfg.machine), True)
+            self.track(_lev+1, "python_compiler: " + str(self.cfg.python_compiler), True)
+            self.track(_lev+1, "python_version: " + str(self.cfg.python_version), True)
+
+            self.track(_lev+1, "state: " + str(self.cfg.state), True)
+            self.track(_lev+1, "debugging: " + str(self.cfg.debugging), True)
+            self.track(_lev+1, "logging: " + str(self.cfg.logging), True)
+            self.track(_lev+1, "tracking: " + str(self.cfg.tracking), True)
+            self.track(_lev+1, "timing: " + str(self.cfg.timing), True)
+            self.track(_lev+1, "locking: " + str(self.cfg.logging), True)
+            self.track(_lev+1, "type: " + str(self.cfg.type), True)
+            self.track(_lev+1, "host: " + str(self.cfg.host), True)
+            self.track(_lev+1, "port: " + str(self.cfg.port), True)
+            self.track(_lev+1, "protocol: " + str(self.cfg.protocol), True)
+            self.track(_lev+1, "packet_size: " + str(self.cfg.packet_size), True)
+            self.track(_lev+1, "sys_status_file: " + str(self.cfg.sys_status_file), True)
+            self.track(_lev+1, "data_dir: " + str(self.cfg.data_dir), True)
+            self.track(_lev+1, "data_dir_path: " + str(self.cfg.data_dir_path), True)
+            self.track(_lev+1, "db_file: " + str(self.cfg.db_file), True)
+            self.track(_lev+1, "log_dir: " + str(self.cfg.log_dir), True)
+            self.track(_lev+1, "br_log_name: " + str(self.cfg.br_log_name), True)
+            self.track(_lev+1, "br_log_file: " + str(self.cfg.br_log_file), True)
+            self.track(_lev+1, "bs_log_name: " + str(self.cfg.bs_log_name), True)
+            self.track(_lev+1, "bs_log_file: " + str(self.cfg.bs_log_file), True)
+            self.track(_lev+1, "wt_changed: " + str(self.cfg.wt_changed), True)
+            self.track(_lev+1, "pipo_scor_wt: " + str(self.cfg.pipo_trig_wt), True)
+            self.track(_lev+1, "pipo_qual_wt: " + str(self.cfg.pipo_qual_wt), True)
+            self.track(_lev+1, "pipo_trig_wt: " + str(self.cfg.pipo_trig_wt), True)
+            self.track(_lev+1, "pipo_time_wt: " + str(self.cfg.pipo_time_wt), True)
+            self.track(_lev+1, "purge_rating: " + str(self.cfg.purge_rating), True)
+            self.track(_lev+1, "max_msg_size: " + str(self.cfg.max_msg_size), True)
 
     def track(self, lev, msg, new):
         yesdbg = True
@@ -215,27 +199,17 @@ class BotLog(object):
                 sys.stdout.flush()
 
             if yeslog:
-                if self.recv:
-                    try:
-                        self.log = open(self.recvfile, 'a')
-                        self.log.write(self.msg)
-                        self.log.flush()
-                        self.log.close()
-                    except:
-                        self.recv = False   # On error, turn off recv logging
+                try:
+                    self.log = open(self.file, 'a')
+                    self.log.write(self.msg)
+                    self.log.flush()
+                    self.log.close()
+                except:
+                    self.cfg.logging = False   # On error, turn off logging
 
-                if self.send:
-                    try:
-                        self.log = open(self.sendfile, 'a')
-                        self.log.write(self.msg)
-                        self.log.flush()
-                        self.log.close()
-                    except:
-                        self.recv = False   # On error, turn off recv logging
+    def errtrack(self, _enum, _emsg):
+        msg = "ERROR: " + str(_enum) + ": " + str(_emsg)
+        self.track(True, msg, True)
 
-    def errtrack(self, errnum, msg):
-        self.msg = "\n**ERROR " + str(errnum) + ": " + str(msg)
-        self.track(0, self.msg, True)
-
-    def reset(self):
-        self.initlog()
+    def reset(self, _lev):
+        self.initlog(_lev)

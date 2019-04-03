@@ -49,20 +49,21 @@ from bothelp import writeFloatFile
 ########################################################################
 
 cfg = BotCfg()
+cfg.initcfg()
 
 ########################################################################
 ##  Instantiate a BotLog Debug/Log Class Object (from 'botlog.py')
 ########################################################################
 
-log = BotLog(cfg, 0, "BOT-RECV")
-log.initlog()
+log = BotLog(cfg, "BOT-RECV")
+log.initlog(0)
 
 ########################################################################
 ##  Instantiate a BotDB Database Class (from 'botdb.py').
 ########################################################################
 
-db = BotDB(cfg, log)
-success, conn = db.getconn()
+db = BotDB(cfg, log, 0)
+success, dbconn = db.getconn(0)
 
 if not success[0]:
     sys.exit(1)
@@ -120,7 +121,7 @@ else:
         log.track(8, "action_json: " + str(action_json), True)
         log.track(1, "Write the 'Action' file for the SDK.", True)
 
-    #-------------------------------------------------------------------
+    #---------------------------------------------------------------
     # Write 'Action' File
 
     if cfg.tracking:
@@ -134,7 +135,7 @@ else:
         if cfg.tracking:
             log.track(2, "ERROR " + str(success[1] + ": " + success[2]), True)
 
-    #-------------------------------------------------------------------
+    #---------------------------------------------------------------
     # Construct 'Task' File
 
     if cfg.tracking:
@@ -155,7 +156,7 @@ else:
         log.track(8, "task_json: " + str(task_json), True)
         log.track(1, "Write the 'Task' file for the SDK.", True)
 
-    #-------------------------------------------------------------------
+    #---------------------------------------------------------------
     # Write 'Task' File
 
     success = writeFloatFile(task_file, task_json)

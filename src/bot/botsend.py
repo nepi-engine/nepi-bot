@@ -76,6 +76,7 @@ from bothelp import readFloatFile, triggerScoreLookup, resetCfgValue
 ########################################################################
 
 cfg = BotCfg()
+cfg.initcfg()
 
 ########################################################################
 ##  Instantiate Bot-Send Debug/Log Object (from 'botlog.py')

@@ -58,10 +58,10 @@ class Messages:
 
 # Directory and File Locations.  NEPI Home should be /usr/nepi-usr on
 # the Float itself (per the "NumSDK - NEPI-Bot ICD"). For a variety of
-# reasons, the Bot Configuration and Log Files should be static to
+# reasons, the Bot Configuration and Log Files must be static to insure
 # insure acccessibility.
 nepi_home = "../.."
-bot_cfg_file = nepi_home + "/" + "cfg/bot/config.json"  # Bot Cfg File
+bot_cfg_file = nepi_home + "/cfg/bot/config.json"       # Bot Cfg File
 bot_db_file  = nepi_home + "/" + "db/float.db"          # Bot DB File
 
 # This is another Python2 way of doing Enums.  We don't seem to have the
@@ -85,3 +85,5 @@ logging = False
 timing = False
 tracking = False
 locking = False
+
+

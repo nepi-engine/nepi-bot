@@ -16,12 +16,12 @@
 ##  
 ##  Revision:   1.1 2019/04/01  12:00:00
 ##  Comment:    Release 4.1; Able to receive downlink messages.
-##  Developer:  
+##  Developer:  Kevin Ramada; University of Washington
 ##  Platform:   Ubuntu 16.05; Python 2.7.12
 ##
 ##  Revision:   1.1 2019/02/18  12:00:00
 ##  Comment:    Module Instantiation.
-##  Developer:  
+##  Developer:  Kevin Ramada; University of Washington
 ##  Platform:   Ubuntu 16.05; Python 2.7.12
 ##
 ########################################################################
@@ -137,16 +137,21 @@ class BotComm(object):
                     self.log.track(_lev+1, "Attempting Message Read(s).", True)
                 icnt = 0
                 results = []
+                tries = 0
                 while True:
                     iline = self.serialport.readline()
-                    if iline.strip() == "":
-                        if self.cfg.tracking:
-                            self.log.track(_lev+2, "DONE.", True)
-                        break
                     if self.cfg.tracking:
-                        self.log.track(_lev+2, "iline " + str(icnt) + ":" + str(iline), True)
-                    results.append(iline)
-                    icnt = icnt + 1
+                        self.log.track(_lev+2, "iline " + str(tries) + ":" + str(iline), True)
+                    if iline.strip() == "":
+                        if tries > 5:
+                            if self.cfg.tracking:
+                                self.log.track(_lev+2, "DONE.", True)
+                            break
+                        else:
+                            tries = tries + 1
+                    else:
+                        results.append(iline)
+                        icnt = icnt + 1
                 
                 return [ True, None, None ], results
 
