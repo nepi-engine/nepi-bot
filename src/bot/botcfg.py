@@ -14,6 +14,11 @@
 ##  Revision History
 ##  ----------------
 ##  
+##  Revision:   1.5 2019/04/04  10:20:00
+##  Comment:    Add 'baud' and 'tout' keyword-value pairs.
+##  Developer:  John benJohn, Leonardo, New Jersey
+##  Platform:   Ubuntu 16.05; Python 2.7.12
+##
 ##  Revision:   1.4 2019/04/02  16:00:00
 ##  Comment:    Re-write; Added sys info; simplified factory default.
 ##  Developer:  John benJohn, Leonardo, New Jersey
@@ -68,11 +73,11 @@ class BotCfg(object):
             self.python_version = platform.python_version()
 
             self.cfgfile = bot_cfg_file
-            success, self.bot_cfg_json = readFloatFile(self.cfgfile, False, True)
+            success, self.bot_cfg_json = readFloatFile(None, None, 0, self.cfgfile, False, True)
         except Exception as e:
             self.enum = "CFG001"
-            self.emsg = str(e)
-            success = [ False, None, None ]
+            self.emsg = "ERROR: [" + str(e) + "]"
+            success = [ False, self.enum, self.emsg ]
 
         # If reading the specified configuration file fails, construct
         # a FACTORY DEFAULT CONFIG FILE that provides enough information
@@ -91,6 +96,8 @@ class BotCfg(object):
                 self.type = "Ethernet"
                 self.host = "10.0.0.116"
                 self.port = 7770
+                self.baud = 19200
+                self.tout = 1
                 self.protocol = 1
                 self.packet_size = 1024
                 self.sys_status_file = "sys_status_file"
@@ -100,6 +107,7 @@ class BotCfg(object):
                 self.log_dir = "log"
                 self.br_log_name = "brlog.txt"
                 self.bs_log_name = "bslog.txt"
+                self.bu_log_name = "bulog.txt"
                 self.wt_changed = 0
                 self.pipo_scor_wt = 0.5
                 self.pipo_qual_wt = 0.5
@@ -114,9 +122,11 @@ class BotCfg(object):
                 self.logging  = 5
                 self.timing = 1
                 self.locking = 0
-                self.type = "Ethernet"
-                self.host = "10.0.0.116"
-                self.port = 7770
+                self.type = "Iridium"
+                self.host = "None"
+                self.port = "/dev/ttyUSB0"
+                self.baud = 19200
+                self.tout = 1
                 self.protocol = 1
                 self.packet_size = 1024
                 self.sys_status_file = "sys_status_file"
@@ -126,6 +136,7 @@ class BotCfg(object):
                 self.log_dir = "log"
                 self.br_log_name = "brlog.txt"
                 self.bs_log_name = "bslog.txt"
+                self.bu_log_name = "bulog.txt"
                 self.wt_changed = 0
                 self.pipo_scor_wt = 0.5
                 self.pipo_qual_wt = 0.5
@@ -140,6 +151,7 @@ class BotCfg(object):
             self.db_file = nepi_home + "/" + self.db_dir + "/" + self.db_name
             self.br_log_file = nepi_home + "/" + self.log_dir + "/" + self.br_log_name
             self.bs_log_file = nepi_home + "/" + self.log_dir + "/" + self.bs_log_name
+            self.bu_log_file = nepi_home + "/" + self.log_dir + "/" + self.bu_log_name
 
             self.factory = True
         else:
@@ -153,7 +165,9 @@ class BotCfg(object):
             self.locking = int(self.bot_cfg_json["locking"])
             self.type = str(self.bot_cfg_json["type"])
             self.host = str(self.bot_cfg_json["host"])
-            self.port = int(self.bot_cfg_json["port"])
+            self.port = str(self.bot_cfg_json["port"])
+            self.baud = int(self.bot_cfg_json["baud"])
+            self.tout = int(self.bot_cfg_json["tout"])
             self.protocol = int(self.bot_cfg_json["protocol"])
             self.packet_size = int(self.bot_cfg_json["packet_size"])
             self.sys_status_file = str(self.bot_cfg_json["sys_status_file"])
@@ -167,6 +181,8 @@ class BotCfg(object):
             self.br_log_file = nepi_home + "/" + self.log_dir + "/" + self.br_log_name
             self.bs_log_name = str(self.bot_cfg_json["bs_log_name"])
             self.bs_log_file = nepi_home + "/" + self.log_dir + "/" + self.bs_log_name
+            self.bu_log_name = str(self.bot_cfg_json["bu_log_name"])
+            self.bu_log_file = nepi_home + "/" + self.log_dir + "/" + self.bu_log_name
             self.wt_changed = int(self.bot_cfg_json["wt_changed"])
             self.pipo_scor_wt = float(self.bot_cfg_json["pipo_scor_wt"])
             self.pipo_qual_wt = float(self.bot_cfg_json["pipo_qual_wt"])

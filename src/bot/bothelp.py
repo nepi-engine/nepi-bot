@@ -14,6 +14,16 @@
 ##  Revision History
 ##  ----------------
 ##  
+##  Revision:   1.6 2019/04/08  11:10:00
+##  Comment:    Mod deleteFolder() & deleteDataProduct() methods.
+##  Developer:  John benJohn, Leonardo, New Jersey
+##  Platform:   Ubuntu 16.05; Python 2.7.12
+##
+##  Revision:   1.6 2019/04/07  08:50:00
+##  Comment:    Updated/fixed getAllFolderNames() method.
+##  Developer:  John benJohn, Leonardo, New Jersey
+##  Platform:   Ubuntu 16.05; Python 2.7.12
+##
 ##  Revision:   1.5 2019/03/26  09:30:00
 ##  Comment:    Added support for writeFloatFile() method.
 ##  Developer:  John benJohn, Leonardo, New Jersey
@@ -46,6 +56,7 @@ import sys
 import time
 import uuid
 import json
+import shutil
 import botdefs
 from pylocker import Locker
 
@@ -53,93 +64,122 @@ from pylocker import Locker
 # Retrieve a list of the Float's Data Folders; Sort and Reverse.
 ########################################################################
 
-def getAllFolderNames(cfg, log, lev, dir, sortem, revem):
-    if cfg.tracking :
-        log.track(lev, "Entering 'getAllFolderNames()' Module.", True)
-        log.track(lev+1, "Dir: " + str(dir), True)
+def getAllFolderNames(_cfg, _log, _lev, _dir, _sortflag, _revflag):
+    if _cfg.tracking :
+        _log.track(_lev, "Entering 'getAllFolderNames()' Module.", True)
+        _log.track(_lev+13, "_cfg:  " + str(_cfg), True)
+        _log.track(_lev+13, "_log:  " + str(_log), True)
+        _log.track(_lev+13, "_lev:  " + str(_lev), True)
+        _log.track(_lev+13, "_dir:  " + str(_dir), True)
+        _log.track(_lev+13, "_sort: " + str(_sortflag), True)
+        _log.track(_lev+13, "_rev:  " + str(_revflag), True)
 
-        if not os.path.isdir(dir):
-            return [ False, "AF001", "NOT A DIRECTORY" ], None
+        if not os.path.isdir(_dir):
+            enum = "BH001"
+            emsg = "getAllFolderNames(): Argument Not a Directory."
+            if _cfg.tracking:
+                _log.errtrack(str(enum), str(emsg))
+            return [ False, str(enum), str(emsg) ], None
 
     try:
         #all_dirs = os.listdir(dir)
-
         #all_dirs = filter(os.path.isdir, os.listdir(dir))
-        #all_dirs =  [d for d in os.listdir(dir) if os.path.isdir(d)] 
-        all_dirs =  next(os.walk(dir))[1]    
+        #all_dirs = [d for d in os.listdir(dir) if os.path.isdir(d)] 
+        all_dirs =  next(os.walk(_dir))[1]    
 
-        if sortem:
-            if cfg.tracking:
-                log.track(lev, "Sort Requested.", True)
-            #all_dirs.sort()
+        if _sortflag:
+            if _cfg.tracking:
+                _log.track(_lev+1, "Sort Requested.", True)
+            all_dirs.sort()
 
-        if revem:
-            if cfg.tracking:
-                log.track(lev, "Reversal Requested.", True)
-            #all_dirs.reverse()
+        if _revflag:
+            if _cfg.tracking:
+                _log.track(_lev+1, "Reversal Requested.", True)
+            all_dirs.reverse()
 
-        if cfg.tracking:
-            log.track(lev+5, "All Folders: " + str(all_dirs), True)
+        if _cfg.tracking:
+            _log.track(_lev+1, "Got All Folders.", True)
+            _log.track(_lev+14, "Names: " + str(all_dirs), True)
+            _log.track(_lev+1, "Returning.", True)
 
         return [True, None, None], all_dirs
 
     except Exception as e:
-        if cfg.tracking:
-            log.errtrack("AF002", "Get All Folders FAILED.")
-            log.errtrack("AF002", "EXCEPTION: [" + str(e) + "]")
-        
-        return [ False, "AF002", "EXCEPTION: [" + str(e) + "]" ], None
+        enum = "BH002"
+        emsg = "getAllFolderNames(): [" + str(e) + "]"
+        if _cfg.tracking:
+            _log.errtrack(str(enum), str(emsg))
+        return [ False, str(enum), str(emsg) ], None
 
 ########################################################################
 # Return List of All File Names in a Dir; Optional: Sort and Reverse.
 ########################################################################
 
-def getAllFileNames(cfg, log, lev, dir, sortem, revem):
-    if cfg.tracking :
-        log.track(lev, "Entering 'getAllFileNames()' Module.", True)
-        log.track(lev+1, "Dir: " + str(dir), True)
+def getAllFileNames(_cfg, _log, _lev, _dir, _sortflag, _revflag):
+    if _cfg.tracking :
+        _log.track(_lev, "Entering 'getAllFileNames()' Module.", True)
+        _log.track(_lev+13, "_cfg:  " + str(_cfg), True)
+        _log.track(_lev+13, "_log:  " + str(_log), True)
+        _log.track(_lev+13, "_lev:  " + str(_lev), True)
+        _log.track(_lev+13, "_dir:  " + str(_dir), True)
+        _log.track(_lev+13, "_sort: " + str(_sortflag), True)
+        _log.track(_lev+13, "_rev:  " + str(_revflag), True)
 
     try:
-        if not os.path.isdir(dir):
-            return [ False, "AFN001", "NOT A DIRECTORY" ], None
+        if not os.path.isdir(_dir):
+            enum = "BH010"
+            emsg = "getAllFileNames(): Not a Directory."
+            if _cfg.tracking:
+                _log.errtrack(str(enum), str(emsg))
+            return [ False, str(enum), str(emsg) ], None
 
-        all_files = os.listdir(dir)
-        if sortem:
-            if cfg.tracking:
-                log.track(lev, "Sort Requested.", True)
+        all_files = os.listdir(_dir)
+        if _sortflag:
+            if _cfg.tracking:
+                _log.track(_lev+1, "Sort Requested.", True)
             all_files.sort()
 
-        if revem:
-            if cfg.tracking:
-                log.track(lev, "Reversal Requested.", True)
+        if _revflag:
+            if _cfg.tracking:
+                _log.track(_lev+1, "Reversal Requested.", True)
             all_files.reverse()
 
-        if cfg.tracking:
-            log.track(lev+5, "All File Names: " + str(all_files), True)
+        if _cfg.tracking:
             #print('\n'.join(map(str, all_files)))
             #print (*all_files, sep = "\n")  # Python3 method
+            _log.track(_lev+1, "Got All Files.", True)
+            _log.track(_lev+14, "Names: " + str(all_files), True)
+            _log.track(_lev+1, "Returning.", True)
 
         return [True, None, None], all_files
 
     except Exception as e:
-        if cfg.tracking:
-            log.errtrack("AFN002", "Get All Files FAILED.")
-            log.errtrack("AFN002", "EXCEPTION: [" + str(e) + "]")
-
-        return [ False, "AFN002", "EXCEPTION: [" + str(e) + "]" ], None
+        enum = "BH011"
+        emsg = "getAllFileNames(): [" + str(e) + "]"
+        if _cfg.tracking:
+            _log.errtrack(str(enum), str(emsg))
+        return [ False, str(enum), str(emsg) ], None
 
 ########################################################################
 ##  Read a File from the Float's SD drive; optional lock or JSON-parse.
 ########################################################################
 
-def readFloatFile(ffile, lockflag, jsonflag):
-    success = False
-    enum = None
-    emsg = None
-    ffdata = None
-    # Create Locker instance.
-    if botdefs.locking and lockflag:
-        FL = Locker(filePath=ffile, lockPass=botdefs.lockpass, mode='r')
+def readFloatFile(_cfg, _log, _lev, _ffile, _lockflag, _jsonflag):
+    if _cfg != None and _cfg.tracking:
+        _log.track(_lev, "Entering 'readFloatFile()' Module.", True)
+        _log.track(_lev+1, "_cfg:      " + str(_cfg), True)
+        _log.track(_lev+1, "_log:      " + str(_log), True)
+        _log.track(_lev+1, "_lev:      " + str(_lev), True)
+        _log.track(_lev+1, "_ffile:    " + str(_ffile), True)
+        _log.track(_lev+1, "_lockflag: " + str(_lockflag), True)
+        _log.track(_lev+1, "_jsonflag: " + str(_jsonflag), True)
+
+    if botdefs.locking and _lockflag:
+        if _cfg != None and _cfg.tracking:
+            _log.track(_lev+1, "File Locking Requested.", True)
+            _log.track(_lev+1, "Create Locker Instance.", True)
+
+        FL = Locker(filePath=_ffile, lockPass=botdefs.lockpass, mode='r')
 
         # Acquire the lock. Using 'with' will insure all cleanup without us
         # having to worry about it.
@@ -154,35 +194,49 @@ def readFloatFile(ffile, lockflag, jsonflag):
             if acquired and fd is not None:
                 try:
                     ffdata = fd.read()
-                    success = True
-                    enum = None
-                    emsg = None
+                    return [True, None, None], ffdata
                 except Exception as e:
-                    success = False
-                    enum = "RFF-101"
-                    emsg = "readFloatFile(): " + str(e)
-                    ffdata = None
+                    enum = "BH021"
+                    emsg = "readFloatFile(): [" + str(e) + "]"
+                    if _cfg != None and _cfg.tracking:
+                        _log.errtrack(str(enum), str(emsg))
+                    return [ False, str(enum), str(emsg) ], None
             else:
-                success = False
-                enum = "RFF-102"
-                emsg = "readFloatFile(): " + str(e)
-                ffdata = None
+                    enum = "BH022"
+                    emsg = "readFloatFile(): Can't Access File."
+                    if _cfg != None and _cfg.tracking:
+                        _log.errtrack(str(enum), str(emsg))
+                    return [ False, str(enum), str(emsg) ], None
     else:
+        if _cfg != None and _cfg.tracking:
+            _log.track(_lev+1, "File Locking NOT Requested.", True)
         try:
-            fd = open(ffile,'r')
-            ffdata = fd.read()
-            if jsonflag:
-                ffdata = json.loads(ffdata)
-            success = True
-            enum = None
-            emsg = None
-        except Exception as e:
-            success = False
-            enum = "RFF-103"
-            emsg = "readFloatFile(): " + str(e)
-            ffdata = None
+            if _cfg != None and _cfg.tracking:
+                _log.track(_lev+1, "Open File.", True)
+            fd = open(_ffile,'r')
 
-    return [success, enum, emsg], ffdata
+            if _cfg != None and _cfg.tracking:
+                _log.track(_lev+1, "Read Data.", True)
+            ffdata = fd.read()
+            if _cfg != None and _cfg.tracking:
+                _log.track(_lev+1, "Data: " + str(ffdata), True)
+
+            if _jsonflag:
+                if _cfg != None and _cfg.tracking:
+                    _log.track(_lev+1, "JSON Loads Requested.", True)
+                ffdata = json.loads(ffdata)
+                if _cfg != None and _cfg.tracking:
+                    _log.track(_lev+1, "JSON: " + str(ffdata), True)
+
+            if _cfg != None and _cfg.tracking:
+                _log.track(_lev+1, "Return.", True)
+            return [True, None, None], ffdata
+        except Exception as e:
+            enum = "BH021"
+            emsg = "readFloatFile(): [" + str(e) + "]"
+            if _cfg != None and _cfg.tracking:
+                _log.errtrack(str(enum), str(emsg))
+            return [ False, str(enum), str(emsg) ], None
 
 ########################################################################
 ##  Write a File from the Float's SD drive.
@@ -252,3 +306,94 @@ def resetCfgValue(cfg, log, lev, key, val):
 
     return [ True, None, None ]
 
+
+########################################################################
+##  Delete Data Product Folder.
+########################################################################
+
+def deleteFolder(_cfg, _log, _lev, _dpf):
+    if _cfg.tracking:
+        _log.track(_lev, "Entering deleteFolder() Module.", True)
+        _log.track(_lev+7, "_cfg: " + str(_cfg), True)
+        _log.track(_lev+7, "_log: " + str(_log), True)
+        _log.track(_lev+7, "_lev: " + str(_lev), True)
+        _log.track(_lev+7, "_dpf: " + str(_dpf), True)
+        _log.track(_lev+1, "Remove Entire Folder Tree.", True)
+
+    try:
+        shutil.rmtree(_dpf)
+        if _cfg.tracking:
+            _log.track(_lev+1, "Success: Folder Removed.", True)
+    except Exception as e:
+        if _cfg.tracking:
+            _log.track(_lev+1, "ERROR: [" + str(e) + "]", True)
+
+
+########################################################################
+##  Delete Data Product.
+########################################################################
+
+def deleteDataProduct(_cfg, _log, _lev, _dp):
+    if _cfg.tracking:
+        _log.track(_lev, "Entering deleteDataProduct() Module.", True)
+        _log.track(_lev+7, "_cfg: " + str(_cfg), True)
+        _log.track(_lev+7, "_log: " + str(_log), True)
+        _log.track(_lev+7, "_lev: " + str(_lev), True)
+        _log.track(_lev+7, "_dp:  " + str(_dp), True)
+        _log.track(_lev+1, "Delete All Data Product File.", True)
+
+    try:
+        std = _dp.replace("meta", "std")
+    except:
+        std = None
+
+    try:
+        chg = _dp.replace("meta", "change")
+    except:
+        chg = None
+
+    try:
+        if _dp:
+            if _cfg.tracking:
+                _log.track(_lev+2, "Remove: " + str(_dp), True)
+            if os.path.isfile(_dp):
+                os.remove(_dp)
+            if _cfg.tracking:
+                _log.track(_lev+3, "Done.", True)
+        else:
+            if _cfg.tracking:
+                _log.track(_lev+3, "None.", True)
+    except:
+        if _cfg.tracking:
+            _log.track(_lev+3, "Ignored.", True)
+                
+    try:
+        if std:
+            if _cfg.tracking:
+                _log.track(_lev+2, "Remove: " + str(std), True)
+            if os.path.isfile(std):
+                os.remove(std)
+            if _cfg.tracking:
+                _log.track(_lev+3, "Done.", True)
+        else:
+            if _cfg.tracking:
+                _log.track(_lev+3, "None.", True)
+    except:
+        if _cfg.tracking:
+            _log.track(_lev+3, "Ignored.", True)
+                
+    try:
+        if chg:
+            if _cfg.tracking:
+                _log.track(_lev+2, "Remove: " + str(chg), True)
+            if os.path.isfile(chg):
+                os.remove(chg)
+            if _cfg.tracking:
+                _log.track(_lev+3, "Done.", True)
+        else:
+            if _cfg.tracking:
+                _log.track(_lev+3, "None.", True)
+    except:
+        if _cfg.tracking:
+            _log.track(_lev+3, "Ignored.", True)
+                

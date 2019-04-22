@@ -14,6 +14,11 @@
 ##  Revision History
 ##  ----------------
 ##  
+##  Revision:   1.9 2019/04/12  11:00:00
+##  Comment:    Changed indentation to 2; levels to 12/24.
+##  Developer:  John benJohn, Leonardo, New Jersey
+##  Platform:   Ubuntu 16.05; Python 2.7.12
+##  
 ##  Revision:   1.8 2019/04/02  14:15:00
 ##  Comment:    Re-write; simplify tracking; make robust.
 ##  Developer:  John benJohn, Leonardo, New Jersey
@@ -72,14 +77,16 @@ class BotLog(object):
         self.cfg = _cfg
         self.name = str(_which)
         self.file = None
-        self.indent = "                     "
+        self.indent = "                          "
 
         if str(_which) == "BOT-RECV":
-            self.recv = True
             self.file = self.cfg.br_log_file
         elif str(_which) == "BOT-SEND":
-            self.send = True
             self.file = self.cfg.bs_log_file
+        else:
+            self.file = self.cfg.bu_log_file
+            self.name = "UNKNOWN"
+
 
     def initlog(self, _lev):
         # If debugging, we're writing to the console.
@@ -94,7 +101,7 @@ class BotLog(object):
                 sys.exit(1)
             else:
                 sys.stdout.write(str(time.ctime()) + ": STARTING '" + str(self.name) + "' DEBUGGING:\n")
-                if not self.recv and not self.send:
+                if self.name == "UNKNOWN":
                     sys.stdout.write(str(time.ctime()) + ":    ERROR: LOG001: Name should be either 'BOT-RECV' or 'BOT-SEND.\n")
 
             sys.stdout.write(time.ctime() + ":\n")
@@ -122,7 +129,7 @@ class BotLog(object):
                 self.track(_lev, "Using Factory Def Cfg: " + str(self.cfg.state), True)
             else:
                 self.track(_lev, "Using Bot Config File: " + str(bot_cfg_file), True)
-                self.track(_lev+6, "JSON Format: " + str(self.cfg.bot_cfg_json), True)
+                self.track(_lev+13, "JSON Format: " + str(self.cfg.bot_cfg_json), True)
 
             self.track(_lev+1, "machine: " + str(self.cfg.machine), True)
             self.track(_lev+1, "platform: " + str(self.cfg.platform), True)
@@ -153,6 +160,8 @@ class BotLog(object):
             self.track(_lev+1, "br_log_file: " + str(self.cfg.br_log_file), True)
             self.track(_lev+1, "bs_log_name: " + str(self.cfg.bs_log_name), True)
             self.track(_lev+1, "bs_log_file: " + str(self.cfg.bs_log_file), True)
+            self.track(_lev+1, "bu_log_name: " + str(self.cfg.bu_log_name), True)
+            self.track(_lev+1, "bu_log_file: " + str(self.cfg.bu_log_file), True)
             self.track(_lev+1, "wt_changed: " + str(self.cfg.wt_changed), True)
             self.track(_lev+1, "pipo_scor_wt: " + str(self.cfg.pipo_trig_wt), True)
             self.track(_lev+1, "pipo_qual_wt: " + str(self.cfg.pipo_qual_wt), True)
@@ -164,22 +173,19 @@ class BotLog(object):
     def track(self, lev, msg, new):
         yesdbg = True
         yeslog = True
-        if lev < 0:
-            lev = 0
+        if (lev < 0) or (lev > 23): # Completely outside loggin/debugging bounds.
+            return
 
-        if lev > 11:
-            lev = 11
-            
-        if (self.cfg.debugging < 0) or (lev > self.cfg.debugging):
+        if (self.cfg.debugging < 0) or (lev > self.cfg.debugging):  # Ignore DBG
             yesdbg = False
         
-        if (self.cfg.logging < 0) or (lev > self.cfg.logging):
+        if (self.cfg.logging < 0) or (lev > self.cfg.logging):      # Ignore LOG
             yeslog = False
 
         if yesdbg or yeslog:
             inum = lev
-            if lev > 5:
-                inum = lev - 6
+            if lev > 11:
+                inum = lev - 12
 
             if self.cfg.timing:
                 self.ti = str(time.ctime()) + ": "
@@ -191,12 +197,15 @@ class BotLog(object):
             else:
                 self.nl = ""
 
-            self.ind = self.indent[0:3*inum]
+            self.ind = self.indent[0:2*inum]
             self.msg = str(self.ti) + str(self.ind) + str(msg) + str(self.nl)
 
             if yesdbg:
-                sys.stdout.write(self.msg)
-                sys.stdout.flush()
+                try:
+                    sys.stdout.write(self.msg)
+                    sys.stdout.flush()
+                except:
+                    self.cfg.debugging = False   # On error, turn off debugging
 
             if yeslog:
                 try:

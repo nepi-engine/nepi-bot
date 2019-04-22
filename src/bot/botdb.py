@@ -14,12 +14,32 @@
 ##  Revision History
 ##  ----------------
 ##  
-##  Revision:   1.7 2019/04/03  08:15:00
+##  Revision:   1.13 2019/04/15  11:00:00
+##  Comment:    Upgrade to new Node Type'code' Converison Table.
+##  Developer:  John benJohn, Leonardo, New Jersey
+##  Platform:   Ubuntu 16.05; Python 2.7.12
+##
+##  Revision:   1.12 2019/04/12  11:20:00
+##  Comment:    Changed Reporting levels to 12/24.
+##  Developer:  John benJohn, Leonardo, New Jersey
+##  Platform:   Ubuntu 16.05; Python 2.7.12
+##
+##  Revision:   1.11 2019/04/10  08:00:00
+##  Comment:    Add 'eligible' Table to manage Cloud tracking.
+##  Developer:  John benJohn, Leonardo, New Jersey
+##  Platform:   Ubuntu 16.05; Python 2.7.12
+##
+##  Revision:   1.10 2019/04/04  08:00:00
+##  Comment:    General updates/fixes to support 5/1 Data Products.
+##  Developer:  John benJohn, Leonardo, New Jersey
+##  Platform:   Ubuntu 16.05; Python 2.7.12
+##
+##  Revision:   1.9 2019/04/03  08:15:00
 ##  Comment:    Remove 'admin' Table Mgmt; Fix Err Mgmt.
 ##  Developer:  John benJohn, Leonardo, New Jersey
 ##  Platform:   Ubuntu 16.05; Python 2.7.12
 ##
-##  Revision:   1.7 2019/04/02  13:30:00
+##  Revision:   1.8 2019/04/02  13:30:00
 ##  Comment:    Fix getconn() success return codes.
 ##  Developer:  John benJohn, Leonardo, New Jersey
 ##  Platform:   Ubuntu 16.05; Python 2.7.12
@@ -88,11 +108,11 @@ class BotDB(object):
         self.log = _log
         if self.cfg.tracking:
             self.log.track(_lev, 'Created DB Class Object: ', True)
-            self.log.track(_lev+1, '^dbc: ' + str(self.dbc), True)
-            self.log.track(_lev+1, '^dbr: ' + str(self.dbr), True)
-            self.log.track(_lev+1, '^log: ' + str(self.log), True)
-            self.log.track(_lev+1, '^cfg: ' + str(self.cfg), True)
-            self.log.track(_lev+1, '_lev: ' + str(_lev), True)
+            self.log.track(_lev+13, '^dbc: ' + str(self.dbc), True)
+            self.log.track(_lev+13, '^dbr: ' + str(self.dbr), True)
+            self.log.track(_lev+13, '^log: ' + str(self.log), True)
+            self.log.track(_lev+13, '^cfg: ' + str(self.cfg), True)
+            self.log.track(_lev+13, '_lev: ' + str(_lev), True)
 
     def getconn(self, _lev):
         # Establish a connection. SQLite either creates or opens a file
@@ -100,14 +120,15 @@ class BotDB(object):
         # above).  If the file is there, we assume that it is a legit
         # Float Database.  If not there, the DB requires instantiation.
         if self.cfg.tracking:
-            self.log.track(_lev, "Establish DB Connection.", True)
+            self.log.track(_lev, "Entering DB 'getconn()' Method.", True)
+            self.log.track(_lev+1, "Establish DB Connection.", True)
 
         if os.path.isfile(self.cfg.db_file):
             if self.cfg.tracking:
-                self.log.track(_lev+1, "DB File Found: " + str(self.cfg.db_file), True)
+                self.log.track(_lev+2, "DB File Found: " + str(self.cfg.db_file), True)
         else:
             if self.cfg.tracking:
-                self.log.track(_lev+1, "DB File NOT Found: " + str(self.cfg.db_file), True)
+                self.log.track(_lev+2, "DB File NOT Found: " + str(self.cfg.db_file), True)
             success = self.reset(_lev+2)
             if not success[0]:
                 return success, None
@@ -115,7 +136,7 @@ class BotDB(object):
         try:
             self.dbc = sqlite3.connect(self.cfg.db_file)
             if self.cfg.tracking:
-                self.log.track(_lev+1, "DB Connection Established: " + str(self.cfg.db_file), True)
+                self.log.track(_lev+1, "DB Connection Established.", True)
             return [ True, None, None ], self.dbc
         except Exception as e:
             enum = "DB001"
@@ -131,9 +152,9 @@ class BotDB(object):
         # apart the 'statjson' JSON-formatted 'Status' record as
         # retrieved from the Data Folder and subjected to a json.load.
         if self.cfg.tracking:
-            self.log.track(_lev, "Entering 'popstat()' Module.", True)
-            self.log.track(_lev+1, "_log: " + str(_lev), True)
-            self.log.track(_lev+7, "_JSON: " + str(_statjson), True)
+            self.log.track(_lev, "Entering DB 'pushstat()' Module.", True)
+            self.log.track(_lev+1, "_lev: " + str(_lev), True)
+            self.log.track(_lev+13, "_JSON: " + str(_statjson), True)
             self.log.track(_lev+1, "Format SQL INSERT Statement.", True)
 
         #---------------------------------------------------------------
@@ -176,15 +197,16 @@ class BotDB(object):
         # Perform the actual INSERT and 'commit()' the new record to the
         # 'float.db' database.
         if self.cfg.tracking:
-            self.log.track(_lev+1, "Perform the 'Status' Record INSERT.", True)
-            self.log.track(_lev+7, "SQL: " + str(sql), True)
+            self.log.track(_lev+1, "INSERT Status Record into DB.", True)
+            self.log.track(_lev+14, "SQL: " + str(sql), True)
         
         try:
             cursor = self.dbc.cursor()
             cursor.execute(str(sql))
             lastrowid = cursor.lastrowid
             if self.cfg.tracking:
-                self.log.track(_lev+2, "Row ID: " + str(lastrowid), True)
+                self.log.track(_lev+14, "Successful.", True)
+                self.log.track(_lev+14, "Row ID: " + str(lastrowid), True)
             self.dbc.commit()
         except Exception as e:
             enum = "DB003"
@@ -201,23 +223,43 @@ class BotDB(object):
     # 'datajson' JSON-formatted 'Meta' record as retrieved from the
     # Data Folder and subjected to a json.load.  In addition, the
     # mandatory "standard" and optional "change" files are included.
-    def pushmeta(self, _lev, _datajson, _state, _status, _trigger, _numerator, _stdsize, _chgsize, _norm, _pipo, _metafile, _stdfile, _chgfile):
+    #def pushmeta(self, _lev, _datajson, _state, _status, _trigger, _numerator, _stdsize, _chgsize, _norm, _pipo, _metafile, _stdfile, _chgfile):
+    def pushmeta(self, _lev, _datajson, _info, _status, _trigger, _metafile):
         if self.cfg.logging:
-            self.log.track(_lev, "Entering 'popdata()' Module.", True)
-            self.log.track(_lev+1, "Log Level:   " + str(_lev), True)
-            self.log.track(_lev+7, "Data JSON:   " + str(_datajson), True)
-            self.log.track(_lev+1, "State:       " + str(_state), True)
-            self.log.track(_lev+1, "Status ID:   " + str(_status), True)
-            self.log.track(_lev+1, "Trigger:     " + str(_trigger), True)
-            self.log.track(_lev+1, "Numerator:   " + str(_numerator), True)
-            self.log.track(_lev+1, "Std Size:    " + str(_stdsize), True)
-            self.log.track(_lev+1, "Chg Size:    " + str(_chgsize), True)
-            self.log.track(_lev+1, "Normalize:   " + str(_norm), True)
-            self.log.track(_lev+1, "PIPO Rating: " + str(_pipo), True)
-            self.log.track(_lev+1, "MetaFile:    " + str(_metafile), True)
-            self.log.track(_lev+1, "StdFile:     " + str(_stdfile), True)
-            self.log.track(_lev+1, "ChgFile:     " + str(_chgfile), True)
+            self.log.track(_lev, "Entering DB 'popdata()' Module.", True)
+            self.log.track(_lev+1, "Log Level:    " + str(_lev), True)
+            self.log.track(_lev+13, "Data JSON:    " + str(_datajson), True)
+            self.log.track(_lev+1, "State:        " + str(_info[3]), True)
+            self.log.track(_lev+1, "Status ID:    " + str(_status), True)
+            self.log.track(_lev+1, "Trigger:      " + str(_trigger), True)
+            self.log.track(_lev+1, "Numerator:    " + str(_info[0]), True)
+            self.log.track(_lev+1, "Std Size:     " + str(_info[1]), True)
+            self.log.track(_lev+1, "Chg Size:     " + str(_info[2]), True)
+            self.log.track(_lev+1, "Normalize:    " + str(_info[4]), True)
+            self.log.track(_lev+1, "PIPO Rating:  " + str(_info[5]), True)
+            self.log.track(_lev+1, "MetaFile:     " + str(_metafile), True)
+            self.log.track(_lev+1, "StdFile:      " + str(_info[6]), True)
+            self.log.track(_lev+1, "ChgFile:      " + str(_info[7]), True)
+            self.log.track(_lev+1, "Chg Eligible: " + str(_info[3]), True)
+            self.log.track(_lev+13, "StdJSON:      " + str(_info[8]), True)
+            self.log.track(_lev+13, "ChgJSON:      " + str(_info[9]), True)
             self.log.track(_lev+1, "Format SQL INSERT Statement.", True)
+
+        chg_channels = 0
+        chg_dtype = ""
+        chg_deltas = ""
+
+        try:
+            if _info[9]:
+                chg_channels = int(_info[9]["channel_count"])
+                chg_dtype    = str(_info[9]["dt"])
+                chg_deltas   = str(_info[9]["deltas"])
+        except Exception as e:
+            enum = "DB104"
+            emsg = "pushmeta(): [" + str(e) + "]"
+            if self.cfg.tracking:
+                self.log.errtrack(str(enum), str(emsg))
+            return [ False, str(enum), str(emsg) ], None
 
         #---------------------------------------------------------------
         # Create the SQL statement for inserting the Data Record into
@@ -227,12 +269,12 @@ class BotDB(object):
         # will be used later and specific values passed to this function
         # as arguments.
         try:
-            sql = "INSERT INTO meta VALUES (%i,0,%i,%.15f,%.15f,%.15f,'%s',%i,%.15f,%.15f,%.15f,%.15f,'%s','%s','%s',%i,%i,%i,'%s','%s')" % (
-                _state,
+            sql = "INSERT INTO meta VALUES (%i,0,%i,%.15f,%.15f,%.15f,'%s',%i,%.15f,%.15f,%.15f,%.15f,'%s','%s','%s',%i,%i,%i,'%s','%s',%i,%i,%i,%i,%i,%i,%i,'%s','%s',%i,'%s','%s',%i)" % (
+                _info[3],
                 _status,
-                _numerator,
+                _info[0],
                 _trigger,
-                _pipo,
+                _info[5],
                 str(_datajson['node_type']),
                 int(_datajson['instance']),
                 float(_datajson['timestamp']),
@@ -242,11 +284,24 @@ class BotDB(object):
                 _metafile,
                 str(_datajson["data_file"]),
                 str(_datajson["change_file"]),
-                _stdsize,
-                _chgsize,
-                _norm,
-                _stdfile,
-                _chgfile
+                _info[1],
+                _info[2],
+                _info[4],
+                _info[6],
+                _info[7],
+                _info[3],
+                int(_datajson["pitch"]),
+                int(_datajson["roll"]),
+                int(_info[8]["channels"]),
+                int(_info[8]["rows"]),
+                int(_info[8]["cols"]),
+                int(_info[8]["samples"]),
+                str(_info[8]["dtype"]),
+                str(_info[8]["data"]),
+                int(chg_channels),
+                str(chg_dtype),
+                str(chg_deltas),
+                int(_info[10])
             )
         except Exception as e:
             enum = "DB004"
@@ -256,11 +311,11 @@ class BotDB(object):
             return [ False, str(enum), str(emsg) ], None
 
         #---------------------------------------------------------------
-        # Perform the actual INSERT and 'commit()' the new record to the
-        # 'float.db' database.
+        # Perform the actual INSERT and 'commit()' the new 'meta' record
+        # to the 'float.db' database.
         if self.cfg.tracking:
+            self.log.track(_lev+13, "SQL: " + str(sql), True)
             self.log.track(_lev, "Perform the 'Meta' Record INSERT.", True)
-            self.log.track(_lev+7, "SQL: " + str(sql), True)
 
         try:
             cursor = self.dbc.cursor()
@@ -285,8 +340,8 @@ class BotDB(object):
         if self.cfg.tracking:
             self.log.track(_lev, "Entering DB getResults() Module.", True)
             self.log.track(_lev+1, "_lev:   " + str(_lev), True)
-            self.log.track(_lev+7, "_sql:   " + str(_sql), True)
-            self.log.track(_lev+7, "_jflag: " + str(_jflag), True)
+            self.log.track(_lev+13, "_sql:   " + str(_sql), True)
+            self.log.track(_lev+1, "_jflag: " + str(_jflag), True)
 
         try:
             if _jflag:
@@ -311,14 +366,14 @@ class BotDB(object):
                     self.log.track(_lev+1, "Changed Row Factory Back.", True)
         except Exception as e:
             enum = "DB006"
-            emsg = "pushmeta(): [" + str(e) + "]"
+            emsg = "getResults(): [" + str(e) + "]"
             if self.cfg.tracking:
                 self.log.errtrack(str(enum), str(emsg))
             return [ False, str(enum), str(emsg) ], None
 
         if self.cfg.tracking:
             self.log.track(_lev+1, "Returning Result Set.", True)
-            self.log.track(_lev+7, "Results: " + str(results), True)
+            self.log.track(_lev+13, "Results: " + str(results), True)
 
         return [ True, None, None ], results
 
@@ -327,8 +382,8 @@ class BotDB(object):
     #-------------------------------------------------------------------
         if self.cfg.tracking:
             self.log.track(_lev, "Entering DB update() Module.", True)
-            self.log.track(_lev+1, "lev: " + str(_lev), True)
-            self.log.track(_lev+7, "sql: " + str(_sql), True)
+            self.log.track(_lev+1, "_lev: " + str(_lev), True)
+            self.log.track(_lev+13, "_sql: " + str(_sql), True)
 
         try:
             cursor = self.dbc.cursor()
@@ -342,10 +397,10 @@ class BotDB(object):
                 self.log.track(_lev+1, "Update Committed.", True)
         except Exception as e:
             enum = "DB007"
-            emsg = "pushmeta(): [" + str(e) + "]"
+            emsg = "update(): [" + str(e) + "]"
             if self.cfg.tracking:
                 self.log.errtrack(str(enum), str(emsg))
-            return [ False, str(enum), str(emsg) ], None
+            return [ False, str(enum), str(emsg) ]
 
         return [ True, None, None ]
 
@@ -419,8 +474,6 @@ class BotDB(object):
 
             try:        
                 self.dbr = sqlite3.connect(self.cfg.db_file)
-                if self.cfg.tracking:
-                    self.log.track(_lev+2, "Connected.", True)
             except Exception as e:
                 enum = "DB103"
                 emsg = "reset(): [" + str(e)  + "]"
@@ -436,8 +489,6 @@ class BotDB(object):
 
             try:
                 cursor = self.dbr.cursor()
-                if self.cfg.tracking:
-                    self.log.track(_lev+2, "Acquired.", True)
             except:
                 enum = "DB104"
                 emsg = "reset(): [" + str(e)  + "]"
@@ -481,9 +532,6 @@ class BotDB(object):
                     reserved3 BLOB,
                     reserved4 BLOB) 
                     """)
-
-                if self.cfg.tracking:
-                    self.log.track(_lev+2, "Created.", True)
             except:
                 enum = "DB105"
                 emsg = "reset(): [" + str(e)  + "]"
@@ -517,11 +565,21 @@ class BotDB(object):
                     chgsize INTEGER,
                     norm INTEGER,
                     std TEXT,
-                    chg TEXT)
+                    chg TEXT,
+                    chg_eligible BOOLEAN,
+                    pitch INTEGER,
+                    roll INTEGER,
+                    channels INTEGER,
+                    rows INTEGER,
+                    columns INTEGER,
+                    samples INTEGER,
+                    dtype TEXT,
+                    data TEXT,
+                    chg_channels INTEGER,
+                    chg_dtype TEXT,
+                    chg_deltas TEXT,
+                    node_code INTEGER)
                     """)
-
-                if self.cfg.tracking:
-                    self.log.track(_lev+2, "Created.", True)
             except  Exception as e:
                 enum = "DB106"
                 emsg = "reset(): [" + str(e)  + "]"
@@ -530,7 +588,84 @@ class BotDB(object):
                 return [ False, str(enum), str(emsg) ]
 
             #-----------------------------------------------------------
+            # Create the 'node' Table.
+            #-----------------------------------------------------------
+            if self.cfg.tracking:
+                self.log.track(_lev+1, "Create the 'node' Table.", True)
+
+            try:
+                cursor.execute("""CREATE TABLE node
+                    (node_type TEXT,
+                    node_code TINYINT,
+                    node_instance TINYINT,
+                    node_index TINYINT)
+                    """)
+            except  Exception as e:
+                enum = "DB107"
+                emsg = "reset(): [" + str(e)  + "]"
+                if self.cfg.tracking:
+                    self.log.errtrack(str(enum), str(emsg))
+                return [ False, str(enum), str(emsg) ]
+
+            #-----------------------------------------------------------
+            # Instantiate the 'node' Table.
+            #-----------------------------------------------------------
+            cmds = [ "INSERT INTO node VALUES ('BAT', 1, 0, 0);",
+                    "INSERT INTO node VALUES ('THR', 2, 0, 0);",
+                    "INSERT INTO node VALUES ('IMU', 3, 0, 0);",
+                    "INSERT INTO node VALUES ('GPS', 5, 0, 0);",
+                    "INSERT INTO node VALUES ('CAM', 9, 0, 0);",
+                    "INSERT INTO node VALUES ('ESR', 10, 0, 0);",
+                    "INSERT INTO node VALUES ('ESP', 11, 0, 0);",
+                    "INSERT INTO node VALUES ('EBI', 12, 0, 0);",
+                    "INSERT INTO node VALUES ('ECH', 13, 0, 0);",
+                    "INSERT INTO node VALUES ('ERD', 14, 0, 0);",
+                    "INSERT INTO node VALUES ('EPR', 15, 0, 0);",
+                    "INSERT INTO node VALUES ('EPC', 16, 0, 0);",
+                    "INSERT INTO node VALUES ('CTP', 17, 0, 0);",
+                    "INSERT INTO node VALUES ('CRS', 18, 0, 0);",
+                    "INSERT INTO node VALUES ('CBD', 19, 0, 0);",
+                    "INSERT INTO node VALUES ('CAV', 20, 0, 0);",
+                    "INSERT INTO node VALUES ('CCA', 21, 0, 0);",
+                    "INSERT INTO node VALUES ('CRB', 22, 0, 0);",
+                    "INSERT INTO node VALUES ('CGS', 23, 0, 0);",
+                    "INSERT INTO node VALUES ('CGP', 24, 0, 0);",
+                    "INSERT INTO node VALUES ('UGP', 25, 0, 0);",
+                    "INSERT INTO node VALUES ('NBD', 26, 0, 0);",
+                    "INSERT INTO node VALUES ('NLG', 27, 0, 0);",
+                    "INSERT INTO node VALUES ('FTH', 28, 0, 0);",
+                    "INSERT INTO node VALUES ('FCF', 29, 0, 0);",
+                    "INSERT INTO node VALUES ('FTM', 30, 0, 0);",
+                    "INSERT INTO node VALUES ('FWN', 31, 0, 0);",
+                    "INSERT INTO node VALUES ('FRS', 32, 0, 0);",
+                    "INSERT INTO node VALUES ('FBB', 33, 0, 0);",
+                    "INSERT INTO node VALUES ('FSG', 34, 0, 0);",
+                    "INSERT INTO node VALUES ('FPK', 35, 0, 0);",
+                    "INSERT INTO node VALUES ('FOF', 36, 0, 0);",
+                    "INSERT INTO node VALUES ('FDN', 37, 0, 0);",
+                    "INSERT INTO node VALUES ('RCH', 38, 0, 0);",
+                    "INSERT INTO node VALUES ('CLA', 39, 0, 0);"
+            ]
+
+            if self.cfg.tracking:
+                self.log.track(3, "Instantiated the 'node' Table.", True)
+
+            for sql in cmds:
+                try:
+                    cursor.execute(str(sql))
+                    self.dbr.commit()
+                    if self.cfg.tracking:
+                        self.log.track(4, str(sql), True)
+                except Exception as e:
+                    enum = "DB116"
+                    emsg = "reset(): [" + str(e)  + "]"
+                    if self.cfg.tracking:
+                        self.log.errtrack(str(enum), str(emsg))
+                    return [ False, str(enum), str(emsg) ], None
+
+            #-----------------------------------------------------------
             # Close the Database.
+            #-----------------------------------------------------------
             if self.cfg.tracking:
                 self.log.track(_lev+1, "Close the Database.", True)
 
@@ -538,17 +673,17 @@ class BotDB(object):
                 self.dbr.close()
                 self.dbr = None
                 if self.cfg.tracking:
-                   self.log.track(_lev+2, "Closed.", True)
-                return True
+                    self.log.track(_lev+2, "Closed.", True)
             except Exception as e:
                 if self.cfg.tracking:
                    self.log.track(_lev+2, "WARNING: DB Failed to Close Properly.", True)
                    self.log.track(_lev+2, "ERR MSG: [" + str(e) + "]", True)
-                return [ True, None, None ]
+            
+            return [ True, None, None ]
 
         except Exception as e:
             if self.cfg.tracking:
-                enum = "DB107"
+                enum = "DB108"
                 emsg = "reset(): [" + str(e)  + "]"
                 if self.cfg.tracking:
                     self.log.errtrack(str(enum), str(emsg))
