@@ -14,7 +14,17 @@
 ##  Revision History
 ##  ----------------
 ##  
-##  Revision:   1.6 2019/04/08  11:10:00
+##  Revision:   1.9 2019/04/24  10:25:00
+##  Comment:    Update triggerScoreLookup(); add try/except logic.
+##  Developer:  John benJohn, Leonardo, New Jersey
+##  Platform:   Ubuntu 16.05; Python 2.7.12
+##
+##  Revision:   1.8 2019/04/24  08:50:00
+##  Comment:    Update writeFloatFile(); add dir check; make robust.
+##  Developer:  John benJohn, Leonardo, New Jersey
+##  Platform:   Ubuntu 16.05; Python 2.7.12
+##
+##  Revision:   1.7 2019/04/08  11:10:00
 ##  Comment:    Mod deleteFolder() & deleteDataProduct() methods.
 ##  Developer:  John benJohn, Leonardo, New Jersey
 ##  Platform:   Ubuntu 16.05; Python 2.7.12
@@ -239,27 +249,89 @@ def readFloatFile(_cfg, _log, _lev, _ffile, _lockflag, _jsonflag):
             return [ False, str(enum), str(emsg) ], None
 
 ########################################################################
-##  Write a File from the Float's SD drive.
+##  Write a File to the Float's SD drive.
 ########################################################################
 
-def writeFloatFile(ffile, fdata):
-    success = False
-    enum = None
-    emsg = None
+def writeFloatFile(_cfg, _log, _lev, _clear, _ffile, _fdata):
+    if _cfg.tracking:
+        _log.track(_lev, "Entering 'writeFloatFile()' Module.", True)
+        _log.track(_lev+1, "_cfg:   " + str(_cfg), True)
+        _log.track(_lev+1, "_log:   " + str(_log), True)
+        _log.track(_lev+1, "_lev:   " + str(_lev), True)
+        _log.track(_lev+1, "_clear: " + str(_clear), True)
+        _log.track(_lev+1, "_ffile: " + str(_ffile), True)
+        _log.track(_lev+13, "_fdata: " + str(_fdata), True)
 
+    #-------------------------------------------------------------------
+    # If 'clear' is True and file exists, delete it.
+    #-------------------------------------------------------------------
+    if _clear:
+        if _cfg.tracking:
+            _log.track(_lev+1, "File 'clear' requested.", True)
+
+        if os.path.isfile(_ffile):
+            if _cfg.tracking:
+                _log.track(_lev+2, "File Exists; Remove it.", True)
+            try:
+                os.remove(_ffile)
+                _log.track(_lev+2, "Remove File Successful.", True)
+            except Exception as e:
+                enum = "BH031"
+                emsg = "writeFloatFile(): [" + str(e)  + "]"
+                if _cfg.tracking:
+                    _log.track(_lev+2, str(enum), str(emsg))
+                return [ False, str(enum), str(emsg) ]
+        else:
+            if _cfg.tracking:
+                _log.track(_lev+1, "File does not exist; OK, Continue.", True)
+
+    #-------------------------------------------------------------------
+    # Check Directory Path, Create it if Necessary.
+    #-------------------------------------------------------------------
     try:
-        with open(ffile, 'w') as f:
-            f.write(fdata)
+        dir = os.path.dirname(_ffile)
+        if _cfg.tracking:
+            _log.track(_lev+1, "Check File Directory.", True)
+            _log.track(_lev+2, "Dir: " + str(dir), True)
 
-        success = True
-        enum = None
-        emsg = None
+        if not os.path.isdir(str(dir)):
+            if _cfg.tracking:
+                _log.track(_lev+2, "File Directory doesn't exist; Create It.", True)
+            os.makedirs(str(dir))
+            if _cfg.tracking:
+                _log.track(_lev+2, "Created Dir: " + str(dir), True)
+        else:
+            if _cfg.tracking:
+                _log.track(_lev+2, "DB Directory Already Exists.", True)
+
     except Exception as e:
-        success = False
-        enum = "WFF103"
-        emsg = "writeFloatFile(): " + str(e)
+        enum = "BH032"
+        emsg = "writeFloatFile(): [" + str(e) + "]"
+        if _cfg.tracking:
+            _log.track(_lev+2, str(enum), str(emsg))
+        return [ False, str(enum), str(emsg) ], None
 
-    return [success, enum, emsg]
+    #-------------------------------------------------------------------
+    # Open File for Append; Write Information.
+    #-------------------------------------------------------------------
+    if _cfg.tracking:
+        _log.track(_lev+1, "Open/Write File.", True)
+    
+    try:
+        with open(_ffile, 'a') as f:
+            f.write(_fdata)
+
+        if _cfg.tracking:
+            _log.track(_lev+2, "File Write Complete.", True)
+
+    except Exception as e:
+        enum = "BH033"
+        emsg = "writeFloatFile(): [" + str(e) + "]"
+        if _cfg.tracking:
+            _log.track(_lev+2, str(enum), str(emsg))
+        return [ False, str(enum), str(emsg) ], None
+
+    return [True, None, None]
 
 ########################################################################
 ##  Trigger Score Lookup Table.
@@ -268,11 +340,26 @@ def writeFloatFile(ffile, fdata):
 # Needs to be addressed more robustly; must be configurable.  For now,
 # we're using a simplified default return value.
 
-def triggerScoreLookup(status_json):
-    wake_event_type = str(status_json["wake_event_type"])
-    wake_event_id = str(status_json["wake_event_id"])
+def triggerScoreLookup(_cfg, _log, _lev, status_json):
+    if _cfg.tracking:
+        _log.track(_lev, "Entering 'triggerScoreLookup()' Module.", True)
+        _log.track(_lev+1, "_cfg:  " + str(_cfg), True)
+        _log.track(_lev+1, "_log:  " + str(_log), True)
+        _log.track(_lev+1, "_lev:  " + str(_lev), True)
+        _log.track(_lev+13, "_json: " + str(status_json), True)
 
-    trigger = 0.5
+    try:
+        wake_event_type = int(status_json["wake_event_type"])
+        wake_event_id = int(status_json["wake_event_id"])
+    except Exception as e:
+        enum = "BH041"
+        emsg = "triggerScoreLookup(): [" + str(e) + "]"
+        if _cfg.tracking:
+            _log.track(_lev+2, str(enum), str(emsg))
+
+        wake_event_type = 0
+        wake_event_id = 1.0
+
     if wake_event_type == 0:
         trigger = 1.0
     else:
@@ -286,7 +373,7 @@ def triggerScoreLookup(status_json):
 
 def resetCfgValue(cfg, log, lev, key, val):
     if cfg.tracking:
-        log.track(lev, "Entering resetValue() Module.", True)
+        log.track(lev, "Entering resetCfgValue() Module.", True)
         log.track(lev+1, "lev: " + str(lev), True)
         log.track(lev+1, "key: " + str(key), True)
         log.track(lev+1, "val: " + str(val), True)

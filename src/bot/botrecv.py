@@ -92,7 +92,7 @@ if not success[0]:
 if cfg.tracking:
     log.track(0, "Retrieve All Pending 'C&C' Messages.", True)
 
-success, cnc_msgs = bc.receive(1)
+success, cnc_msgs = bc.receive(1, 3)
 
 if not success[0]:
     if cfg.tracking:
@@ -153,13 +153,9 @@ for msgnum in range(0, len(cnc_msgs)):
         if cfg.tracking:
             log.track(1, "Write the 'Action' file for the SDK.", True)
 
-        success = writeFloatFile(action_file, action_json)
-        if success[0]:
-            if cfg.tracking:
-                log.track(2, "Successful.", True)
-        else:
-            if cfg.tracking:
-                log.track(2, "ERROR " + str(success[1] + ": " + success[2]), True)
+        success = writeFloatFile(cfg, log, 2, True, action_file, action_json)
+        if not success[0]:
+            continue
 
         #---------------------------------------------------------------
         # Construct 'Task' File
@@ -185,13 +181,8 @@ for msgnum in range(0, len(cnc_msgs)):
         #---------------------------------------------------------------
         # Write 'Task' File
 
-        success = writeFloatFile(task_file, task_json)
-        if success[0]:
-            if cfg.tracking:
-                log.track(2, "SUCCESSFUL.", True)
-        else:
-            if cfg.tracking:
-                log.track(2, "ERROR: " + str(success[1] + ": " + success[2]), True)
+        success = writeFloatFile(cfg, log, 2, True, task_file, task_json)
+        continue
     
     else:
         #---------------------------------------------------------------

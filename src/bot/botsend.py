@@ -275,7 +275,7 @@ for dir in allfolders:
     if cfg.tracking:
         log.track(1, "Calculate Trigger Score.", True)
 
-    trigger, wet, wei = triggerScoreLookup(status_json)
+    trigger, wet, wei = triggerScoreLookup(cfg, log, 2, status_json)
     if cfg.tracking:
         log.track(2, "Trigger Score:   " + str(trigger), True)
         log.track(2, "Wake Event Type: " + str(wet), True)
