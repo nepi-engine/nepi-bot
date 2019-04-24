@@ -14,6 +14,11 @@
 ##  Revision History
 ##  ----------------
 ##  
+##  Revision:   1.10 2019/04/22  11:50:00
+##  Comment:    Fix logging to overwrite file on start-up.
+##  Developer:  John benJohn, Leonardo, New Jersey
+##  Platform:   Ubuntu 16.05; Python 2.7.12
+##  
 ##  Revision:   1.9 2019/04/12  11:00:00
 ##  Comment:    Changed indentation to 2; levels to 12/24.
 ##  Developer:  John benJohn, Leonardo, New Jersey
@@ -87,41 +92,68 @@ class BotLog(object):
             self.file = self.cfg.bu_log_file
             self.name = "UNKNOWN"
 
-
     def initlog(self, _lev):
         # If debugging, we're writing to the console.
-        if self.cfg.debugging:
+        if self.cfg.debugging > -1:
+            # Save whatever logging is and turn off temporarily.
+            logsav = self.cfg.logging
+            self.cfg.logging = -1
+
             # Bomb if any configuration errors.
             if self.cfg.enum != None:
-                sys.stdout.write(time.ctime() + ":\n")
-                sys.stdout.write(str(time.ctime()) + ": FATAL CONFIGURATION ERROR: " + str(self.cfg.enum) + "\n")
-                sys.stdout.write(str(time.ctime()) + ": " + str(self.cfg.emsg) + "\n")
-                sys.stdout.write(time.ctime() + ":\n")
-                sys.stdout.flush()
+                self.track(0, "", True)
+                self.track(0, "FATAL CONFIG ERR: " + str(self.cfg.enum), True)
+                self.track(0, "FATAL CONFIG ERR: " + str(self.cfg.emsg), True)
+                self.track(0, "", True)
                 sys.exit(1)
             else:
-                sys.stdout.write(str(time.ctime()) + ": STARTING '" + str(self.name) + "' DEBUGGING:\n")
+                self.track(0, "STARTING '" + str(self.name) + "' DEBUGGING:", True)
                 if self.name == "UNKNOWN":
-                    sys.stdout.write(str(time.ctime()) + ":    ERROR: LOG001: Name should be either 'BOT-RECV' or 'BOT-SEND.\n")
+                    enum = "LOG001"
+                    emsg = "initlog(): Name should be either 'BOT-RECV' or 'BOT-SEND.'"
+                    self.track(1, str(enum) + ": " + str(emsg), True)
+                self.track(0, "", True)
+                
+            self.cfg.logging = logsav   # Return logging to whatever it was.
 
-            sys.stdout.write(time.ctime() + ":\n")
-            sys.stdout.flush()
+        # If logging, we're writing to a file on SD Card.
+        if self.cfg.logging > -1:
+            # Remove exising file.
+            if os.path.exists(self.file):
+                try:
+                    os.remove(self.file)
+                except:
+                    pass
 
-        if self.cfg.logging:
             if not os.path.exists(os.path.dirname(self.file)):
                 try:
                     os.makedirs(os.path.dirname(self.file))
-                    self.log = open(self.file, 'w')
-                    self.log.write(str(time.ctime() + ": STARTING " + str(self.name) + " LOGGING:\n"))
-                    self.log.write(str(time.ctime() + "\n"))
-                    self.log.flush()
-                    self.log.close()
                 except Exception as e:
-                    if self.cfg.debugging:
-                        self.errtrack("LOG002", "Can't Initialize Logging.")
-                        self.errtrack("LOG002", str(e))
-                        self.errtrack("LOG002", "Logging Turned OFF")
-                        self.cfg.logging = False
+                    self.cfg.logging = -1   # Turn off Logging
+                    enum = "LOG002"
+                    emsg = "initlog(): Can't Make Path: [" + str(e) + "]: Logging Turned OFF."
+                    if self.cfg.tracking:
+                        self.track(_lev+2, str(enum) + ": " + str(emsg), True)
+                    return [ False, str(enum), str(emsg) ]
+
+            # Save whatever debugging is and turn off temporarily.
+            dbgsav = self.cfg.debugging
+            self.cfg.debugging = -1
+            
+            if self.cfg.logging > -1:
+                self.track(0, "STARTING '" + str(self.name) + "' LOGGING:", True)
+                if self.name == "UNKNOWN":
+                    enum = "LOG002"
+                    emsg = "initlog(): Name should be either 'BOT-RECV' or 'BOT-SEND.'"
+                    self.track(1, str(enum) + ": " + str(emsg), True)
+                self.track(0, "", True)
+
+            self.cfg.debugging = dbgsav   # Return debugging to whatever it was.
+
+        if (self.cfg.debugging > -1) or (self.cfg.logging > -1):
+            self.cfg.tracking = True
+        else:
+            self.cfg.tracking = False
 
         if self.cfg.tracking:
             if self.cfg.factory:

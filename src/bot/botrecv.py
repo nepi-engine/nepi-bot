@@ -62,20 +62,27 @@ log.initlog(0)
 ##  Instantiate a BotDB Database Class (from 'botdb.py').
 ########################################################################
 
-#db = BotDB(cfg, log, 0)
-#success, dbconn = db.getconn(0)
+db = BotDB(cfg, log, 0)
+success, dbconn = db.getconn(0)
 
-#if not success[0]:
-    #sys.exit(1)
+if success[0]:
+    dbActiveFlag = True         # Flag reserved to future use.
+else:
+    dbActiveFlag = False
+
+if cfg.tracking:
+    log.track(1, "DB Active Status: " + str(dbActiveFlag), True)
 
 ########################################################################
 # Instantiate a BotComm Communication Class Object (from 'botcomm.py').
 ########################################################################
 
 bc = BotComm(cfg, log, cfg.type, 0)
-bc_success = bc.getconn(0)
+success = bc.getconn(0)
 
-if not bc_success[0]:
+if not success[0]:
+    if cfg.tracking:
+        log.track(0, "EXIT the 'BotRecv' Subsystem.", True)
     sys.exit(1)
 
 ########################################################################
@@ -89,17 +96,19 @@ success, cnc_msgs = bc.receive(1)
 
 if not success[0]:
     if cfg.tracking:
-        log.track(1, "Error(s) Receiving Cloud Messages", True)
-        log.track(1, "Close Comms; EXIT the Bot-Recv Subsystem.", True)
+        log.track(1, "Error(s) Receiving Cloud Messages; Close Comms.", True)
     success = bc.close(2)
+    if cfg.tracking:
+        log.track(0, "EXIT the Bot-Recv Subsystem.", True)
     sys.exit(1)
 elif (cnc_msgs == None) or (len(cnc_msgs) == 0):
     if cfg.tracking:
         log.track(1, "NO Cloud Messages in Queue.", True)
         log.track(2, "len: " + str(len(cnc_msgs)), True)
         log.track(2, "cnc: " + str(cnc_msgs), True)
-        log.track(1, "Close Comms; EXIT the Bot-Recv Subsystem.", True)
     success = bc.close(2)
+    if cfg.tracking:
+        log.track(0, "EXIT the Bot-Recv Subsystem.", True)
     sys.exit(0)
     
 if cfg.tracking:
@@ -108,16 +117,20 @@ if cfg.tracking:
     log.track(14, "cnc: " + str(cnc_msgs), True)
     log.track(0, "Take Action on ALL Downlink Messages.", True)
 
+########################################################################
+##  Parse C&C Downlink Messages and Take Appropriate Actions.
+########################################################################
+
 for msgnum in range(0, len(cnc_msgs)):
     msg = cnc_msgs[msgnum]
     if cfg.tracking:
         log.track(1, "Evaluating DL Message: " + str(msgnum), True)
-        log.track(14, "msg: [" + str(msg) + "]", True)
+        log.track(2, "msg: [" + str(msg) + "]", True)
 
+    #-------------------------------------------------------------------
+    # Handle C&C "SCUTTLE" Message
+    #-------------------------------------------------------------------
     if msg == "SCUTTLE":
-        #---------------------------------------------------------------
-        # Handle C&C "SCUTTLE" Message
-        #---------------------------------------------------------------
         log.track(1, "Construct 'Action' File for SDK.", True)
         action_data = {"action_seq_id": "31", "actions": [{"action_id": "5", "max_duration": "1000"}]}
 
@@ -175,10 +188,10 @@ for msgnum in range(0, len(cnc_msgs)):
         success = writeFloatFile(task_file, task_json)
         if success[0]:
             if cfg.tracking:
-                log.track(2, "Successful.", True)
+                log.track(2, "SUCCESSFUL.", True)
         else:
             if cfg.tracking:
-                log.track(2, "ERROR " + str(success[1] + ": " + success[2]), True)
+                log.track(2, "ERROR: " + str(success[1] + ": " + success[2]), True)
     
     else:
         #---------------------------------------------------------------
@@ -192,12 +205,12 @@ for msgnum in range(0, len(cnc_msgs)):
 ########################################################################
 
 if cfg.tracking:
-    log.track(0, "Done Processing Downlink Messages; Close Comms.", True)
+    log.track(0, "DONE Processing Downlink Messages; Close Comms.", True)
 
 success = bc.close(1)
 
 if cfg.tracking:
-    log.track(0, "EXIT the Bot-Recv Subsystem.", True)
+    log.track(0, "EXIT the 'BotRecv' Subsystem.", True)
 
 sys.exit(0)
 

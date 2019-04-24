@@ -118,8 +118,8 @@ class BotCfg(object):
                 self.max_msg_size = 2000000
             else:
                 self.state = "fl"
-                self.debugging  = 5
-                self.logging  = 5
+                self.debugging  = -1
+                self.logging  = -1
                 self.timing = 1
                 self.locking = 0
                 self.type = "Iridium"
@@ -158,11 +158,26 @@ class BotCfg(object):
             # Get the Bot Configuration information into useful
             # global variables.
             self.state = str(self.bot_cfg_json["state"])
+            
             self.debugging = int(self.bot_cfg_json["debugging"])
+            if (int(self.debugging) < -1):
+                self.debugging = -1
+            if (int(self.debugging) > 23):
+                self.debugging = 23
+
             self.logging = int(self.bot_cfg_json["logging"])
-            self.tracking = bool(self.debugging) or bool(self.logging)
+            if (int(self.logging) < -1):
+                self.logging = -1
+            if (int(self.logging) > 23):
+                self.logging = 23
+
+            if (int(self.logging) > -1) or (int(self.debugging) > -1):
+                self.tracking = True
+            else:
+                self.tracking = False
+
             self.timing = int(self.bot_cfg_json["timing"])
-            self.locking = int(self.bot_cfg_json["locking"])
+            self.locking = int(self.bot_cfg_json["locking"]) 
             self.type = str(self.bot_cfg_json["type"])
             self.host = str(self.bot_cfg_json["host"])
             self.port = str(self.bot_cfg_json["port"])
