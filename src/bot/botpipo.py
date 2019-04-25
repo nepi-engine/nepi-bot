@@ -48,6 +48,7 @@
 
 import os
 #import sys
+import ast
 import math
 import time 
 from bothelp import readFloatFile
@@ -212,7 +213,8 @@ class BotPIPO(object):
 
         try:
             std_data_type = str(stdjson['dtype'])
-            std_data_items = len(stdjson['data'])
+            std_data_list = ast.literal_eval(str(stdjson['data']))
+            std_data_items = len(std_data_list)
         except Exception as e:
             enum = "P016"
             emsg = "getPipo(): [" + str(e) + "]"
@@ -225,7 +227,7 @@ class BotPIPO(object):
         elif std_data_type == "float32" or std_data_type == "int32":
             std_data_bytes = std_data_items * 4
         elif std_data_type == "uint8":
-            std_data_bytes = std_data_items * 4
+            std_data_bytes = std_data_items * 1
         else:
             enum = "P017"
             emsg = "getPipo(): Unknown Data Type [" + str(std_data_type) + "] encountered."
@@ -237,6 +239,7 @@ class BotPIPO(object):
 
         if self.cfg.tracking:
             self.log.track(lev+1, "Std Head Bytes: " + str(std_head_bytes), True)
+            self.log.track(lev+1, "Std Data List:  " + str(std_data_list), True)
             self.log.track(lev+1, "Std Data Items: " + str(std_data_items), True)
             self.log.track(lev+1, "Std Data Type:  " + str(std_data_type), True)
             self.log.track(lev+1, "Std Data Bytes: " + str(std_data_bytes), True)
@@ -254,6 +257,7 @@ class BotPIPO(object):
         chg_file_path = None
         chg_head_bytes = 12
         chg_data_type = None
+        chg_data_list = []
         chg_data_items = 0
         chg_data_bytes = 0
         chg_msg_size = 0
@@ -288,8 +292,9 @@ class BotPIPO(object):
                         self.log.track(lev+1, "Ignore; Continue.", True)
                 else:
                     try:
-                        chg_data_items = len(chgjson['data'])
                         chg_data_type = str(chgjson['dtype'])
+                        chg_data_list = ast.literal_eval(str(chgjson['data']))
+                        chg_data_items = len(chg_data_list)
                         chg_eligible = True # Set now, anticipating OK data_bytes calc.
                         if chg_data_type == "float64" or chg_data_type == "int64":
                             chg_data_bytes = chg_data_items * 8
@@ -312,6 +317,7 @@ class BotPIPO(object):
         if self.cfg.tracking:
             self.log.track(lev+1, "Chg ELIGIBLE:   " + str(chg_eligible), True)
             self.log.track(lev+1, "Chg Head Bytes: " + str(chg_head_bytes), True)
+            self.log.track(lev+1, "Chg Data List:  " + str(chg_data_list), True)
             self.log.track(lev+1, "Chg Data Items: " + str(chg_data_items), True)
             self.log.track(lev+1, "Chg Data Type:  " + str(chg_data_type), True)
             self.log.track(lev+1, "Chg Data Bytes: " + str(chg_data_bytes), True)

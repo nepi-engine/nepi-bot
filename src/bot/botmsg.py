@@ -540,7 +540,7 @@ class BotMsg(object):
 
         try:
             pack2b64 = 0
-            pack2b64 = (int(statid_adj) << 52) + (int(heading_adj) << 36) + (int(pitch_sgn) << 35) + (int(pitch_adj) << 30) + (int(roll_sgn) << 29) + (int(roll_adj) << 24) + (int(channels_adj) << 16) + (int(dt_adj) << 12) + int(size_adj)
+            pack2b64 = (int(statid_adj) << 52) + (int(heading_adj) << 36) + (int(pitch_sgn) << 35) + (int(pitch_adj) << 30) + (int(roll_sgn) << 29) + (int(roll_adj) << 24) + (int(channels_adj) << 20) + (int(dt_adj) << 16) + (int(size_adj) << 4)
         except Exception as e:
             enum = "MSG114"
             emsg = "packmeta(): Error Packing 2b64: " + str(e)
@@ -581,7 +581,7 @@ class BotMsg(object):
 
             try:
                 pack3b32 = 0
-                pack3b32 = (int(samples_adj) << 24) + (int(rows_adj) << 12) + int(cols_adj)
+                pack3b32 = (int(samples_adj) << 23) + (int(rows_adj) << 12) + int(cols_adj)
             except Exception as e:
                 enum = "MSG114"
                 emsg = "packmeta(): Error Packing 3b32: " + str(e)
@@ -598,6 +598,7 @@ class BotMsg(object):
 
             #-----------------------------------------------------------
             # Pack 'std' Data Product.
+            #-----------------------------------------------------------
 
             if self.cfg.tracking:
                 self.log.track(_lev+1, "Put 'std' Segment Together.", True)

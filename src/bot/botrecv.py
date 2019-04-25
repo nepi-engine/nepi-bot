@@ -92,7 +92,11 @@ if not success[0]:
 if cfg.tracking:
     log.track(0, "Retrieve All Pending 'C&C' Messages.", True)
 
-success, cnc_msgs = bc.receive(1, 3)
+success, cnc_msgs = bc.receive(1, 5)
+
+# For Test:
+success = [ True, None, None ]
+cnc_msgs = [ "SCUTTLE"]
 
 if not success[0]:
     if cfg.tracking:
@@ -131,6 +135,14 @@ for msgnum in range(0, len(cnc_msgs)):
     # Handle C&C "SCUTTLE" Message
     #-------------------------------------------------------------------
     if msg == "SCUTTLE":
+        log.track(2, "Manage 'Scuttle' Message.", True)
+        
+        ffile = str(nepi_home)+ "/commands/scuttle"
+
+        success = writeFloatFile(cfg, log,3, True, ffile, str(""))
+
+
+
         log.track(1, "Construct 'Action' File for SDK.", True)
         action_data = {"action_seq_id": "31", "actions": [{"action_id": "5", "max_duration": "1000"}]}
 
@@ -149,6 +161,7 @@ for msgnum in range(0, len(cnc_msgs)):
 
         #---------------------------------------------------------------
         # Write 'Action' File
+        #---------------------------------------------------------------
 
         if cfg.tracking:
             log.track(1, "Write the 'Action' file for the SDK.", True)
@@ -159,6 +172,7 @@ for msgnum in range(0, len(cnc_msgs)):
 
         #---------------------------------------------------------------
         # Construct 'Task' File
+        #---------------------------------------------------------------
 
         if cfg.tracking:
             log.track(1, "Construct 'Task' File for SDK.", True)
@@ -180,6 +194,7 @@ for msgnum in range(0, len(cnc_msgs)):
 
         #---------------------------------------------------------------
         # Write 'Task' File
+        #---------------------------------------------------------------
 
         success = writeFloatFile(cfg, log, 2, True, task_file, task_json)
         continue

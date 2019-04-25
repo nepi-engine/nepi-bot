@@ -644,7 +644,8 @@ class BotDB(object):
                     "INSERT INTO node VALUES ('FOF', 36, 0, 0);",
                     "INSERT INTO node VALUES ('FDN', 37, 0, 0);",
                     "INSERT INTO node VALUES ('RCH', 38, 0, 0);",
-                    "INSERT INTO node VALUES ('CLA', 39, 0, 0);"
+                    "INSERT INTO node VALUES ('CLA', 39, 0, 0);",
+                    "INSERT INTO node VALUES ('SIN', 40, 0, 0);"
             ]
 
             if self.cfg.tracking:

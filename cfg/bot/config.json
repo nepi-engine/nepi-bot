@@ -6,7 +6,7 @@
     "locking": 0,
     "type": "Iridium",
     "host": "N/A",
-    "port": "/dev/ttyUSB0",
+    "port": "COM3",
     "baud": 19200,
     "tout": 3,
     "protocol": 2,

@@ -255,11 +255,11 @@ def readFloatFile(_cfg, _log, _lev, _ffile, _lockflag, _jsonflag):
 def writeFloatFile(_cfg, _log, _lev, _clear, _ffile, _fdata):
     if _cfg.tracking:
         _log.track(_lev, "Entering 'writeFloatFile()' Module.", True)
-        _log.track(_lev+1, "_cfg:   " + str(_cfg), True)
-        _log.track(_lev+1, "_log:   " + str(_log), True)
-        _log.track(_lev+1, "_lev:   " + str(_lev), True)
-        _log.track(_lev+1, "_clear: " + str(_clear), True)
-        _log.track(_lev+1, "_ffile: " + str(_ffile), True)
+        _log.track(_lev+13, "_cfg:   " + str(_cfg), True)
+        _log.track(_lev+13, "_log:   " + str(_log), True)
+        _log.track(_lev+13, "_lev:   " + str(_lev), True)
+        _log.track(_lev+13, "_clear: " + str(_clear), True)
+        _log.track(_lev+13, "_ffile: " + str(_ffile), True)
         _log.track(_lev+13, "_fdata: " + str(_fdata), True)
 
     #-------------------------------------------------------------------
@@ -267,7 +267,7 @@ def writeFloatFile(_cfg, _log, _lev, _clear, _ffile, _fdata):
     #-------------------------------------------------------------------
     if _clear:
         if _cfg.tracking:
-            _log.track(_lev+1, "File 'clear' requested.", True)
+            _log.track(_lev+1, "File 'clear' Requested.", True)
 
         if os.path.isfile(_ffile):
             if _cfg.tracking:
@@ -279,11 +279,14 @@ def writeFloatFile(_cfg, _log, _lev, _clear, _ffile, _fdata):
                 enum = "BH031"
                 emsg = "writeFloatFile(): [" + str(e)  + "]"
                 if _cfg.tracking:
-                    _log.track(_lev+2, str(enum), str(emsg))
+                    _log.track(_lev+2, "ERROR: " + str(enum) + ": " + str(emsg))
                 return [ False, str(enum), str(emsg) ]
         else:
             if _cfg.tracking:
                 _log.track(_lev+1, "File does not exist; OK, Continue.", True)
+    else:
+        if _cfg.tracking:
+            _log.track(_lev+1, "File 'clear' NOT Requested.", True)
 
     #-------------------------------------------------------------------
     # Check Directory Path, Create it if Necessary.
@@ -308,28 +311,42 @@ def writeFloatFile(_cfg, _log, _lev, _clear, _ffile, _fdata):
         enum = "BH032"
         emsg = "writeFloatFile(): [" + str(e) + "]"
         if _cfg.tracking:
-            _log.track(_lev+2, str(enum), str(emsg))
-        return [ False, str(enum), str(emsg) ], None
+            _log.track(_lev+2, "ERROR: " + str(enum) + ": " + str(emsg))
+        return [ False, str(enum), str(emsg) ]
 
     #-------------------------------------------------------------------
     # Open File for Append; Write Information.
     #-------------------------------------------------------------------
     if _cfg.tracking:
-        _log.track(_lev+1, "Open/Write File.", True)
+        _log.track(_lev+1, "Open/Append File.", True)
     
     try:
         with open(_ffile, 'a') as f:
             f.write(_fdata)
 
         if _cfg.tracking:
-            _log.track(_lev+2, "File Write Complete.", True)
+            _log.track(_lev+2, "File Append Complete.", True)
 
     except Exception as e:
         enum = "BH033"
         emsg = "writeFloatFile(): [" + str(e) + "]"
         if _cfg.tracking:
-            _log.track(_lev+2, str(enum), str(emsg))
-        return [ False, str(enum), str(emsg) ], None
+            _log.track(_lev+2, "ERROR: " + str(enum) + ": " + str(emsg))
+        return [ False, str(enum), str(emsg) ]
+
+    #-------------------------------------------------------------------
+    # Close File to be Safe.
+    #-------------------------------------------------------------------
+    if _cfg.tracking:
+        _log.track(_lev+1, "Close File.", True)
+
+    if f.closed:
+        if _cfg.tracking:
+            _log.track(_lev+2, "File Already Closed.", True)
+    else:
+        f.close()
+        if _cfg.tracking:
+            _log.track(_lev+2, "File Closed.", True)
 
     return [True, None, None]
 
