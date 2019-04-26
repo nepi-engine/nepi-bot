@@ -467,6 +467,7 @@ else:
 ########################################################################
 # Select Active/Unsent Meta Records for the Float Message.
 ########################################################################
+
 if cfg.tracking:
     log.track(0, "Select Top Active Data Products for Uplink Message.", True)
 
@@ -496,6 +497,7 @@ else:
 ########################################################################
 # Cycle through all active/unsent Data Products and add to the Float
 # message if they fit.
+
 if meta_rows:
     for row in meta_rows:
         metaID = str(row[0])
@@ -588,6 +590,15 @@ if meta_rows:
         if success[0]:
             if cfg.tracking:
                 log.track(3, "PACKED Data Product Record into Message.", True)
+                log.track(3, "Update Meta Record 'state' to 'packed.'", True)
+
+                sql = "UPDATE meta SET state = '1' WHERE rowid = '" + str(row[0]) + "'"
+                success = db.update(4, sql)
+                if not success[0]:
+                    if cfg.tracking:
+                        log.track(4, "Well ... This is Awkward.", True)
+                        log.track(4, "Probably Come Back to Bite Us in the Ass.'", True)
+                        log.track(4, "May Eventually Repack This Same Meta Record.", True)
         else:
             if cfg.tracking:
                 log.track(3, "Can't PACK Data Product Record.", True)
@@ -598,21 +609,85 @@ if cfg.tracking:
     log.track(2, "Buf Msg: " + str(sm.buf).encode("hex"), True)
 
 ########################################################################
-# Send the  Message Buffer.
+# Open Communications Port and Send the Message Buffer.
 ########################################################################
+
 if cfg.tracking:
     log.track(0, "Send the Message Buffer.", True)
 
 bc = BotComm(cfg, log, cfg.type, 1)
 success = bc.getconn(1)
 if success[0]:
-    success = bc.send(1, sm.buf)
+    send_success = bc.send(1, sm.buf)
+else:
+    send_success = False
+
+########################################################################
+# Close the Communications Port.
+########################################################################
 
 success = bc.close(1)
 
 ########################################################################
+# Database Housekeeping.
+########################################################################
+
+if cfg.tracking:
+    log.track(0, "Peform DB Housekeeping.", True)
+
+if send_success[0]:
+    if cfg.tracking:
+        log.track(1, "Update Bit-Packed Status Record(s) to 'sent' Status.", True)
+
+    sql = "UPDATE status SET state = '2' WHERE state = '1'"
+    success = db.update(2, sql)
+    if not success[0]:
+        if cfg.tracking:
+            log.track(2, "Well ... This is Awkward.", True)
+    else:
+        if cfg.tracking:
+            log.track(2, "Done.", True)
+
+    if cfg.tracking:
+        log.track(1, "Update Bit-Packed Meta Record(s) to 'sent' Status.", True)
+
+    sql = "UPDATE meta SET state = '1' WHERE state = '1'"
+    success = db.update(2, sql)
+    if not success[0]:
+        if cfg.tracking:
+            log.track(2, "Well ... This is Awkward.", True)
+    else:
+        if cfg.tracking:
+            log.track(2, "Done.", True)
+else:
+    if cfg.tracking:
+        log.track(1, "Reset Bit-Packed Status Record(s) to 'new/active' Status.", True)
+
+    sql = "UPDATE status SET state = '0' WHERE state = '1'"
+    success = db.update(2, sql)
+    if not success[0]:
+        if cfg.tracking:
+            log.track(2, "Well ... This is Awkward.", True)
+    else:
+        if cfg.tracking:
+            log.track(2, "Done.", True)
+
+    if cfg.tracking:
+        log.track(1, "Reset Bit-Packed Meta Record(s) to 'new/active' Status.", True)
+
+    sql = "UPDATE meta SET state = '0' WHERE state = '1'"
+    success = db.update(2, sql)
+    if not success[0]:
+        if cfg.tracking:
+            log.track(2, "Well ... This is Awkward.", True)
+    else:
+        if cfg.tracking:
+            log.track(2, "Done.", True)
+
+########################################################################
 # Close the Bot-Send Subsystem.
 ########################################################################
+
 if cfg.tracking:
     log.track(0, "", True)
     log.track(0, "Bot-Send Subsystem Closing.", True)
