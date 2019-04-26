@@ -199,7 +199,7 @@ class BotMsg(object):
             #-----------------------------------------------------------
             # Bytes 16-19 (pack4b32)
 
-            wake_raw        = int(_rec[18])         # wake_event_id (0-255)
+            wake_raw        = int(_rec[19])         # wake_event_id (0-255)
             wake_adj        = wake_raw % 256
 
             task_raw        = int(_rec[20])         # task_index (0-63)
