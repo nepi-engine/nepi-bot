@@ -36,6 +36,7 @@ import math
 import time
 import datetime
 from datetime import date
+import calendar
 from struct import *
 import ctypes
 import botdefs
@@ -83,7 +84,7 @@ class BotMsg(object):
             datnow          = datetime.datetime.now()
             datnow_yr       = int(datnow.year)
             startdate       = datetime.datetime(int(datnow_yr), 1, 1)
-            utcstart        = int(time.mktime(startdate.timetuple()))
+            utcstart        = int(calendar.timegm(startdate.timetuple()))
 
             if self.cfg.tracking:
                 self.log.track(_lev+14, "utcnow:          " + str(utcnow), True)

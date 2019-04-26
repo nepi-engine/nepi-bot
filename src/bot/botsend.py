@@ -126,6 +126,7 @@ sm = BotMsg(cfg, log, 1)
 ########################################################################
 # Re-Evaluate PIPO Ratings for Archived Data Products if Required.
 ########################################################################
+
 if cfg.tracking:
     log.track(0, "Recalculate Archived PIPO Ratings.", True)
     log.track(1, "Select 'Active' Records from Database.", True)
@@ -219,7 +220,7 @@ for dir in allfolders:
     # Product folder. Deconstruct it into a JSON object and load into
     # the 'status' table of the embedded DB.  If any failure detected,
     # DESTROY the entire DP Folder since, without this Status Record,
-    # all the Data Products are useless.
+    # all the Data Products in this DP Folder are useless.
 
     data_prod_folder = cfg.data_dir_path + "/" + str(dir)
     status_file_path = data_prod_folder + "/" + cfg.sys_status_file
@@ -250,7 +251,11 @@ for dir in allfolders:
             if cfg.tracking:
                 log.track(2, "Continue.", True)
             continue
-
+        else:
+            # Status Record successfully inserted into DB.  We no
+            # longer need the sys_status.json file in the DP Folder.
+            if cfg.tracking:
+                log.track(2, "Succcessfully Inserted; Delete File from DP Folder.", True)
     else:
         if cfg.tracking:
             log.track(2, "Status File NOT Acquired.", True)
