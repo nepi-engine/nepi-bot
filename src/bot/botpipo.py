@@ -145,11 +145,13 @@ class BotPIPO(object):
 
             node_code = node_results[0][1]
             node_index = 0
-            sql = "INSERT INTO node VALUES ('%s',%i,%i,%i)" % (
+            node_stage = 0
+            sql = "INSERT INTO node VALUES ('%s',%i,%i,%i,%i)" % (
                 str(node_type),
                 int(node_code),
                 int(node_instance),
-                int(node_index)
+                int(node_index),
+                int(node_stage)
             )
             success = self.db.update(lev+2, sql)
         else:
@@ -157,12 +159,14 @@ class BotPIPO(object):
                 self.log.track(lev+1, "A 'node' Table Entry Exists.", True)
             node_code = node_results[0][1]
             node_index = node_results[0][3]
+            node_stage = node_results[0][4]
 
         if self.cfg.tracking:
             self.log.track(lev+2, "Node Type:     " + str(node_type), True)
             self.log.track(lev+2, "Node Code:     " + str(node_code), True)
             self.log.track(lev+2, "Node Instance: " + str(node_instance), True)
             self.log.track(lev+2, "Node Index:    " + str(node_index), True)
+            self.log.track(lev+2, "Node Stage:    " + str(node_stage), True)
 
         #-----------------------------------------------------------
         # Evaluate 'Standard' Data Product.
@@ -359,7 +363,7 @@ class BotPIPO(object):
         if self.cfg.tracking:
             self.log.track(lev, "Get PIPO Formula Denominator.", True)
 
-        success, denominator = self.computeDenominator(lev+1, metafile)
+        success, denominator = self.computeDenominator(lev+1, float(metajson["timestamp"]))
 
         # Calculation of the PIPO Denominator should NEVER fail; it's
         # a simple multiplier and adder calculation.  If it does,
@@ -443,24 +447,29 @@ class BotPIPO(object):
     #---------------------------------------------------------------
     # computeDenominator() class module.
     #---------------------------------------------------------------
-    def computeDenominator(self, lev, metafile):
+    def computeDenominator(self, lev, ts):
         if self.cfg.tracking:
             self.log.track(lev, "Entering 'computeDenominator() Module.", True)
             self.log.track(lev+1, "lev: " + str(lev), True)
-            self.log.track(lev+1, "met: " + str(metafile), True)
+            self.log.track(lev+1, "ts:  " + str(ts), True)
 
         try:
             ts = time.time()
             now = int(math.floor(ts / 3600)) * 1.0
-            st = os.stat(metafile)
-            meta_age = int(math.floor(st.st_mtime / 3600)) * 1.0
+            #st = os.stat(metafile)
+            meta_age = int(math.floor(float(ts) / 3600)) * 1.0
             pipo_age = (now - meta_age) * 1.0
             denominator = (pipo_age * self.cfg.pipo_time_wt) + 1.0
         except Exception as e:
-            return [ False, "P120", "PIPO Age Calculation Failed" + str(e) ], None
+            enum = "P120"
+            emsg = "computeDenominator(): [" + str(e) + "]"
+            if self.cfg.tracking:
+                self.log.track(lev+1, "ERROR: " + str(enum) + ": " + str(emsg), True)
+
+            return [ False, str(enum), str(emsg) ], 0.5
 
         if self.cfg.tracking:
-            self.log.track(lev+1, "System Time:      " + str(ts), True)
+            self.log.track(lev+1, "System Time:      " + str(float(ts)), True)
             self.log.track(lev+1, "Now Age (hours):  " + str(now), True)
             self.log.track(lev+1, "Meta Age (hours): " + str(meta_age), True)
             self.log.track(lev+1, "PIPO Age (hours): " + str(pipo_age), True)

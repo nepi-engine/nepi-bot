@@ -148,13 +148,13 @@ if success[0]:
                 log.track(1, "Weight Factors Are Unchanged.", True)
 
         for row in rows:
-            rwid = row[0]
-            numr = row[1]
-            trig = row[2]
-            qual = row[3]
-            scor = row[4]
-            meta = row[5]
-            norm = row[6]
+            rwid = int(row[0])
+            numr = float(row[1])
+            trig = float(row[2])
+            qual = float(row[3])
+            scor = float(row[4])
+            meta = str(row[5])
+            norm = float(row[6])
             if cfg.tracking:
                 log.track(1, "Reevaluating Data Product ID: " + str(rwid), True)
                 log.track(2, "Numr: " + str(numr), True)
@@ -251,11 +251,7 @@ for dir in allfolders:
             if cfg.tracking:
                 log.track(2, "Continue.", True)
             continue
-        else:
-            # Status Record successfully inserted into DB.  We no
-            # longer need the sys_status.json file in the DP Folder.
-            if cfg.tracking:
-                log.track(2, "Succcessfully Inserted; Delete File from DP Folder.", True)
+
     else:
         if cfg.tracking:
             log.track(2, "Status File NOT Acquired.", True)
@@ -403,6 +399,34 @@ for dir in allfolders:
         #---------------------------------------------------------------
         # DONE LOOP-PROCESSING NEW SDK DATA PRODUCTS.
         #---------------------------------------------------------------
+
+########################################################################
+# Housekeeping of Data Directory.
+########################################################################
+# In theory, all the Data Products should have been processed if we get
+# to this point.  I case of errors, those offending Data Products have
+# already been removed.  Now, we should clean up any residue in the
+# entire Data Directory.
+
+if cfg.tracking:
+    log.track(0, "Clean Up the Entire Data Directory.", True)
+    log.track(1, "Get Remaining Data Folders in Data Dir.", True)
+
+success, allfolders = getAllFolderNames(cfg, log, 2, cfg.data_dir_path, True, True)
+
+if not success[0]:
+    if cfg.tracking:
+        log.track(1, "UNABLE to perform Clean-Up.", True)
+elif (allfolders == None) or (allfolders == []):
+    if cfg.tracking:
+        log.track(1, "Nothing remaining to Clean-Up.", True)
+else:
+    for folder in allfolders:
+        dir = cfg.data_dir_path + "/" + str(dir)
+        deleteFolder(cfg, log, 1, dir)
+
+if cfg.tracking:
+    log.track(1, "Clean-Up Completed; Continue.", True)
 
 ########################################################################
 # Create the Float Message.
@@ -561,13 +585,15 @@ if meta_rows:
                 log.track(3, "Ignore This DP; Continue.", True)
             continue
 
-        # Get the Current 'index' value from 'node' Table in DB.
+        #---------------------------------------------------------------
+        # Get the Next 'index' value from 'node' Table in DB.
+        #---------------------------------------------------------------
         ntype = str(row[7])
         ninst = str(row[8])
         if cfg.tracking:
-            log.track(2, "Get the Current 'index' value from 'node' Table in DB", True)
+            log.track(2, "Get the Next 'index' value from 'node' Table in DB", True)
 
-        sql = "SELECT * FROM node WHERE node_type = '"+ str(ntype) + "' AND node_instance = '" + str(ninst) + "' LIMIT 1"
+        sql = "SELECT rowid, * FROM node WHERE node_type = '"+ str(ntype) + "' AND node_instance = '" + str(ninst) + "' LIMIT 1"
         success, node_results = db.getResults(3, sql, False)
 
         if not success[0] or not node_results:
@@ -582,16 +608,22 @@ if meta_rows:
                 log.track(3, "Ignore This DP; Continue.", True)
             continue
 
-        node_index = int(node_results[0][3])
+        node_index = int(node_results[0][4])
+        node_stage = int(node_results[0][5])
+        next_index = node_stage + 1
         if cfg.tracking:
             log.track(3, "Got Node Type/Instance: "+ str(ntype) + "/" + str(ninst), True)
             log.track(4, "Index: " + str(node_index), True)
+            log.track(4, "Stage: " + str(node_index), True)
+            log.track(4, "Next:  " + str(next_index), True)
 
-        # Got the Associated Status Record, so process this Data Product.
+        #---------------------------------------------------------------
+        # Got Associated Status Record, so PACK this Data Product.
+        #---------------------------------------------------------------
         if cfg.tracking:
             log.track(2, "Pack This Data Product into Uplink Message.", True)
 
-        success = sm.packmeta(3, row, stat_timestamp, node_index)
+        success = sm.packmeta(3, row, stat_timestamp, next_index)
         if success[0]:
             if cfg.tracking:
                 log.track(3, "PACKED Data Product Record into Message.", True)
@@ -607,6 +639,24 @@ if meta_rows:
         else:
             if cfg.tracking:
                 log.track(3, "Can't PACK Data Product Record.", True)
+                continue
+
+        #---------------------------------------------------------------
+        # Data Product Packed; Update 'node' Table in DB.
+        #---------------------------------------------------------------
+
+        if cfg.tracking:
+            log.track(1, "Update 'node' Table with latest Index.'", True)
+
+            sql = "UPDATE node SET node_stage = '" + str(next_index) + "' WHERE rowid = '" + str(node_results[0][0]) + "'"
+            success = db.update(2, sql)
+            if not success[0]:
+                if cfg.tracking:
+                    log.track(2, "Well ... This is Awkward.", True)
+                    log.track(2, "Probably Come Back to Bite Us in the Ass.'", True)
+                    log.track(2, "Will wind up reverting back to 'std' DP Delivery.", True)
+
+        
 
 if cfg.tracking:
     log.track(1, "Final Message Complete.", True)
@@ -620,18 +670,17 @@ if cfg.tracking:
 if cfg.tracking:
     log.track(0, "Send the Message Buffer.", True)
 
-bc = BotComm(cfg, log, cfg.type, 1)
-success = bc.getconn(1)
-if success[0]:
-    send_success = bc.send(1, sm.buf)
+if sm.len > 0:
+    bc = BotComm(cfg, log, cfg.type, 1)
+    success = bc.getconn(1)
+    if success[0]:
+        send_success = bc.send(1, sm.buf, 5)
+    else:
+        send_success = False
+    success = bc.close(1)
 else:
-    send_success = False
-
-########################################################################
-# Close the Communications Port.
-########################################################################
-
-success = bc.close(1)
+    if cfg.tracking:
+        log.track(1, "NO Message to Send.", True)
 
 ########################################################################
 # Database Housekeeping.
@@ -640,54 +689,86 @@ success = bc.close(1)
 if cfg.tracking:
     log.track(0, "Peform DB Housekeeping.", True)
 
-if send_success[0]:
-    if cfg.tracking:
-        log.track(1, "Update Bit-Packed Status Record(s) to 'sent' Status.", True)
-
-    sql = "UPDATE status SET state = '2' WHERE state = '1'"
-    success = db.update(2, sql)
-    if not success[0]:
+if sm.len > 0:
+    if send_success:
         if cfg.tracking:
-            log.track(2, "Well ... This is Awkward.", True)
+            log.track(1, "Update Bit-Packed Status Record(s) to 'sent' Status.", True)
+
+        sql = "UPDATE status SET state = '2' WHERE state = '1'"
+        success = db.update(2, sql)
+        if not success[0]:
+            if cfg.tracking:
+                log.track(2, "Well ... This is Awkward.", True)
+        else:
+            if cfg.tracking:
+                log.track(2, "Done.", True)
+
+        if cfg.tracking:
+            log.track(1, "Update Bit-Packed Meta Record(s) to 'sent' Status.", True)
+
+        sql = "UPDATE meta SET state = '1' WHERE state = '1'"
+        success = db.update(2, sql)
+        if not success[0]:
+            if cfg.tracking:
+                log.track(2, "Well ... This is Awkward.", True)
+        else:
+            if cfg.tracking:
+                log.track(2, "Done.", True)
+
+        if cfg.tracking:
+            log.track(1, "Update 'node' Table.", True)
+
+        sql = "UPDATE node SET node_index = node_stage"
+        success = db.update(2, sql)
+
+        if not success[0]:
+            if cfg.tracking:
+                log.track(2, "Well ... This is Awkward.", True)
+        else:
+            if cfg.tracking:
+                log.track(2, "Done.", True)
+
     else:
         if cfg.tracking:
-            log.track(2, "Done.", True)
+            log.track(1, "Reset Bit-Packed Status Record(s) to 'new/active' Status.", True)
 
-    if cfg.tracking:
-        log.track(1, "Update Bit-Packed Meta Record(s) to 'sent' Status.", True)
+        sql = "UPDATE status SET state = '0' WHERE state = '1'"
+        success = db.update(2, sql)
+        if not success[0]:
+            if cfg.tracking:
+                log.track(2, "Well ... This is Awkward.", True)
+        else:
+            if cfg.tracking:
+                log.track(2, "Done.", True)
 
-    sql = "UPDATE meta SET state = '1' WHERE state = '1'"
-    success = db.update(2, sql)
-    if not success[0]:
         if cfg.tracking:
-            log.track(2, "Well ... This is Awkward.", True)
-    else:
+            log.track(1, "Reset Bit-Packed Meta Record(s) to 'new/active' Status.", True)
+
+        sql = "UPDATE meta SET state = '0' WHERE state = '1'"
+        success = db.update(2, sql)
+        if not success[0]:
+            if cfg.tracking:
+                log.track(2, "Well ... This is Awkward.", True)
+        else:
+            if cfg.tracking:
+                log.track(2, "Done.", True)
+
         if cfg.tracking:
-            log.track(2, "Done.", True)
+            log.track(1, "Update 'node' Table.", True)
+
+        sql = "UPDATE node SET node_stage = node_index"
+        success = db.update(2, sql)
+
+        if not success[0]:
+            if cfg.tracking:
+                log.track(2, "Well ... This is Awkward.", True)
+        else:
+            if cfg.tracking:
+                log.track(2, "Done.", True)
 else:
     if cfg.tracking:
-        log.track(1, "Reset Bit-Packed Status Record(s) to 'new/active' Status.", True)
-
-    sql = "UPDATE status SET state = '0' WHERE state = '1'"
-    success = db.update(2, sql)
-    if not success[0]:
-        if cfg.tracking:
-            log.track(2, "Well ... This is Awkward.", True)
-    else:
-        if cfg.tracking:
-            log.track(2, "Done.", True)
-
-    if cfg.tracking:
-        log.track(1, "Reset Bit-Packed Meta Record(s) to 'new/active' Status.", True)
-
-    sql = "UPDATE meta SET state = '0' WHERE state = '1'"
-    success = db.update(2, sql)
-    if not success[0]:
-        if cfg.tracking:
-            log.track(2, "Well ... This is Awkward.", True)
-    else:
-        if cfg.tracking:
-            log.track(2, "Done.", True)
+        log.track(1, "NO Housekeeping to be Done.", True)
+    
 
 ########################################################################
 # Close the Bot-Send Subsystem.

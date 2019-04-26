@@ -170,7 +170,7 @@ class BotMsg(object):
                 bus_raw = bus_raw * -1.0                        # get rid of sign
             else:
                 bus_bit = 0                                     # sign bit is pos
-            bus_dec         = float(bus_raw * 10.0)             # decivolts in float
+            bus_dec         = float(bus_raw)                    # decivolts no * by 10
             bus_adj         = int(math.floor(bus_dec))          # s/b <= 5 bits
 
             temp_raw        = float(_rec[16])                   # temperature raw

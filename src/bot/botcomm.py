@@ -14,6 +14,11 @@
 ##  Revision History
 ##  ----------------
 ##
+##  Revision:   1.1 2019/04/26  12:00:00
+##  Comment:    Adding check_signal_quality, updating initiate_sbd, and fixing acquire_response.
+##  Developer:  Kevin Ramada; University of Washington
+##  Platform:   Ubuntu 16.05; Python 2.7.12
+##
 ##  Revision:   1.1 2019/04/01  12:00:00
 ##  Comment:    Release 4.1; Able to receive downlink messages.
 ##  Developer:  Kevin Ramada; University of Washington
@@ -52,25 +57,26 @@ class BotComm(object):
         self.typ = _typ
         if self.cfg.tracking:
             self.log.track(_lev, "Created BotComm Class Object: ", True)
-            self.log.track(_lev+13, "^cfg: " + str(self.cfg), True)
-            self.log.track(_lev+13, "^log: " + str(self.log), True)
-            self.log.track(_lev+13, "^typ: " + str(self.typ), True)
-            self.log.track(_lev+13, "_lev: " + str(_lev), True)
+            self.log.track(_lev+1, "^cfg: " + str(self.cfg), True)
+            self.log.track(_lev+1, "^log: " + str(self.log), True)
+            self.log.track(_lev+1, "^typ: " + str(self.typ), True)
+            self.log.track(_lev+1, "_lev: " + str(_lev), True)
 
         self.serialport = serial.Serial()
 
     #-------------------------------------------------------------------
     # Establish the communications connection.
     #-------------------------------------------------------------------
+    #def getconn(self, _lev, tout, ocnt):
     def getconn(self, _lev):
         if self.cfg.tracking:
             self.log.track(_lev, "Establish Communcations Connection.", True)
-            self.log.track(_lev+13, "typ: " + str(self.typ), True)
-            self.log.track(_lev+13, "_lev: " + str(_lev), True)
+            self.log.track(_lev+1, "typ: " + str(self.typ), True)
+            self.log.track(_lev+1, "_lev: " + str(_lev), True)
 
         if self.typ == 'Iridium':
             if self.cfg.tracking:
-                self.log.track(_lev+1, "Set 'Iridium' Serial Port.", True)
+                self.log.track(_lev+1, "Set Serial Port.", True)
 
 
             try:
@@ -79,40 +85,41 @@ class BotComm(object):
                 self.serialport.timeout = self.cfg.tout
 
                 if self.cfg.tracking:
-                    self.log.track(_lev+2, "port: " + str(self.serialport.port), True)
-                    self.log.track(_lev+2, "baud: " + str(self.serialport.baudrate), True)
-                    self.log.track(_lev+2, "tout: " + str(self.serialport.timeout), True)
+                    self.log.track(_lev+14, "port: " + str(self.serialport.port), True)
+                    self.log.track(_lev+14, "baud: " + str(self.serialport.baudrate), True)
+                    self.log.track(_lev+14, "tout: " + str(self.serialport.timeout), True)
 
                 if not self.serialport.isOpen():
                     if self.cfg.tracking:
                         self.log.track(_lev+1, "Open Serial Port", True)
                     self.serialport.open()
                     if self.cfg.tracking:
-                        self.log.track(_lev+2, "Opened.", True)
+                        self.log.track(_lev+14, "Opened.", True)
 
                     command = [b'AT+CGMI', b'AT+CGMM', b'AT+CGMR', b'AT+CGSN']
 
                     isu_name = self.acquire_response(command[0])
                     if self.cfg.tracking:
-                        self.log.track(_lev+2, "ISU Name: " + str(isu_name), True)
+                        self.log.track(_lev+14, "ISU Name: " + str(isu_name), True)
 
                     isu_model_number = self.acquire_response(command[1])
                     if self.cfg.tracking:
-                        self.log.track(_lev+2, "ISU Model Number: " + str(isu_model_number), True)
+                        self.log.track(_lev+14, "ISU Model Number: " + str(isu_model_number), True)
 
                     isu_version = self.acquire_response(command[2])
                     if self.cfg.tracking:
-                        self.log.track(_lev+2, "ISU Version:", True)
-                        for line in isu_version.split('\n'):
-                            if len(line) > 1:
-                                self.log.track(_lev+3, str(line), True)
+                        self.log.track(_lev+14, "ISU Version:", True)
+                        if isu_version:
+                            for line in isu_version.split('\n'):
+                                if len(line) > 1:
+                                    self.log.track(_lev+3, str(line), True)
 
                     isu_imei = self.acquire_response(command[3])
                     if self.cfg.tracking:
-                        self.log.track(_lev+2, "ISU IMEI: " + str(isu_imei), True)
+                        self.log.track(_lev+14, "ISU IMEI: " + str(isu_imei), True)
                 else:
                     if self.cfg.tracking:
-                        self.log.track(_lev+1, "Serial Port ALREADY Connected", True)
+                        self.log.track(_lev+14, "Serial Port ALREADY Connected", True)
 
                 return [ True, None, None ]
 
@@ -126,7 +133,7 @@ class BotComm(object):
     #-------------------------------------------------------------------
     # Receive a Message.
     #-------------------------------------------------------------------
-    def receive(self, _lev):
+    def receive(self, _lev, num):
         if self.cfg.tracking:
             self.log.track(_lev, "Receive Message on Established Connection.", True)
             self.log.track(_lev+1, "_lev: " + str(_lev), True)
@@ -142,7 +149,7 @@ class BotComm(object):
                     mo_buffer = self.read_status(_lev, 'mo buffer', int(response))
 
                     if mo_buffer == True:
-                        cnc_msgs = self.initiate_sbd(_lev, "receive")
+                        cnc_msgs = self.initiate_sbd(_lev, "receive", num)
                         print cnc_msgs
 
                         return [ True, None, None ], cnc_msgs
@@ -153,7 +160,7 @@ class BotComm(object):
                         if self.cfg.tracking:
                             self.log.errtrack(str(enum), str(emsg))
 
-                        return [ False, str(enum), str(emsg) ], ""
+                        return [ False, str(enum), str(emsg) ], None
 
                 else:
                     enum = "BC108"
@@ -161,7 +168,7 @@ class BotComm(object):
                     if self.cfg.tracking:
                         self.log.errtrack(str(enum), str(emsg))
 
-                    return [ False, str(enum), str(emsg) ], ""
+                    return [ False, str(enum), str(emsg) ], None
 
             except Exception as e:
                 enum = "BC109"
@@ -221,11 +228,11 @@ class BotComm(object):
     #-------------------------------------------------------------------
     # Send a Message.
     #-------------------------------------------------------------------
-    def send(self, _lev, msg):
+    def send(self, _lev, msg, num):
         if self.cfg.tracking:
             self.log.track(_lev, "Send Message on Established Connection.", True)
             self.log.track(_lev+1, "_lev: " + str(_lev), True)
-            self.log.track(_lev+1, "msg: " + str(msg), True)
+            self.log.track(_lev+1, "msg: " + str(msg).encode("hex"), True)
 
         if self.typ == 'Iridium':
             try:
@@ -234,21 +241,21 @@ class BotComm(object):
                     if self.cfg.tracking:
                         self.log.track(_lev, "SBD Modem Ready To Receive Message", True)
 
-                    response = self.acquire_response(msg + '\r')
+                    response = self.acquire_response(msg)
+                    # print response
                     mo_buffer = self.read_status(_lev, 'mo buffer', int(response))
 
                     if mo_buffer == True:
-                        success = self.initiate_sbd(_lev, "send")
+                        success, cnc_msgs = self.initiate_sbd(_lev, "send", num)
                         if success:
-                            return [ True, None, None ]
-                        # else:
-                        #     enum = "BC110"
-                        #     emsg = "SBD Sesion Time Out"
-                        #     if self.cfg.tracking:
-                        #         self.log.errtrack(str(enum), str(emsg))
+                            return [ True, None, None ], cnc_msgs
+                        else:
+                            enum = "BC110"
+                            emsg = "SBD Sesion Time Out"
+                            if self.cfg.tracking:
+                                self.log.errtrack(str(enum), str(emsg))
 
-                        #     return [ False, str(enum), str(emsg) ]
-
+                            return [ False, str(enum), str(emsg) ], None
 
                     else:
                         enum = "BC104"
@@ -256,7 +263,7 @@ class BotComm(object):
                         if self.cfg.tracking:
                             self.log.errtrack(str(enum), str(emsg))
 
-                        return [ False, str(enum), str(emsg) ]
+                        return [ False, str(enum), str(emsg) ], None
 
                 else:
                     enum = "BC105"
@@ -264,20 +271,15 @@ class BotComm(object):
                     if self.cfg.tracking:
                         self.log.errtrack(str(enum), str(emsg))
 
-                    return [ False, str(enum), str(emsg) ]
+                    return [ False, str(enum), str(emsg) ], None
 
-                ### Condition for +SBDWB
-                # msg = self.acquire_response(b'AT+SBDWB={message size}')
-                # elif msg == '3':
-                #     print "SBD message size is not correct. It should be between 1-340 bytes"
-                ###
 
             except Exception as e:
                 enum = "BC106"
                 emsg = str(e)
                 if self.cfg.tracking:
                     self.log.errtrack(str(enum), str(emsg))
-                return [ False, str(enum), str(emsg) ]
+                return [ False, str(enum), str(emsg) ], None
 
     #-------------------------------------------------------------------
     # Close the Connection.
@@ -342,18 +344,16 @@ class BotComm(object):
                     print("Message: ", message)
 
                     if "OK" in message:
-                        if command[2:] in message:
-                            start_idx = message.index('\n') + 1
-                            end_idx = message.index("OK")
-                            message = message[start_idx:end_idx]
-                            message = message.strip()
-                            return message
-                        return True
-                    
+                        start_idx = message.index('\n') + 1
+                        end_idx = message.index("OK")
+                        message = message[start_idx:end_idx]
+                        message = message.strip()
+                        return message
+
                     elif "READY" in message:
                         return True
 
-                except Exception as e:
+                except Exception, e:
                     enum = "BC113"
                     emsg = str(e)
                     if self.cfg.tracking:
@@ -391,7 +391,7 @@ class BotComm(object):
     #-------------------------------------------------------------------
     # Initiate SBD Session - Send MO buffer to the GSS & Receive MT queued at the GSS
     #-------------------------------------------------------------------
-    def initiate_sbd(self, _lev, action, timeout=1000):
+    def initiate_sbd(self, _lev, action, num, wait_time=1000):
     # Response: +SBDIX:<MO status>,<MOMSN>,<MT status>,<MTMSN>,<MT length>,<MT queued>
 
         if self.typ == 'Iridium':
@@ -401,12 +401,13 @@ class BotComm(object):
             mt_queued = 0
             count = 1
             start_time = time.time()
-                
+            timeout = start_time + wait_time
+
             if self.cfg.tracking:
                 self.log.track(_lev, "SBD Session Initiated.", True)
 
             if action == 'send':
-                while mo_sent == False:
+                while (mo_sent == False or mt_received == False or (mt_queued > 0 and num > 0)) and start_time < timeout:
                     signal_strength = self.check_signal_quality(2)
 
                     if int(signal_strength) > 2:
@@ -418,11 +419,27 @@ class BotComm(object):
                             response = response.split(',')
 
                             mo_status = int(response[0])
+                            mt_status = int(response[2])
+                            mt_queued = int(response[5])
 
                             if self.cfg.tracking:
                                 self.log.track(_lev+1, "MO Status: " + str(mo_status), True)
+                                self.log.track(_lev+1, "MT Status: " + str(mt_status), True)
+                                self.log.track(_lev+1, "MT Queued: " + str(mt_queued), True)
 
                             mo_sent = self.read_status(_lev+1, 'mo sbd', mo_status)
+                            mt_received = self.read_status(_lev+1, 'mt sbd', mt_status)
+
+                            if mt_status == 1:
+                                mt_msg = self.get_mt_message(2)
+
+                                if mt_msg:
+                                    mt_msg_list.append(mt_msg)
+                                    num -= 1
+
+                            if mt_queued > 0:
+                                if self.cfg.tracking:
+                                    self.log.track(_lev+1, "MT SBD messages queued to be transferred: " + str(mt_queued) + " messages", True)
 
                             time.sleep(5)
                         else:
@@ -432,10 +449,11 @@ class BotComm(object):
                             count += 1
                 if self.cfg.tracking:
                     self.log.track(_lev+1, "Number of retry: " + str(count), True)
-                return True
+                return True, mt_msg_list
+                print mt_msg_list
 
             elif action == 'receive':
-                while mt_received == False or mt_queued > 0:
+                while (mt_received == False or (mt_queued > 0 and num > 0)) and start_time < timeout:
                     signal_strength = self.check_signal_quality(2)
 
                     if int(signal_strength) > 2:
@@ -460,11 +478,12 @@ class BotComm(object):
 
                                 if mt_msg:
                                     mt_msg_list.append(mt_msg)
+                                    num -= 1
 
                             if mt_queued > 0:
                                 if self.cfg.tracking:
                                     self.log.track(_lev+1, "MT SBD messages queued to be transferred: " + str(mt_queued) + " messages", True)
-                            
+
                             time.sleep(5)
 
                         else:
@@ -477,7 +496,7 @@ class BotComm(object):
                     self.log.track(_lev+1, "Number of retry: " + str(count), True)
                 return mt_msg_list
 
-            
+
     #-------------------------------------------------------------------
     # Read Iridium Transfer Status from the AT Command Response
     #-------------------------------------------------------------------
@@ -494,28 +513,31 @@ class BotComm(object):
                 if self.cfg.tracking:
                     self.log.track(_lev+1, "SBD message write timeout. No terminating carriage return was sent within the transfer period of 60 seconds", True)
                 return False
+            else:
+                if self.cfg.tracking:
+                    self.log.track(_lev+1, "An error occurred while attempting to write a message to mobile originated buffer.", True)
+                return False
 
         elif status_type == 'mt sbd':
+            if self.cfg.tracking:
+                self.log.track(_lev, "MT SBD Message Status:", True)
             if response == 0:
                 if self.cfg.tracking:
-                    self.log.track(_lev, "MT SBD Message Status:", True)
                     self.log.track(_lev+1, "No MT SBD message to receive from the Iridium Gateway.", True)
                 return True
 
             elif response == 1:
                 if self.cfg.tracking:
-                    self.log.track(_lev, "MT SBD Message Status:", True)
                     self.log.track(_lev+1, "MT SBD message successfully received to MT buffer from the Iridium Gateway.", True)
                 return True
 
             else:
                 if self.cfg.tracking:
-                    self.log.track(_lev, "MT SBD Message Status:", True)
                     self.log.track(_lev+1, "An error occurred while attempting to perform a mailbox check or receive a message from the Iridium Gatewy.", True)
                 return False
 
         elif status_type == 'mo sbd':
-            if self.cfg.tracking:    
+            if self.cfg.tracking:
                 self.log.track(_lev, "MO SBD Message Status:", True)
 
             if response == 0:
@@ -527,7 +549,7 @@ class BotComm(object):
                     self.log.track(_lev+1, "MO message, if any, transferred successfully, but the MT message in the queue was too big to be transferred.", True)
                 return True
             elif response == 2:
-                if self.cfg.tracking:    
+                if self.cfg.tracking:
                     self.log.track(_lev+1, "MO message, if any, transferred successfully, but the requested Location Update was not accepted.", True)
                 return True
             elif  3 <= response <= 4:
@@ -538,7 +560,7 @@ class BotComm(object):
                 if self.cfg.tracking:
                     self.log.track(_lev+1, "Reserved, but indicate MO session failure if used.", True)
             elif response == 10:
-                if self.cfg.tracking:    
+                if self.cfg.tracking:
                     self.log.track(_lev+1, "Iridium Gateway reported that the call did not complete in the allowed time.", True)
             elif response == 11:
                 if self.cfg.tracking:

@@ -418,11 +418,11 @@ def resetCfgValue(cfg, log, lev, key, val):
 def deleteFolder(_cfg, _log, _lev, _dpf):
     if _cfg.tracking:
         _log.track(_lev, "Entering deleteFolder() Module.", True)
-        _log.track(_lev+7, "_cfg: " + str(_cfg), True)
-        _log.track(_lev+7, "_log: " + str(_log), True)
-        _log.track(_lev+7, "_lev: " + str(_lev), True)
-        _log.track(_lev+7, "_dpf: " + str(_dpf), True)
-        _log.track(_lev+1, "Remove Entire Folder Tree.", True)
+        _log.track(_lev+13, "_cfg: " + str(_cfg), True)
+        _log.track(_lev+13, "_log: " + str(_log), True)
+        _log.track(_lev+13, "_lev: " + str(_lev), True)
+        _log.track(_lev+13, "_dpf: " + str(_dpf), True)
+        _log.track(_lev+13, "Remove Entire Folder Tree.", True)
 
     try:
         shutil.rmtree(_dpf)

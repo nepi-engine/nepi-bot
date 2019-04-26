@@ -6,7 +6,7 @@
     "locking": 0,
     "type": "Iridium",
     "host": "N/A",
-    "port": "COM3",
+    "port": "COM4",
     "baud": 19200,
     "tout": 3,
     "protocol": 2,
