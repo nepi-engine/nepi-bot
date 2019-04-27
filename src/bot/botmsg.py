@@ -246,7 +246,7 @@ class BotMsg(object):
             swinc_raw       = int(_rec[9])                      # sw_rev_incr (0-15)
             swinc_adj       = swinc_raw % 16                    # s/b <= 4 bits
 
-            lati_raw        = int(_rec[11])                     # latitide (-90.0-90.0)
+            lati_raw        = float(_rec[11])                   # latitide (-90.0-90.0)
             if lati_raw < 0.0:
                 lati_sgn    = 1                                 # sign bit is 1
                 lati_mic    = float(lati_raw * -1000000.0)      # latitude microdegrees
