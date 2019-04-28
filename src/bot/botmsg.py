@@ -582,7 +582,7 @@ class BotMsg(object):
 
             try:
                 pack3b32 = 0
-                pack3b32 = (int(samples_adj) << 23) + (int(rows_adj) << 12) + int(cols_adj)
+                pack3b32 = (int(samples_adj) << 22) + (int(rows_adj) << 11) + int(cols_adj)
             except Exception as e:
                 enum = "MSG114"
                 emsg = "packmeta(): Error Packing 3b32: " + str(e)
