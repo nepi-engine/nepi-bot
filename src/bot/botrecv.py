@@ -269,7 +269,7 @@ for msgnum in range(0, len(cnc_msgs)):
             # Write the proc_node file
 
             try:
-                fname = "proc_node_cfg_" + str(msg_indx).zfill(5)
+                fname = "proc_node_cfg_" + str(msg_indx).zfill(5) + ".json"
                 ffile = str(nepi_home)+ "/proc_nodes/" + str(fname)
                 seg_parsed = json.loads("{" + segment)
                 seg_dumped = json.dumps(seg_parsed, indent=4, sort_keys=False)
@@ -355,7 +355,7 @@ if (cfg.state == "fl") and (sdk_action == True):
         sdkproc = '/opt/numurus/ros/nepi-utilities/process-updates.sh'
         devnull = open(os.devnull, 'wb')
         Popen(['nohup', str(sdkproc)], stdout=devnull, stderr=devnull)
-        
+
     except Exception as e:
         if cfg.tracking:
             log.track(1, "Error(s) Executing 'sdk' Shell.", True)
