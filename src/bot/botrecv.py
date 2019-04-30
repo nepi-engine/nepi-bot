@@ -109,7 +109,7 @@ if not success[0]:
 ########################################################################
 
 if cfg.tracking:
-    log.track(0, "Retrieve All Pending 'C&C' Messages.", True)
+    log.track(0, "Retrieve All Pending 'C&C' Downlink Messages.", True)
 
 success, cnc_msgs = bc.receive(1, 5)
 
@@ -133,112 +133,138 @@ success, cnc_msgs = bc.receive(1, 5)
 
 if not success[0]:
     if cfg.tracking:
-        log.track(1, "Error(s) Receiving Cloud Messages; Close Comms.", True)
+        log.track(1, "Error(s) Receiving C&C Downlink Messages.", True)
+        log.track(1, "Close Comms.", True)
     success = bc.close(2)
     if cfg.tracking:
         log.track(0, "EXIT the Bot-Recv Subsystem.", True)
     sys.exit(1)
 elif (cnc_msgs == None) or (len(cnc_msgs) == 0):
     if cfg.tracking:
-        log.track(1, "NO Cloud Messages in Queue.", True)
-        log.track(14, "len: " + str(len(cnc_msgs)), True)
-        log.track(14, "cnc: None", True)
+        log.track(1, "NO C&C Downlink Messages in Queue.", True)
+        log.track(1, "Close Comms.", True)
     success = bc.close(2)
     if cfg.tracking:
         log.track(0, "EXIT the Bot-Recv Subsystem.", True)
     sys.exit(0)
     
 if cfg.tracking:
-    log.track(1, "Cloud Messages Received.", True)
-    log.track(14, "num: " + str(len(cnc_msgs)), True)
-    log.track(0, "Take Action on ALL Downlink Messages.", True)
+    log.track(1, "C&C Downlink Messages Received.", True)
+    log.track(14, "Total: [" + str(len(cnc_msgs)) + "]", True)
+    log.track(0, "Take Action on ALL C&C Downlink Messages.", True)
 
 ########################################################################
 ##  Parse C&C Downlink Messages and Take Appropriate Actions.
 ########################################################################
 
-sdk_action = False
+sdk_action = False  # Used later to indicate we have to notify the SDK.
 
 for msgnum in range(0, len(cnc_msgs)):
+    #msg_b64 = cnc_msgs[msgnum]
+    #msg = msg_b64.decode('base64')
     msg = cnc_msgs[msgnum]
-    msg_hex = str(msg).encode('hex')
     msg_pos = 0
     msg_len = len(msg)
+    msg_hex = str(msg).encode('hex')
     if cfg.tracking:
-        log.track(1, "Evaluating DL Message: " + str(msgnum), True)
-        log.track(2, "msg_hex:  [" + str(msg_hex) + "]", True)
-        log.track(14, "msg_pos:  [" + str(msg_pos) + "]", True)
-        log.track(14, "msg_siz:  [" + str(msg_len) + "]", True)
+        log.track(1, "Evaluating C&C Downlink Message #" + str(msgnum), True)
+        log.track(2, "msg_pos: [" + str(msg_pos) + "]", True)
+        log.track(2, "msg_len: [" + str(msg_len) + "]", True)
+        log.track(14, "msg_hex: [" + str(msg_hex) + "]", True)
 
+    #-------------------------------------------------------------------
+    # Loop Through C&C Message Segments Until this Message is Exhausted.
+    #-------------------------------------------------------------------
     while msg_pos < msg_len:
-        msg_head = struct.unpack('>I', msg[msg_pos:msg_pos+4])[0]
-        msg_prot = (msg_head & 0xc0000000) >> 30
-        msg_type = (msg_head & 0x38000000) >> 27
-        msg_size = (msg_head & 0x07ff0000) >> 16
-        msg_indx = (msg_head & 0x0000fc00) >> 10
-        msg_flag = (msg_head & 0x00000300) >> 8
+        # Even though msg 'header' is exactly 3 bytes, peel off 4 so
+        # 'struct' can deal with it as a 32-bit integer. Ignore the
+        # far-right eight bits (that's atually the 1st byte of data).
+        if cfg.tracking:
+            log.track(2, "Evaluating C&C Segment Header.", True)
+
+        try:    
+            seg_head = struct.unpack('>I', msg[msg_pos:msg_pos+4])[0]
+            seg_prot = (seg_head & 0xc0000000) >> 30    # 'protocol'    (bits 0-1)
+            seg_type = (seg_head & 0x38000000) >> 27    # 'config type' (bits 2-4)
+            seg_size = (seg_head & 0x07ff0000) >> 16    # 'msg length'  (bits 5-15)
+            seg_indx = (seg_head & 0x0000fc00) >> 10    # 'cfg index'   (bits 16-21)
+            seg_flag = (seg_head & 0x00000300) >> 8     # 'msg flags'   (bits 22-23)
+        except Exception as e:
+            if cfg.tracking:
+                log.track(3, "Lost Control Evaluating This Message.", True)
+                log.track(3, "ERROR: [" + str(e) + "]", True)
+                log.track(3, "Continue w/NEXT MESSAGE.", True)
+            break
+
+        msg_pos += 3    # Skip forward over the 3-byte segment 'header.'
 
         if cfg.tracking:
-            log.track(2, "Message Header: ", True)
-            log.track(15, "prot:  [" + str(int(msg_prot)) + "]", True)
-            log.track(15, "type:  [" + str(int(msg_type)) + "]", True)
-            log.track(15, "size:  [" + str(int(msg_size)) + "]", True)
-            log.track(15, "indx:  [" + str(int(msg_indx)) + "]", True)
-            log.track(15, "flag:  [" + str(int(msg_flag)) + "]", True)
-
-        msg_pos += 3
-
-        if cfg.tracking:
-            log.track(2, "Message Data.", True)
-            log.track(15, "pos:  [" + str(msg_pos) + "]", True)
+            log.track(2, "Evaluating C&C Segment Header.", True)
+            log.track(15, "seg_prot:  [" + str(int(seg_prot)) + "]", True)
+            log.track(15, "seg_type:  [" + str(int(seg_type)) + "]", True)
+            log.track(15, "seg_size:  [" + str(int(seg_size)) + "]", True)
+            log.track(15, "seg_indx:  [" + str(int(seg_indx)) + "]", True)
+            log.track(15, "seg_flag:  [" + str(int(seg_flag)) + "]", True)
+            log.track(2, "Bump Forward to Process Message Data.", True)
+            log.track(15, "msg_pos:  [" + str(msg_pos) + "]", True)
         
-        #-----------------------------------------------------------------------
-        # Handle COMMAND Downlink Messages
-        #-----------------------------------------------------------------------
-        if msg_type == 0:   # COMMAND
+        #---------------------------------------------------------------
+        # Handle 'Command' C&C Segment TYPE
+        #---------------------------------------------------------------
+        if seg_type == 0:   # COMMAND
             if cfg.tracking:
-                log.track(3, "Command Message.", True)
-            #msg_fmt = ">" +str(msg_size) + "B"
-            msg_fmt = ">B"
-            msg_cmd = struct.unpack(msg_fmt, msg[msg_pos:msg_pos+1])[0]
+                log.track(2, "Handle 'Command' C&C Segment TYPE.", True)
+            # We only need to peel off a single., unsigned byte for any
+            # 'command.'  The 'struct' method returns a list - in this
+            # case, a single list element (0).
+            seg_fmt = ">B"
+            seg_cmd = struct.unpack(seg_fmt, msg[msg_pos:msg_pos+1])[0]
             if cfg.tracking:
-                log.track(15, "fmt: [" + str(msg_fmt) + "]", True)
-                log.track(15, "cmd: [" + str(msg_cmd) + "]", True)
+                log.track(15, "seg_fmt: [" + str(seg_fmt) + "]", True)
+                log.track(15, "seg_cmd: [" + str(seg_cmd) + "]", True)
 
-            if msg_cmd == 1:
+            if seg_cmd == 1:
+                # The 'scuttle' command require only that we create an
+                # empty file, called 'scuttle,' in the "commands/" dir.
                 if cfg.tracking:
-                    log.track(2, "Handle 'Scuttle' Message.", True)
+                    log.track(2, "Handle C&C 'Scuttle' Command.", True)
 
                 try:
-                    ffile = str(nepi_home)+ "/commands/scuttle"
+                    ffile = str(nepi_home) + "/commands/scuttle"
                     success = writeFloatFile(cfg, log,3, True, ffile, str(""))
+                    sdk_action = True   # Got at least 1 C&C message for the SDK.
                 except Exception as e:
                     if cfg.tracking:
-                        log.track(3, "Error(s) Writing 'scuttlee' File.", True)
+                        log.track(3, "Problem(s) Creating 'scuttle' Command File.", True)
                         log.track(3, "ERROR: [" + str(e) + "]", True)
 
             else:
                 if cfg.tracking:
-                    log.track(2, "WARNING: Unknown Command Message: " + str(msg_cmd), True)
-                    log.track(2, "Continue.", True)
+                    log.track(2, "WARNING: Unknown Command Message: " + str(seg_cmd), True)
+                    log.track(2, "Continue w/NEXT C&C SEGMENT.", True)
 
             msg_pos += 1
-            sdk_action = True
             continue
 
-        elif msg_type == 1:   # SENSOR
+        #---------------------------------------------------------------
+        # Handle 'Sensor' C&C Segment TYPE
+        #---------------------------------------------------------------
+        elif seg_type == 1:   # SENSOR
             if cfg.tracking:
-                log.track(2, "Handle 'Sensor' Message.", True)
-                log.track(3, "NOT IMPLEMENTED YET.", True)
-            msg_pos += msg_size
+                log.track(2, "Handle 'Sensor' C&C Segment TYPE.", True)
+                log.track(3, "NOT IMPLEMENTED YET; Continue w/NEXT SEGMENT.", True)
+            msg_pos += seg_size
             continue
 
-        elif msg_type == 2:   # NODE
+        #---------------------------------------------------------------
+        # Handle 'Node' C&C Segment TYPE
+        #---------------------------------------------------------------
+        elif seg_type == 2:   # NODE
             if cfg.tracking:
-                log.track(2, "Handle 'Node' Message.", True)
+                log.track(2, "Handle 'Node' C&C Segment TYPE.", True)
 
-            seg_fmt = ">" +str(msg_size) + "B"
-            segment = msg[msg_pos:msg_pos+msg_size]
+            seg_fmt = ">" +str(seg_size) + "B"
+            segment = msg[msg_pos:msg_pos+seg_size]
             seg_len = len(segment)
             seg_hex = segment.encode('hex')
 
@@ -269,34 +295,40 @@ for msgnum in range(0, len(cnc_msgs)):
             # Write the proc_node file
 
             try:
-                fname = "proc_node_cfg_" + str(msg_indx).zfill(5) + ".json"
+                fname = "proc_node_cfg_" + str(seg_indx).zfill(5) + ".json"
                 ffile = str(nepi_home)+ "/proc_nodes/" + str(fname)
                 seg_parsed = json.loads(segment)
                 seg_dumped = json.dumps(seg_parsed, indent=4, sort_keys=False)
                 success = writeFloatFile(cfg, log,3, True, ffile, str(seg_dumped))
+                if success[0]:
+                    sdk_action = True   # Got at least 1 C&C message for the SDK.
             except Exception as e:
                 if cfg.tracking:
-                    log.track(3, "Error(s) Writing 'proc_node'File.", True)
+                    log.track(3, "Problem(s) Creating 'proc_node' File.", True)
                     log.track(3, "ERROR: [" + str(e) + "]", True)
 
-            msg_pos += msg_size
-            sdk_action = True
+            msg_pos += seg_size
             continue
             
-        elif msg_type == 3:   # GEOFENCE
+        #---------------------------------------------------------------
+        # Handle 'Geofence' C&C Segment TYPE
+        #---------------------------------------------------------------
+        elif seg_type == 3:   # GEOFENCE
             if cfg.tracking:
-                log.track(2, "Handle 'GeoFence' Message.", True)
+                log.track(2, "Handle 'Geofence' C&C Segment TYPE.", True)
+                log.track(3, "NOT IMPLEMENTED YET; Continue w/NEXT SEGMENT.", True)
 
-            seg_fmt = ">" +str(msg_size) + "B"
-            segment = msg[msg_pos:msg_pos+msg_size]
-            seg_len = len(segment)
-            seg_hex = segment.encode('hex')
 
-            if cfg.tracking:
-                log.track(15, "seg_fmt: [" + str(seg_fmt) + "]", True)
-                log.track(15, "segment: [" + str(segment) + "]", True)
-                log.track(15, "seg_len: [" + str(seg_len) + "]", True)
-                log.track(15, "seg_hex: [" + str(seg_hex) + "]", True)
+            #seg_fmt = ">" +str(seg_size) + "B"
+            #segment = msg[msg_pos:msg_pos+seg_size]
+            #seg_len = len(segment)
+            #seg_hex = segment.encode('hex')
+
+            #if cfg.tracking:
+                #log.track(15, "seg_fmt: [" + str(seg_fmt) + "]", True)
+                #log.track(15, "segment: [" + str(segment) + "]", True)
+                #log.track(15, "seg_len: [" + str(seg_len) + "]", True)
+                #log.track(15, "seg_hex: [" + str(seg_hex) + "]", True)
 
             #seg_dcom = zlib.decompress(segment)
             #seg_dsiz = len(seg_dcom)
@@ -315,33 +347,41 @@ for msgnum in range(0, len(cnc_msgs)):
                 #log.track(15, "unpk: [" + str(seg_unpk) + "]", True)
                 #log.track(15, "usiz: [" + str(seg_usiz) + "]", True)
 
-            msg_pos += msg_size
+            msg_pos += seg_size
             continue
 
-        elif msg_type == 4:   # RULE
+        #---------------------------------------------------------------
+        # Handle 'Rule' C&C Segment TYPE
+        #---------------------------------------------------------------
+        elif seg_type == 4:   # RULE
             if cfg.tracking:
-                log.track(2, "Handle 'Rule' Message.", True)
-                log.track(3, "NOT IMPLEMENTED YET.", True)
-            msg_pos += msg_size
+                log.track(2, "Handle 'Rule' C&C Segment TYPE.", True)
+                log.track(3, "NOT IMPLEMENTED YET; Continue w/NEXT SEGMENT.", True)
+
+            msg_pos += seg_size
             continue
 
-        elif msg_type == 5:   # TRIGGER
+        #---------------------------------------------------------------
+        # Handle 'Trigger' C&C Segment TYPE
+        #---------------------------------------------------------------
+        elif seg_type == 5:   # TRIGGER
             if cfg.tracking:
-                log.track(2, "Handle 'Rule' Message.", True)
-                log.track(3, "NOT IMPLEMENTED YET.", True)
-            msg_pos += msg_size
+                log.track(2, "Handle 'Trigger' C&C Segment TYPE.", True)
+                log.track(3, "NOT IMPLEMENTED YET; Continue w/NEXT SEGMENT.", True)
+
+            msg_pos += seg_size
             continue
 
+        #---------------------------------------------------------------
+        # Handle UNKNOWN C&C Downlink Segment TYPE
+        #---------------------------------------------------------------
         else:
-            #---------------------------------------------------------------
-            # Handle "UNKNOWN" Message TYPE
-            #---------------------------------------------------------------
             if cfg.tracking:
-                log.track(2, "WARNING: Unknown Downlink Message TYPE; Continue.", True)
+                log.track(2, "WARNING: Handle 'Unknown' C&C Segment TYPE.", True)
+                log.track(2, "No Implementation; Continue w/NEXT SEGMENT.", True)
 
-            msg_pos += msg_size
-
-        break
+            msg_pos += seg_size
+            continue
 
 ########################################################################
 # If Messages Received and on FLoat, Tell SDK.
@@ -349,7 +389,7 @@ for msgnum in range(0, len(cnc_msgs)):
   
 if (cfg.state == "fl") and (sdk_action == True):
     if cfg.tracking:
-        log.track(0, "Notify the SDK.", True)
+        log.track(0, "Notify the SDK it has C&C Downlink Messages.", True)
 
     try:
         sdkproc = '/opt/numurus/ros/nepi-utilities/process-updates.sh'
@@ -360,6 +400,7 @@ if (cfg.state == "fl") and (sdk_action == True):
         if cfg.tracking:
             log.track(1, "Error(s) Executing 'sdk' Shell.", True)
             log.track(1, "ERROR: [" + str(e) + "]", True)
+            log.track(1, "Continue.", True)
 
 ########################################################################
 # Application Complete: Close Comms and EXIT the Bot-Recv Subsystem.

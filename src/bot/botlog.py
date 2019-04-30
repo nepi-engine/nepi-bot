@@ -177,7 +177,7 @@ class BotLog(object):
             self.track(_lev+1, "logging: " + str(self.cfg.logging), True)
             self.track(_lev+1, "tracking: " + str(self.cfg.tracking), True)
             self.track(_lev+1, "timing: " + str(self.cfg.timing), True)
-            self.track(_lev+1, "locking: " + str(self.cfg.logging), True)
+            self.track(_lev+1, "locking: " + str(self.cfg.locking), True)
             self.track(_lev+1, "type: " + str(self.cfg.type), True)
             self.track(_lev+1, "host: " + str(self.cfg.host), True)
             self.track(_lev+1, "port: " + str(self.cfg.port), True)

@@ -150,7 +150,8 @@ class BotComm(object):
 
                     if mo_buffer == True:
                         cnc_msgs = self.initiate_sbd(_lev, "receive", num)
-                        print cnc_msgs
+                        if self.cfg.tracking:
+                            self.log.track(_lev+1, "All messages received: " + str(cnc_msgs).encode('hex'), True)
 
                         return [ True, None, None ], cnc_msgs
 
@@ -184,7 +185,7 @@ class BotComm(object):
     def get_mt_message(self, _lev):
         try:
             if self.cfg.tracking:
-                self.log.track(_lev+1, "Attempting Message Read(s).", True)
+                self.log.track(_lev, "Attempting Message Read(s).", True)
 
             # icnt = 0
             # results = []
@@ -212,8 +213,8 @@ class BotComm(object):
                     self.log.errtrack(str(enum), str(emsg))
             else:
                 response = response.split("+SBDRT:\r\n")[1]
-                print response
-
+                if self.cfg.tracking:
+                    self.log.track(_lev+1, "Message: " + str(response).encode('hex'), True)
             return response
 
             # return [ True, None, None ], results
@@ -247,6 +248,9 @@ class BotComm(object):
 
                     if mo_buffer == True:
                         success, cnc_msgs = self.initiate_sbd(_lev, "send", num)
+                        if self.cfg.tracking:
+                            self.log.track(_lev+1, "All messages received: " + str(cnc_msgs).encode('hex'), True)
+
                         if success:
                             return [ True, None, None ], cnc_msgs
                         else:
@@ -341,7 +345,7 @@ class BotComm(object):
 
                     message += self.serialport.readline()
 
-                    print("Message: ", message)
+                    # print("Message: ", message)
 
                     if "OK" in message:
                         start_idx = message.index('\n') + 1
@@ -450,7 +454,7 @@ class BotComm(object):
                 if self.cfg.tracking:
                     self.log.track(_lev+1, "Number of retry: " + str(count), True)
                 return True, mt_msg_list
-                print mt_msg_list
+                # print mt_msg_list
 
             elif action == 'receive':
                 while (mt_received == False or (mt_queued > 0 and num > 0)) and start_time < timeout:
@@ -533,7 +537,7 @@ class BotComm(object):
 
             else:
                 if self.cfg.tracking:
-                    self.log.track(_lev+1, "An error occurred while attempting to perform a mailbox check or receive a message from the Iridium Gatewy.", True)
+                    self.log.track(_lev+1, "An error occurred while attempting to perform a mailbox check or receive a message from the Iridium Gateway.", True)
                 return False
 
         elif status_type == 'mo sbd':
