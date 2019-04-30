@@ -271,7 +271,7 @@ for msgnum in range(0, len(cnc_msgs)):
             try:
                 fname = "proc_node_cfg_" + str(msg_indx).zfill(5) + ".json"
                 ffile = str(nepi_home)+ "/proc_nodes/" + str(fname)
-                seg_parsed = json.loads("{" + segment)
+                seg_parsed = json.loads(segment)
                 seg_dumped = json.dumps(seg_parsed, indent=4, sort_keys=False)
                 success = writeFloatFile(cfg, log,3, True, ffile, str(seg_dumped))
             except Exception as e:
