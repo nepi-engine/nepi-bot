@@ -460,7 +460,7 @@ class BotMsg(object):
         try:
             statid_raw      = int(_rec[3])                      # Status Rec Rowid
             statid_adj      = int(statid_raw % 2**12)           # s/b <= 12 bits
-            statid_adj      = 0
+            #statid_adj      = 0
 
             heading_raw     = float(_rec[10])                   # heading raw
             heading_deg     = float(heading_raw * 100.0)        # heading centidegrees
