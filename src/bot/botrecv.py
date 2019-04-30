@@ -14,6 +14,11 @@
 ##  Revision History
 ##  ----------------
 ##  
+##  Revision:   1.3 2019/04/29  15:50:00
+##  Comment:    Major revsion 5/1 to handle downlink messsaging.
+##  Developer:  John benJohn, Leonardo, New Jersey
+##  Platform:   Ubuntu 16.05; Python 2.7.12
+##
 ##  Revision:   1.2 2019/03/22  15:50:00
 ##  Comment:    Integration with latest botcomm.py.
 ##  Developer:  John benJohn, Leonardo, New Jersey
@@ -32,6 +37,11 @@ import time
 import uuid
 import json
 import math
+import ast
+from subprocess import Popen
+#import msgpack
+import struct
+#import zlib
 import shutil
 import socket
 import sqlite3
@@ -43,6 +53,15 @@ from botdb import BotDB
 from botmsg import BotMsg
 from botcomm import BotComm
 from bothelp import writeFloatFile
+
+
+#def inflate(data):
+    #decompress = zlib.decompressobj(
+            #-zlib.MAX_WBITS  # see above
+    #)
+    #inflated = decompress.decompress(data)
+    #inflated += decompress.flush()
+    #return inflated
 
 ########################################################################
 ##  Instantiate a BotCfg Configuration Class Object (from 'botcfg.py')
@@ -95,8 +114,22 @@ if cfg.tracking:
 success, cnc_msgs = bc.receive(1, 5)
 
 # For Test:
-success = [ True, None, None ]
-cnc_msgs = [ "SCUTTLE"]
+#success = [ True, None, None ]
+# With msgpack()
+#msg_b64 = "AAEBGGl42mteVZCfU5menxefmcK9PDUvMSknNYVxRVlqUUlmcmrx5KbFOYklpx0sD/1tW/GHd0lOfl766QMhPG6OOh9+QeWMynUXKv26DpULaDuS8LZhIVTOQT31b9etXTA5Aw7Htw+lAIMDOKYQWXjaa1uZl5+SGl9SWZC6uDgzb0VmXnFJYl5yKuPa4qLkeLjcgjUgLkySYXVeakFmfH5pSUFpCeOygsSixNziSU0rwIz4zBSWpWWJOaWpXAgRVohICgCJYC8y"
+
+# Without msgpack()
+#msg_b64 = "AAH8ARh0eJxFytEKwjAMQNF/yXMNydqksb8iIlPLGJRWdAgy+u8qyHy83LPCrZXX1OppvkJidpDreC75Gw6e+b7Ml/yAdFihjAukQTAqq31maXWCtDNC3nM06+5n2DCoSNiIKjJJ9LoRP6CnaH8RMAoJhX7sb3bvKNcQZnicTYzLCoAgFET/ZdZ3YVAbfyVCRF1cqJukBhH+e69F7oYzZ+aErD6YfMQAjcQCAkvKVtwNOkLanGkVfOh3FEFCZLOWHEt+N9FudknQ4/lFwx66J+x2Ls+rqtQ2Q9OoOtULj5kxJg=="
+
+# Proc Node Only
+#msg_b64 = "EGZ4nE2MywqAIBRE/2XWd2FQG38lQkRdXKibpAYR/nuvRe6GM2fmhKw+mHzEAI3EAgJLylbcDTpC2pxpFXzodxRBQmSzlhxLfjfRbnZJ0OP5RcMeuifsdi7Pq6rUNkPTqDrVC4+ZMSY="
+
+# With no compression
+#msg_b64 = "EJR7Im5vZGVfdHlwZSI6InNpbiIsImluc3RhbmNlIjoxLCJzcmNfbm9kZV90eXBlIjoiIiwic3JjX2luc3RhbmNlIjowLCJuZXBpX291dHB1dCI6MSwicGFyYW1zIjpbeyJwYXJhbV9pZCI6NCwidmFsdWUiOjEwfSx7InBhcmFtX2lkIjo1LCJ2YWx1ZSI6MTAwfV19"
+
+#msg_raw = msg_b64.decode('base64')
+#cnc_msgs = [ msg_raw ]
+#cnc_msgs = str(msg_raw)
 
 if not success[0]:
     if cfg.tracking:
@@ -108,8 +141,8 @@ if not success[0]:
 elif (cnc_msgs == None) or (len(cnc_msgs) == 0):
     if cfg.tracking:
         log.track(1, "NO Cloud Messages in Queue.", True)
-        log.track(2, "len: " + str(len(cnc_msgs)), True)
-        log.track(2, "cnc: " + str(cnc_msgs), True)
+        log.track(14, "len: " + str(len(cnc_msgs)), True)
+        log.track(14, "cnc: None", True)
     success = bc.close(2)
     if cfg.tracking:
         log.track(0, "EXIT the Bot-Recv Subsystem.", True)
@@ -117,94 +150,216 @@ elif (cnc_msgs == None) or (len(cnc_msgs) == 0):
     
 if cfg.tracking:
     log.track(1, "Cloud Messages Received.", True)
-    log.track(14, "len: " + str(len(cnc_msgs)), True)
-    log.track(14, "cnc: " + str(cnc_msgs), True)
+    log.track(14, "num: " + str(len(cnc_msgs)), True)
     log.track(0, "Take Action on ALL Downlink Messages.", True)
 
 ########################################################################
 ##  Parse C&C Downlink Messages and Take Appropriate Actions.
 ########################################################################
 
+sdk_action = False
+
 for msgnum in range(0, len(cnc_msgs)):
     msg = cnc_msgs[msgnum]
+    msg_hex = str(msg).encode('hex')
+    msg_pos = 0
+    msg_len = len(msg)
     if cfg.tracking:
         log.track(1, "Evaluating DL Message: " + str(msgnum), True)
-        log.track(2, "msg: [" + str(msg) + "]", True)
+        log.track(2, "msg_hex:  [" + str(msg_hex) + "]", True)
+        log.track(14, "msg_pos:  [" + str(msg_pos) + "]", True)
+        log.track(14, "msg_siz:  [" + str(msg_len) + "]", True)
 
-    #-------------------------------------------------------------------
-    # Handle C&C "SCUTTLE" Message
-    #-------------------------------------------------------------------
-    if msg == "SCUTTLE":
-        log.track(2, "Manage 'Scuttle' Message.", True)
+    while msg_pos < msg_len:
+        msg_head = struct.unpack('>I', msg[msg_pos:msg_pos+4])[0]
+        msg_prot = (msg_head & 0xc0000000) >> 30
+        msg_type = (msg_head & 0x38000000) >> 27
+        msg_size = (msg_head & 0x07ff0000) >> 16
+        msg_indx = (msg_head & 0x0000fc00) >> 10
+        msg_flag = (msg_head & 0x00000300) >> 8
+
+        if cfg.tracking:
+            log.track(2, "Message Header: ", True)
+            log.track(15, "prot:  [" + str(int(msg_prot)) + "]", True)
+            log.track(15, "type:  [" + str(int(msg_type)) + "]", True)
+            log.track(15, "size:  [" + str(int(msg_size)) + "]", True)
+            log.track(15, "indx:  [" + str(int(msg_indx)) + "]", True)
+            log.track(15, "flag:  [" + str(int(msg_flag)) + "]", True)
+
+        msg_pos += 3
+
+        if cfg.tracking:
+            log.track(2, "Message Data.", True)
+            log.track(15, "pos:  [" + str(msg_pos) + "]", True)
         
-        ffile = str(nepi_home)+ "/commands/scuttle"
+        #-----------------------------------------------------------------------
+        # Handle COMMAND Downlink Messages
+        #-----------------------------------------------------------------------
+        if msg_type == 0:   # COMMAND
+            if cfg.tracking:
+                log.track(3, "Command Message.", True)
+            #msg_fmt = ">" +str(msg_size) + "B"
+            msg_fmt = ">B"
+            msg_cmd = struct.unpack(msg_fmt, msg[msg_pos:msg_pos+1])[0]
+            if cfg.tracking:
+                log.track(15, "fmt: [" + str(msg_fmt) + "]", True)
+                log.track(15, "cmd: [" + str(msg_cmd) + "]", True)
 
-        success = writeFloatFile(cfg, log,3, True, ffile, str(""))
+            if msg_cmd == 1:
+                if cfg.tracking:
+                    log.track(2, "Handle 'Scuttle' Message.", True)
 
+                try:
+                    ffile = str(nepi_home)+ "/commands/scuttle"
+                    success = writeFloatFile(cfg, log,3, True, ffile, str(""))
+                except Exception as e:
+                    if cfg.tracking:
+                        log.track(3, "Error(s) Writing 'scuttlee' File.", True)
+                        log.track(3, "ERROR: [" + str(e) + "]", True)
 
+            else:
+                if cfg.tracking:
+                    log.track(2, "WARNING: Unknown Command Message: " + str(msg_cmd), True)
+                    log.track(2, "Continue.", True)
 
-        log.track(1, "Construct 'Action' File for SDK.", True)
-        action_data = {"action_seq_id": "31", "actions": [{"action_id": "5", "max_duration": "1000"}]}
-
-        action_json = json.dumps(action_data, indent=4, sort_keys=True, separators=(",", ": "), ensure_ascii=False)
-
-        action_num  = 1
-        action_nstr = '{:05d}'.format(action_num)
-        action_file = nepi_home + "/cfg/action/action_seq_" + action_nstr + ".json"
-        if cfg.tracking:
-            log.track(2, "action_num:  " + str(action_num), True)
-            log.track(2, "action_nstr: " + str(action_nstr), True)
-            log.track(2, "action_file: " + str(action_file), True)
-            log.track(8, "action_data: " + str(action_data), True)
-            log.track(8, "action_json: " + str(action_json), True)
-            log.track(1, "Write the 'Action' file for the SDK.", True)
-
-        #---------------------------------------------------------------
-        # Write 'Action' File
-        #---------------------------------------------------------------
-
-        if cfg.tracking:
-            log.track(1, "Write the 'Action' file for the SDK.", True)
-
-        success = writeFloatFile(cfg, log, 2, True, action_file, action_json)
-        if not success[0]:
+            msg_pos += 1
+            sdk_action = True
             continue
 
-        #---------------------------------------------------------------
-        # Construct 'Task' File
-        #---------------------------------------------------------------
+        elif msg_type == 1:   # SENSOR
+            if cfg.tracking:
+                log.track(2, "Handle 'Sensor' Message.", True)
+                log.track(3, "NOT IMPLEMENTED YET.", True)
+            msg_pos += msg_size
+            continue
 
+        elif msg_type == 2:   # NODE
+            if cfg.tracking:
+                log.track(2, "Handle 'Node' Message.", True)
+
+            seg_fmt = ">" +str(msg_size) + "B"
+            segment = msg[msg_pos:msg_pos+msg_size]
+            seg_len = len(segment)
+            seg_hex = segment.encode('hex')
+
+            if cfg.tracking:
+                log.track(15, "seg_fmt: [" + str(seg_fmt) + "]", True)
+                log.track(15, "segment: [" + str(segment) + "]", True)
+                log.track(15, "seg_len: [" + str(seg_len) + "]", True)
+                log.track(15, "seg_hex: [" + str(seg_hex) + "]", True)
+
+            #seg_dcom = zlib.decompress(str(segment))
+            #seg_dcom = inflate(segment)
+            #seg_dsiz = len(seg_dcom)
+
+            #if cfg.tracking:
+                #log.track(15, "dcom: [" + str(seg_dcom) + "]", True)
+                #log.track(15, "dsiz: [" + str(seg_dsiz) + "]", True)
+
+            #b = bytearray()
+            #b.extend(seg_dcom)
+
+            #seg_unpk = msgpack.load(seg_dcom, use_list=True)
+            #seg_usiz = len(seg_unpk)
+
+            #if cfg.tracking:
+                #log.track(15, "unpk: [" + str(seg_unpk) + "]", True)
+                #log.track(15, "usiz: [" + str(seg_usiz) + "]", True)
+
+            # Write the proc_node file
+
+            try:
+                fname = "proc_node_cfg_" + str(msg_indx).zfill(5)
+                ffile = str(nepi_home)+ "/proc_nodes/" + str(fname)
+                seg_parsed = json.loads("{" + segment)
+                seg_dumped = json.dumps(seg_parsed, indent=4, sort_keys=False)
+                success = writeFloatFile(cfg, log,3, True, ffile, str(seg_dumped))
+            except Exception as e:
+                if cfg.tracking:
+                    log.track(3, "Error(s) Writing 'proc_node'File.", True)
+                    log.track(3, "ERROR: [" + str(e) + "]", True)
+
+            msg_pos += msg_size
+            sdk_action = True
+            continue
+            
+        elif msg_type == 3:   # GEOFENCE
+            if cfg.tracking:
+                log.track(2, "Handle 'GeoFence' Message.", True)
+
+            seg_fmt = ">" +str(msg_size) + "B"
+            segment = msg[msg_pos:msg_pos+msg_size]
+            seg_len = len(segment)
+            seg_hex = segment.encode('hex')
+
+            if cfg.tracking:
+                log.track(15, "seg_fmt: [" + str(seg_fmt) + "]", True)
+                log.track(15, "segment: [" + str(segment) + "]", True)
+                log.track(15, "seg_len: [" + str(seg_len) + "]", True)
+                log.track(15, "seg_hex: [" + str(seg_hex) + "]", True)
+
+            #seg_dcom = zlib.decompress(segment)
+            #seg_dsiz = len(seg_dcom)
+
+            #if cfg.tracking:
+                #log.track(15, "dcom: [" + str(seg_dcom) + "]", True)
+                #log.track(15, "dsiz: [" + str(seg_dsiz) + "]", True)
+
+            #b = bytearray()
+            #b.extend(seg_dcom)
+
+            #seg_unpk = msgpack.load(seg_dcom, use_list=True)
+            #seg_usiz = len(seg_unpk)
+
+            #if cfg.tracking:
+                #log.track(15, "unpk: [" + str(seg_unpk) + "]", True)
+                #log.track(15, "usiz: [" + str(seg_usiz) + "]", True)
+
+            msg_pos += msg_size
+            continue
+
+        elif msg_type == 4:   # RULE
+            if cfg.tracking:
+                log.track(2, "Handle 'Rule' Message.", True)
+                log.track(3, "NOT IMPLEMENTED YET.", True)
+            msg_pos += msg_size
+            continue
+
+        elif msg_type == 5:   # TRIGGER
+            if cfg.tracking:
+                log.track(2, "Handle 'Rule' Message.", True)
+                log.track(3, "NOT IMPLEMENTED YET.", True)
+            msg_pos += msg_size
+            continue
+
+        else:
+            #---------------------------------------------------------------
+            # Handle "UNKNOWN" Message TYPE
+            #---------------------------------------------------------------
+            if cfg.tracking:
+                log.track(2, "WARNING: Unknown Downlink Message TYPE; Continue.", True)
+
+            msg_pos += msg_size
+
+        break
+
+########################################################################
+# If Messages Received and on FLoat, Tell SDK.
+########################################################################
+  
+if (cfg.state == "fl") and (sdk_action == True):
+    if cfg.tracking:
+        log.track(0, "Notify the SDK.", True)
+
+    try:
+        sdkproc = '/opt/numurus/ros/nepi-utilities/process-updates.sh'
+        devnull = open(os.devnull, 'wb')
+        Popen(['nohup', str(sdkproc)], stdout=devnull, stderr=devnull)
+        
+    except Exception as e:
         if cfg.tracking:
-            log.track(1, "Construct 'Task' File for SDK.", True)
-
-        task_data = {"line": "55", "action_seq_id": "31", "start_time": "0.0", "period": "900", "max_repetition": "-1"}
-
-        task_json = json.dumps(task_data, indent=4, sort_keys=False, separators=(",", ": "), ensure_ascii=False)
-
-        task_num  = 1
-        task_nstr = '{:05d}'.format(task_num)
-        task_file = nepi_home + "/cfg/sched/task_" + action_nstr + ".json"
-        if cfg.tracking:
-            log.track(2, "task_num:  " + str(task_num), True)
-            log.track(2, "task_nstr: " + str(task_nstr), True)
-            log.track(2, "task_file: " + str(task_file), True)
-            log.track(8, "task_data: " + str(task_data), True)
-            log.track(8, "task_json: " + str(task_json), True)
-            log.track(1, "Write the 'Task' file for the SDK.", True)
-
-        #---------------------------------------------------------------
-        # Write 'Task' File
-        #---------------------------------------------------------------
-
-        success = writeFloatFile(cfg, log, 2, True, task_file, task_json)
-        continue
-    
-    else:
-        #---------------------------------------------------------------
-        # Handle "UNKNOWN" Message
-        #---------------------------------------------------------------
-        if cfg.tracking:
-            log.track(2, "WARNING: Unknown Downlink Message; Continue.", True)
+            log.track(1, "Error(s) Executing 'sdk' Shell.", True)
+            log.track(1, "ERROR: [" + str(e) + "]", True)
 
 ########################################################################
 # Application Complete: Close Comms and EXIT the Bot-Recv Subsystem.

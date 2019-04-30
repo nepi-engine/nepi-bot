@@ -674,9 +674,9 @@ if sm.len > 0:
     bc = BotComm(cfg, log, cfg.type, 1)
     success = bc.getconn(1)
     if success[0]:
-        send_success = bc.send(1, sm.buf, 5)
+        send_success, cnc_msgs = bc.send(1, sm.buf, 5)
     else:
-        send_success = False
+        send_success = [ False, None, None ], None
     success = bc.close(1)
 else:
     if cfg.tracking:
@@ -690,7 +690,7 @@ if cfg.tracking:
     log.track(0, "Peform DB Housekeeping.", True)
 
 if sm.len > 0:
-    if send_success:
+    if send_success[0]:
         if cfg.tracking:
             log.track(1, "Update Bit-Packed Status Record(s) to 'sent' Status.", True)
 

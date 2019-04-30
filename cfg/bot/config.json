@@ -1,6 +1,6 @@
 {
     "state": "ut",
-    "debugging": 11,
+    "debugging": 23,
     "logging": 23,
     "timing": 1,
     "locking": 0,
@@ -26,5 +26,5 @@
     "pipo_trig_wt": 0.5,
     "pipo_time_wt": 1.0,
     "purge_rating": 0.05,
-    "max_msg_size": 680
+    "max_msg_size": 340
 }
