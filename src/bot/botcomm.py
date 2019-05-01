@@ -151,7 +151,7 @@ class BotComm(object):
                     if mo_buffer == True:
                         cnc_msgs = self.initiate_sbd(_lev, "receive", num)
                         if self.cfg.tracking:
-                            self.log.track(_lev+1, "All messages received: " + str(cnc_msgs).encode('hex'), True)
+                            self.log.track(_lev+1, "All messages received: " + cnc_msgs, True)
 
                         return [ True, None, None ], cnc_msgs
 
@@ -249,7 +249,7 @@ class BotComm(object):
                     if mo_buffer == True:
                         success, cnc_msgs = self.initiate_sbd(_lev, "send", num)
                         if self.cfg.tracking:
-                            self.log.track(_lev+1, "All messages received: " + str(cnc_msgs).encode('hex'), True)
+                            self.log.track(_lev+1, "All messages received: " + cnc_msgs, True)
 
                         if success:
                             return [ True, None, None ], cnc_msgs
