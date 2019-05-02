@@ -14,6 +14,16 @@
 ##  Revision History
 ##  ----------------
 ##  
+##  Revision:   1.7 2019/05/01  13:55:00
+##  Comment:    Add Iridium SP attempt and timeout support.
+##  Developer:  John benJohn, Leonardo, New Jersey
+##  Platform:   Ubuntu 16.05; Python 2.7.12
+##
+##  Revision:   1.6 2019/05/01  09:50:00
+##  Comment:    Add 'comms' keyword-value pair support.
+##  Developer:  John benJohn, Leonardo, New Jersey
+##  Platform:   Ubuntu 16.05; Python 2.7.12
+##
 ##  Revision:   1.5 2019/04/04  10:20:00
 ##  Comment:    Add 'baud' and 'tout' keyword-value pairs.
 ##  Developer:  John benJohn, Leonardo, New Jersey
@@ -93,11 +103,14 @@ class BotCfg(object):
                 self.logging  = 5
                 self.timing = 1
                 self.locking = 0
+                self.comms = 1
                 self.type = "Ethernet"
                 self.host = "10.0.0.116"
                 self.port = 7770
                 self.baud = 19200
                 self.tout = 1
+                self.isp_open_attm = 10
+                self.isp_open_tout = 1
                 self.protocol = 1
                 self.packet_size = 1024
                 self.sys_status_file = "sys_status_file"
@@ -115,18 +128,21 @@ class BotCfg(object):
                 self.pipo_trig_wt = 0.5
                 self.pipo_time_wt = 1.0
                 self.purge_rating = 0.05
-                self.max_msg_size = 2000000
+                self.max_msg_size = 4096
             else:
                 self.state = "fl"
                 self.debugging  = -1
-                self.logging  = -1
+                self.logging  = 11
                 self.timing = 1
                 self.locking = 0
+                self.comms = 1
                 self.type = "Iridium"
                 self.host = "None"
                 self.port = "/dev/ttyUSB0"
                 self.baud = 19200
                 self.tout = 1
+                self.isp_open_attm = 10
+                self.isp_open_tout = 1
                 self.protocol = 1
                 self.packet_size = 1024
                 self.sys_status_file = "sys_status_file"
@@ -144,7 +160,7 @@ class BotCfg(object):
                 self.pipo_trig_wt = 0.5
                 self.pipo_time_wt = 1.0
                 self.purge_rating = 0.05
-                self.max_msg_size = 2000000
+                self.max_msg_size = 1020
 
             self.tracking = bool(self.debugging) or bool(self.logging)
             self.data_dir_path = nepi_home + "/" + self.data_dir
@@ -178,11 +194,14 @@ class BotCfg(object):
 
             self.timing = int(self.bot_cfg_json["timing"])
             self.locking = int(self.bot_cfg_json["locking"]) 
+            self.comms = int(self.bot_cfg_json["comms"]) 
             self.type = str(self.bot_cfg_json["type"])
             self.host = str(self.bot_cfg_json["host"])
             self.port = str(self.bot_cfg_json["port"])
             self.baud = int(self.bot_cfg_json["baud"])
             self.tout = int(self.bot_cfg_json["tout"])
+            self.isp_open_attm = int(self.bot_cfg_json["isp_open_attm"])
+            self.isp_open_tout = int(self.bot_cfg_json["isp_open_tout"])
             self.protocol = int(self.bot_cfg_json["protocol"])
             self.packet_size = int(self.bot_cfg_json["packet_size"])
             self.sys_status_file = str(self.bot_cfg_json["sys_status_file"])

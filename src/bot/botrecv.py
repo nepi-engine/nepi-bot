@@ -134,16 +134,16 @@ success, cnc_msgs = bc.receive(1, 5)
 if not success[0]:
     if cfg.tracking:
         log.track(1, "Error(s) Receiving C&C Downlink Messages.", True)
-        log.track(1, "Close Comms.", True)
-    success = bc.close(2)
+        log.track(0, "DONE Processing Downlink Messages; Close Comms.", True)
+    success = bc.close(1)
     if cfg.tracking:
         log.track(0, "EXIT the Bot-Recv Subsystem.", True)
     sys.exit(1)
 elif (cnc_msgs == None) or (len(cnc_msgs) == 0):
     if cfg.tracking:
         log.track(1, "NO C&C Downlink Messages in Queue.", True)
-        log.track(1, "Close Comms.", True)
-    success = bc.close(2)
+        log.track(0, "DONE Processing Downlink Messages; Close Comms.", True)
+    success = bc.close(1)
     if cfg.tracking:
         log.track(0, "EXIT the Bot-Recv Subsystem.", True)
     sys.exit(0)

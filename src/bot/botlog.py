@@ -14,6 +14,16 @@
 ##  Revision History
 ##  ----------------
 ##  
+##  Revision:   1.12 2019/05/01  13:55:00
+##  Comment:    Add Iridium SP attempt and timeout support.
+##  Developer:  John benJohn, Leonardo, New Jersey
+##  Platform:   Ubuntu 16.05; Python 2.7.12
+##
+##  Revision:   1.11 2019/05/01  10:00:00
+##  Comment:    Added 'comms' config support.
+##  Developer:  John benJohn, Leonardo, New Jersey
+##  Platform:   Ubuntu 16.05; Python 2.7.12
+##  
 ##  Revision:   1.10 2019/04/22  11:50:00
 ##  Comment:    Fix logging to overwrite file on start-up.
 ##  Developer:  John benJohn, Leonardo, New Jersey
@@ -178,9 +188,12 @@ class BotLog(object):
             self.track(_lev+1, "tracking: " + str(self.cfg.tracking), True)
             self.track(_lev+1, "timing: " + str(self.cfg.timing), True)
             self.track(_lev+1, "locking: " + str(self.cfg.locking), True)
+            self.track(_lev+1, "comms: " + str(self.cfg.comms), True)
             self.track(_lev+1, "type: " + str(self.cfg.type), True)
             self.track(_lev+1, "host: " + str(self.cfg.host), True)
             self.track(_lev+1, "port: " + str(self.cfg.port), True)
+            self.track(_lev+1, "isp_open_attm: " + str(self.cfg.isp_open_attm), True)
+            self.track(_lev+1, "isp_open_tout: " + str(self.cfg.isp_open_tout), True)
             self.track(_lev+1, "protocol: " + str(self.cfg.protocol), True)
             self.track(_lev+1, "packet_size: " + str(self.cfg.packet_size), True)
             self.track(_lev+1, "sys_status_file: " + str(self.cfg.sys_status_file), True)
