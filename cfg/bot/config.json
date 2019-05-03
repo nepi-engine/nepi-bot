@@ -4,7 +4,7 @@
     "logging": 23,
     "timing": 1,
     "locking": 0,
-    "comms": 0,
+    "comms": 1,
     "type": "Iridium",
     "host": "N/A",
     "port": "COM4",
