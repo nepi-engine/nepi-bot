@@ -15,7 +15,7 @@
 ##  ----------------
 ##  
 ##  Revision:   1.13 2019/04/15  11:00:00
-##  Comment:    Upgrade to new Node Type'code' Converison Table.
+##  Comment:    Upgrade to new Node Type'code' Conversion Table.
 ##  Developer:  John benJohn, Leonardo, New Jersey
 ##  Platform:   Ubuntu 16.05; Python 2.7.12
 ##
