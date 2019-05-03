@@ -1,7 +1,7 @@
 {
     "state": "ut",
     "debugging": 23,
-    "logging": -1,
+    "logging": 23,
     "timing": 1,
     "locking": 0,
     "comms": 0,
