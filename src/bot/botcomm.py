@@ -14,7 +14,12 @@
 ##  Revision History
 ##  ----------------
 ##
-##  Revision:   1.3 2019/05/01  14:00:00
+##  Revision:   1.6 2019/05/02  14:00:00
+##  Comment:    Fix; Reversed isactive() method returns.
+##  Developer:  John benJohn, Leonardo, New Jersey
+##  Platform:   Ubuntu 16.05; Python 2.7.12
+##
+##  Revision:   1.5 2019/05/01  14:00:00
 ##  Comment:    Add Comms Active logic for bypassing communications.
 ##  Developer:  John benJohn, Leonardo, New Jersey
 ##  Platform:   Ubuntu 16.05; Python 2.7.12
@@ -851,9 +856,9 @@ class BotComm(object):
         if not self.cfg.comms:
             if self.cfg.tracking:
                 self.log.track(_lev+1, "Comms NOT ACTIVE; Request Ignored.", True)
-            return True
+            return False
         else:
             if self.cfg.tracking:
                 self.log.track(_lev+1, "Comms ACTIVE; Proceed.", True)
-            return False
+            return True
 

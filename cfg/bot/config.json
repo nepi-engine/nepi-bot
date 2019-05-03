@@ -1,10 +1,10 @@
 {
     "state": "ut",
-    "debugging": 12,
+    "debugging": 23,
     "logging": -1,
     "timing": 1,
     "locking": 0,
-    "comms": 1,
+    "comms": 0,
     "type": "Iridium",
     "host": "N/A",
     "port": "COM4",
