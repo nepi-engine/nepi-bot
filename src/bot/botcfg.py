@@ -14,6 +14,16 @@
 ##  Revision History
 ##  ----------------
 ##  
+##  Revision:   1.9 2019/05/05  10:45:00
+##  Comment:    Refactor various 'int' declarations to 'bool' status.
+##  Developer:  John benJohn, Leonardo, New Jersey
+##  Platform:   Ubuntu 16.05; Python 2.7.12
+##
+##  Revision:   1.8 2019/05/05  10:45:00
+##  Comment:    Add support for 'zlib' and 'msgpack' msg management.
+##  Developer:  John benJohn, Leonardo, New Jersey
+##  Platform:   Ubuntu 16.05; Python 2.7.12
+##
 ##  Revision:   1.7 2019/05/01  13:55:00
 ##  Comment:    Add Iridium SP attempt and timeout support.
 ##  Developer:  John benJohn, Leonardo, New Jersey
@@ -101,9 +111,9 @@ class BotCfg(object):
                 self.state = "ut"
                 self.debugging  = 5
                 self.logging  = 5
-                self.timing = 1
-                self.locking = 0
-                self.comms = 1
+                self.timing = True
+                self.locking = False
+                self.comms = True
                 self.type = "Ethernet"
                 self.host = "10.0.0.116"
                 self.port = 7770
@@ -117,11 +127,13 @@ class BotCfg(object):
                 self.db_dir = "db"
                 self.db_name = "float.db"
                 self.data_dir = "data"
+                self.data_zlib = True
+                self.data_msgpack = True
                 self.log_dir = "log"
                 self.br_log_name = "brlog.txt"
                 self.bs_log_name = "bslog.txt"
                 self.bu_log_name = "bulog.txt"
-                self.wt_changed = 0
+                self.wt_changed = False
                 self.pipo_scor_wt = 0.5
                 self.pipo_qual_wt = 0.5
                 self.pipo_size_wt = 0.5
@@ -133,9 +145,9 @@ class BotCfg(object):
                 self.state = "fl"
                 self.debugging  = -1
                 self.logging  = 11
-                self.timing = 1
-                self.locking = 0
-                self.comms = 1
+                self.timing = True
+                self.locking = False
+                self.comms = True
                 self.type = "Iridium"
                 self.host = "None"
                 self.port = "/dev/ttyUSB0"
@@ -149,11 +161,13 @@ class BotCfg(object):
                 self.db_dir = "db"
                 self.db_name = "float.db"
                 self.data_dir = "data"
+                self.data_zlib = True
+                self.data_msgpack = True
                 self.log_dir = "log"
                 self.br_log_name = "brlog.txt"
                 self.bs_log_name = "bslog.txt"
                 self.bu_log_name = "bulog.txt"
-                self.wt_changed = 0
+                self.wt_changed = False
                 self.pipo_scor_wt = 0.5
                 self.pipo_qual_wt = 0.5
                 self.pipo_size_wt = 0.5
@@ -192,9 +206,9 @@ class BotCfg(object):
             else:
                 self.tracking = False
 
-            self.timing = int(self.bot_cfg_json["timing"])
-            self.locking = int(self.bot_cfg_json["locking"]) 
-            self.comms = int(self.bot_cfg_json["comms"]) 
+            self.timing = bool(self.bot_cfg_json["timing"])
+            self.locking = bool(self.bot_cfg_json["locking"]) 
+            self.comms = bool(self.bot_cfg_json["comms"]) 
             self.type = str(self.bot_cfg_json["type"])
             self.host = str(self.bot_cfg_json["host"])
             self.port = str(self.bot_cfg_json["port"])
@@ -207,6 +221,8 @@ class BotCfg(object):
             self.sys_status_file = str(self.bot_cfg_json["sys_status_file"])
             self.data_dir = str(self.bot_cfg_json["data_dir"])
             self.data_dir_path = nepi_home + "/" + self.data_dir
+            self.data_zlib = bool(self.bot_cfg_json["data_zlib"])
+            self.data_msgpack = bool(self.bot_cfg_json["data_msgpack"])
             self.db_dir = str(self.bot_cfg_json["db_dir"])
             self.db_name = str(self.bot_cfg_json["db_name"])
             self.db_file = nepi_home + "/" + self.db_dir + "/" + self.db_name
@@ -217,7 +233,7 @@ class BotCfg(object):
             self.bs_log_file = nepi_home + "/" + self.log_dir + "/" + self.bs_log_name
             self.bu_log_name = str(self.bot_cfg_json["bu_log_name"])
             self.bu_log_file = nepi_home + "/" + self.log_dir + "/" + self.bu_log_name
-            self.wt_changed = int(self.bot_cfg_json["wt_changed"])
+            self.wt_changed = bool(self.bot_cfg_json["wt_changed"])
             self.pipo_scor_wt = float(self.bot_cfg_json["pipo_scor_wt"])
             self.pipo_qual_wt = float(self.bot_cfg_json["pipo_qual_wt"])
             self.pipo_size_wt = float(self.bot_cfg_json["pipo_size_wt"])

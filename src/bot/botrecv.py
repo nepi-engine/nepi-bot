@@ -39,23 +39,23 @@
 import os
 import sys
 import time
-import uuid
+#import uuid
 import json
-import math
+#import math
 import ast
-from subprocess import Popen
-#import msgpack
 import struct
-#import zlib
+import zlib
+import msgpack
 import shutil
-import socket
-import sqlite3
+#import socket
+#import sqlite3
+from subprocess import Popen
 from botdefs import nepi_home
 from array import array
 from botcfg import BotCfg
 from botlog import BotLog
 from botdb import BotDB
-from botmsg import BotMsg
+#from botmsg import BotMsg
 from botcomm import BotComm
 from bothelp import writeFloatFile
 
@@ -118,21 +118,40 @@ if cfg.tracking:
 
 success, cnc_msgs = bc.receive(1, 5)
 
-# For Test
+# For Test; These are base64 test-level message (base64 used for either
+# Slack or email communication)  They're pasted in here and can be
+# uncommented for various levels of testing.
 if not cfg.comms:
+    # The following 5 Iridium Messages are Good Bulk Tests from Jacob.
+    # These samples reflect all message types for bot61 Bitbucket Branch.
+
+    # This is 1) geofence, 2) proc_node, and 3) rules.
+    #msg_b64 = "GFQAa15VkJ9TmZ6fF5+Zwr48NS8xKSc1hWFFWWpRSWZyavHkpsU5iSWnHcwm1idtW1e7JCc/L/30gZAeN/n5jDugcsbl8mZqOrugcsFsRxLeNizEpw8AEGEAa1uZl5+SGl9SWZC6uLggeUVmXnFJYl5yKuPa4qLkeIRcSUXKGpAITJ5hdV5qQWZ8fmlJQWkJw7KCxKLE3OIpTSvAjPjMFIalZYk5pWB9CEFGiCADQoQFIuKAEGGFiHAAACBwAGtdXlSakxqfmcK1PDUvMSknNYVxRUFRam5mcWrxpOY1xbmJRSUlRZnpQBUMKzLziksS85JTmVanFaUWxpdkFKUWZ5y23zkTBGahqmaFq2ZAVs24NjG5JDM/L74YKJSZIrgqNzMvviC1KDM/5SyfAAA="
+
+    # This is 1) sensor, 2) trigger, and 3) schedule.
+    #msg_b64 = "CCQAa1pZnJpXnF8Un5nCvKwgsSgxt3hi0wowAyjEtLQsMac0VQQAKEMAa15XnJtYVFJSlJkeX1JZkMqxIjOvuCQxLzmVbVlBYlFibvHkphVgRnxmCsPSssSc0lRGhAgTROQs+wWEGDNE7Mx/ADhBAGtdkpOZl8qzNjG5JDM/L744tTA+M4VvVXFJYlFJfElmbuq5mGgD12UFqUWZ+SlnZRTW5SZWxBelFqSWZII0/AcA"
+
+    # This is 1) sensor, 2) geofence, and 3) action.
+    #msg_b64 = "CCQAa1pZnJpXnF8Un5nCvKwgsSgxt3hi0wowAyjEtLQsMac0VQQAGFQAa15VkJ9TmZ6fF5+Zwr48NS8xKSc1hWFFWWpRSWZyavHkpsU5iSWnHcwm1idtW1e7JCc/L/30gZAeN/n5jDugcsbl8mZqOrugcsFsRxLeNizEpw8AMDkAa1qbmFySmZ8XX5xaGJ+Zwrocwi2e3LQSKpGZwrgmN7EiPqW0KBEkIIIkw4Qic5YpAkmOFVWO+QUA"
+
+    # This is 1) geofence, 2) node, 3) rules, 4) sensor, 5) trig, 6) sched,  and 7) action.
+    #msg_b64 = "GFQAa15VkJ9TmZ6fF5+Zwr48NS8xKSc1hWFFWWpRSWZyavHkpsU5iSWnHcwm1idtW1e7JCc/L/30gZAeN/n5jDugcsbl8mZqOrugcsFsRxLeNizEpw8AEGEAa1uZl5+SGl9SWZC6uLggeUVmXnFJYl5yKuPa4qLkeIRcSUXKGpAITJ5hdV5qQWZ8fmlJQWkJw7KCxKLE3OIpTSvAjPjMFIalZYk5pWB9CEFGiCADQoQFIuKAEGGFiHAAACBwAGtdXlSakxqfmcK1PDUvMSknNYVxRUFRam5mcWrxpOY1xbmJRSUlRZnpQBUMKzLziksS85JTmVanFaUWxpdkFKUWZ5y23zkTBGahqmaFq2ZAVs24NjG5JDM/L74YKJSZIrgqNzMvviC1KDM/5SyfAAAIJABrWlmcmlecXxSfmcK8rCCxKDG3eGLTCjADKMS0tCwxpzRVBAAoQwBrXlecm1hUUlKUmR5fUlmQyrEiM6+4JDEvOZVtWUFiUWJu8eSmFWBGfGYKw9KyxJzSVEaECBNE5Cz7BYQYM0TszH8AOEEAa12Sk5mXyrM2MbkkMz8vvji1MD4zhW9VcUliUUl8SWZu6rmYaAPXZQWpRZn5KWdlFNblJlbEF6UWpJZkgjT8BwAwOQBrWpuYXJKZnxdfnFoYn5nCuhzCLZ7ctBIqkZnCuCY3sSI+pbQoESQggiTDhCJzlikCSY4VVY75BQA="
+
+    # This is 1) sensor, 2) trigger, and 3) schedule.
+    #msg_b64 = "GGMAa15VkJ9TmZ6fF5+Zwr08NS8xKSc1hXFFWWpRSWZyavHkpsU5iSWnHSwP/W1b8Yd3SU5+XvrpAyE8bo46H35B5YzKdRcq/boOlQtoO5LwtmEhVM5BPfVv161dMDkDDse3D6UAOEEAa12Sk5mXyrM2MbkkMz8vvji1MD4zhW9VcUliUUl8SWZu6rmYaAPXZQWpRZn5KWdlFNblJlbEF6UWpJZkgjT8BwA="
+
+    # This is 1) scuttle, 2) geofence, 2) node, and 3) rules.
+    msg_b64 = "AAH8ARhUAGteVZCfU5menxefmcK+PDUvMSknNYVhRVlqUUlmcmrx5KbFOYklpx3MJtYnbVtXuyQnPy/99IGQHjf5+Yw7oHLG5fJmajq7oHLBbEcS3jYsxKcPABBhAGtbmZefkhpfUlmQuri4IHlFZl5xSWJecirj2uKi5HiEXElFyhqQCEyeYXVeakFmfH5pSUFpCcOygsSixNziKU0rwIz4zBSGpWWJOaVgfQhBRoggA0KEBSLigBBhhYhwAAAgcABrXV5UmpMan5nCtTw1LzEpJzWFcUVBUWpuZnFq8aTmNcW5iUUlJUWZ6UAVDCsy84pLEvOSU5lWpxWlFsaXZBSlFmectt85EwRmoapmhatmQFbNuDYxuSQzPy++GCiUmSK4KjczL74gtSgzP+UsnwAA"
+
+    #msg_b64 = "AAH8AQgkAGtaWZyaV5xfFJ+ZwrysILEoMbd4YtMKMAMoxLS0LDGnNFUEAChDAGteV5ybWFRSUpSZHl9SWZDKsSIzr7gkMS85lW1ZQWJRYm7x5KYVYEZ8ZgrD0rLEnNJURoQIE0TkLPsFhBgzROzMfwA4QQBrXZKTmZfKszYxuSQzPy++OLUwPjOFb1VxSWJRSXxJZm7quZhoA9dlBalFmfkpZ2UU1uUmVsQXpRaklmSCNPwHAA=="
+
+    #msg_b64 = "AAH8AQgkAGtaWZyaV5xfFJ+ZwrysILEoMbd4YtMKMAMoxLS0LDGnNFUEABhUAGteVZCfU5menxefmcK+PDUvMSknNYVhRVlqUUlmcmrx5KbFOYklpx3MJtYnbVtXuyQnPy/99IGQHjf5+Yw7oHLG5fJmajq7oHLBbEcS3jYsxKcPADA5AGtam5hckpmfF1+cWhifmcK6HMItnty0EiqRmcK4JjexIj6ltCgRJCCCJMOEInOWKQJJjhVVjvkFAA=="
+
+    #msg_b64 = "AAH8ARhUAGteVZCfU5menxefmcK+PDUvMSknNYVhRVlqUUlmcmrx5KbFOYklpx3MJtYnbVtXuyQnPy/99IGQHjf5+Yw7oHLG5fJmajq7oHLBbEcS3jYsxKcPABBhAGtbmZefkhpfUlmQuri4IHlFZl5xSWJecirj2uKi5HiEXElFyhqQCEyeYXVeakFmfH5pSUFpCcOygsSixNziKU0rwIz4zBSGpWWJOaVgfQhBRoggA0KEBSLigBBhhYhwAAAgcABrXV5UmpMan5nCtTw1LzEpJzWFcUVBUWpuZnFq8aTmNcW5iUUlJUWZ6UAVDCsy84pLEvOSU5lWpxWlFsaXZBSlFmectt85EwRmoapmhatmQFbNuDYxuSQzPy++GCiUmSK4KjczL74gtSgzP+UsnwAACCQAa1pZnJpXnF8Un5nCvKwgsSgxt3hi0wowAyjEtLQsMac0VQQAKEMAa15XnJtYVFJSlJkeX1JZkMqxIjOvuCQxLzmVbVlBYlFibvHkphVgRnxmCsPSssSc0lRGhAgTROQs+wWEGDNE7Mx/ADhBAGtdkpOZl8qzNjG5JDM/L744tTA+M4VvVXFJYlFJfElmbuq5mGgD12UFqUWZ+SlnZRTW5SZWxBelFqSWZII0/AcAMDkAa1qbmFySmZ8XX5xaGJ+Zwrocwi2e3LQSKpGZwrgmN7EiPqW0KBEkIIIkw4Qic5YpAkmOFVWO+QUA"
+
+    #msg_b64 = "AAH8ARhjAGteVZCfU5menxefmcK9PDUvMSknNYVxRVlqUUlmcmrx5KbFOYklpx0sD/1tW/GHd0lOfl766QMhPG6OOh9+QeWMynUXKv26DpULaDuS8LZhIVTOQT31b9etXTA5Aw7Htw+lADhBAGtdkpOZl8qzNjG5JDM/L744tTA+M4VvVXFJYlFJfElmbuq5mGgD12UFqUWZ+SlnZRTW5SZWxBelFqSWZII0/AcA"
+
     success = [ True, None, None ]
-    # With msgpack()
-    #msg_b64 = "AAEBGGl42mteVZCfU5menxefmcK9PDUvMSknNYVxRVlqUUlmcmrx5KbFOYklpx0sD/1tW/GHd0lOfl766QMhPG6OOh9+QeWMynUXKv26DpULaDuS8LZhIVTOQT31b9etXTA5Aw7Htw+lAIMDOKYQWXjaa1uZl5+SGl9SWZC6uDgzb0VmXnFJYl5yKuPa4qLkeLjcgjUgLkySYXVeakFmfH5pSUFpCeOygsSixNziSU0rwIz4zBSWpWWJOaWpXAgRVohICgCJYC8y"
-
-    # Without msgpack()
-    #msg_b64 = "AAH8ARh0eJxFytEKwjAMQNF/yXMNydqksb8iIlPLGJRWdAgy+u8qyHy83LPCrZXX1OppvkJidpDreC75Gw6e+b7Ml/yAdFihjAukQTAqq31maXWCtDNC3nM06+5n2DCoSNiIKjJJ9LoRP6CnaH8RMAoJhX7sb3bvKNcQZnicTYzLCoAgFET/ZdZ3YVAbfyVCRF1cqJukBhH+e69F7oYzZ+aErD6YfMQAjcQCAkvKVtwNOkLanGkVfOh3FEFCZLOWHEt+N9FudknQ4/lFwx66J+x2Ls+rqtQ2Q9OoOtULj5kxJg=="
-
-    # Proc Node Only
-    #msg_b64 = "EGZ4nE2MywqAIBRE/2XWd2FQG38lQkRdXKibpAYR/nuvRe6GM2fmhKw+mHzEAI3EAgJLylbcDTpC2pxpFXzodxRBQmSzlhxLfjfRbnZJ0OP5RcMeuifsdi7Pq6rUNkPTqDrVC4+ZMSY="
-
-    # Latest for bto61
-    msg_b64 = "AAH8ARiTAHsicG9seWdvbl9pZCI6MTEsImVuYWJsZWQiOjEsInZlcnRpY2VzIjpbeyJsYXQiOjI1Ljc2MTY4MSwibG9uZyI6LTgwLjE5MTc4OH0seyJsYXQiOjE4LjQ2NTU0LCJsb25nIjotNjYuMTA1NzM2fSx7ImxhdCI6MzIuMzA3OCwibG9uZyI6LTY0Ljc1MDUwNH1dfRCUAHsibm9kZV90eXBlIjoic2luIiwiaW5zdGFuY2UiOjEsInNyY19ub2RlX3R5cGUiOiIiLCJzcmNfaW5zdGFuY2UiOjAsIm5lcGlfb3V0cHV0IjoxLCJwYXJhbXMiOlt7InBhcmFtX2lkIjo0LCJ2YWx1ZSI6MTB9LHsicGFyYW1faWQiOjUsInZhbHVlIjoxMDB9XX0YkAB7InBvbHlnb25faWQiOjcsImVuYWJsZWQiOjAsInZlcnRpY2VzIjpbeyJsYXQiOjIyLjU2ODM1LCJsb25nIjotODIuMTkxNzh9LHsibGF0IjoxOS40NjUzMiwibG9uZyI6LTc2LjEwNTczNn0seyJsYXQiOjIyLjU2ODM1LCJsb25nIjotODIuMTkxNzh9XX0="
-
     msg_raw = msg_b64.decode('base64')
     cnc_msgs = [ msg_raw ]
 
@@ -144,7 +163,6 @@ if not cfg.comms:
         log.track(2, "len_raw: [" + str(len(msg_raw)) + "]", True)
         log.track(2, "msg_hex: [" + str(msg_raw).encode("hex") + "]", True)
         log.track(2, "len_hex: [" + str(len(str(msg_raw).encode("hex"))) + "]", True)
-
 
 if not success[0]:
     if cfg.tracking:
@@ -185,7 +203,7 @@ for msgnum in range(0, len(cnc_msgs)):
         log.track(1, "Evaluating C&C Message #" + str(msgnum), True)
         log.track(2, "msg_pos: [" + str(msg_pos) + "]", True)
         log.track(2, "msg_len: [" + str(msg_len) + "]", True)
-        log.track(14, "msg_hex: [" + str(msg_hex) + "]", True)
+        log.track(14, "msg_hex: [" + str(msg_hex) + "] <-- s/b double.", True)
 
     #-------------------------------------------------------------------
     # Loop Through the C&C Segments Until Message is Exhausted.
@@ -212,6 +230,7 @@ for msgnum in range(0, len(cnc_msgs)):
             break
 
         if cfg.tracking:
+            log.track(15, "Starting:  [" + str(int(msg_pos)) + "]", True)
             log.track(15, "seg_prot:  [" + str(int(seg_prot)) + "]", True)
             log.track(15, "seg_type:  [" + str(int(seg_type)) + "]", True)
             log.track(15, "seg_size:  [" + str(int(seg_size)) + "]", True)
@@ -219,16 +238,17 @@ for msgnum in range(0, len(cnc_msgs)):
             log.track(15, "seg_flag:  [" + str(int(seg_flag)) + "]", True)
 
         #---------------------------------------------------------------
-        # Loop Through C&C Message Segments Until Message is Exhausted.
+        # Position at Data and Decompress/Unpack.
         #---------------------------------------------------------------
         msg_pos += 3    # Skip forward over the 3-byte segment 'header.'
 
         if cfg.tracking:
             log.track(2, "Bump Forward to Process Message Data.", True)
             log.track(15, "msg_pos:  [" + str(msg_pos) + "]", True)
+            log.track(2, "Perform 'struct' Unpacking.", True)
 
         try:
-            data_fmt = ">" +str(seg_size) + "B"
+            data_fmt = ">" +str(seg_size) + "s"
             if cfg.tracking:
                 log.track(15, "data_fmt: [" + str(data_fmt) + "]", True)
             data_raw = msg[msg_pos:msg_pos+seg_size]
@@ -240,83 +260,116 @@ for msgnum in range(0, len(cnc_msgs)):
             data_hex = data_raw.encode('hex')
             if cfg.tracking:
                 log.track(15, "data_hex: [" + str(data_hex) + "]", True)
-            data_unp = struct.unpack(data_fmt, data_raw)[0]
+
+            if seg_type == 0:           # If Command, we grab the 1 byte 
+                data_unp = data_hex     # of data in it's 'hex' value.
+            else:
+                data_unp = struct.unpack(data_fmt, data_raw)[0]
+                if cfg.tracking:
+                    log.track(15, "data_unp: [" + str(data_unp) + "]", True)
+
+                if cfg.data_zlib:   # Are we using 'zlib' compression?
+                    if cfg.tracking:
+                        log.track(2, "Perform 'zlib' Decompression.", True)
+
+                    decompress = zlib.decompressobj(-zlib.MAX_WBITS)
+                    data_dcmp = decompress.decompress(data_raw)
+                    data_dcmp += decompress.flush()
+
+                    if cfg.tracking:
+                        log.track(15, "data_dcmp: [" + str(data_dcmp) + "]", True)
+                    data_dsiz = len(data_dcmp)
+                    if cfg.tracking:
+                        log.track(15, "data_dsiz: [" + str(data_dsiz) + "]", True)
+
+                    data_unp = data_dcmp
+
+                if cfg.data_msgpack:    # Are we using 'msgpack' unpacking?
+                    if cfg.tracking:
+                        log.track(2, "Perform 'msgpack' Unpacking.", True)
+                    data_mpak = msgpack.unpackb(data_dcmp)
+                    if cfg.tracking:
+                        log.track(16, "data_mpak: [" + str(data_mpak) + "]", True)
+                    data_mlen = len(str(data_mpak))
+                    if cfg.tracking:
+                        log.track(16, "data_mlen: [" + str(data_mlen) + "]", True)
+
+                    data_unp = data_mpak
+
+            if cfg.tracking:
+                log.track(15, "data_unp: [" + str(data_unp) + "]", True)
+
         except Exception as e:
             if cfg.tracking:
-                log.track(3, "Problem(s) Positioning for Segment Data.", True)
+                log.track(3, "Problem(s) Processing Data Segment.", True)
                 log.track(3, "ERROR: [" + str(e) + "]", True)
                 log.track(3, "Continue w/next MESSAGE.", True)
             break
 
-        # TO-DO: Work with Jacob
-
-        #seg_dcom = zlib.decompress(str(segment))
-        #seg_dcom = inflate(segment)
-        #seg_dsiz = len(seg_dcom)
-
-        #if cfg.tracking:
-            #log.track(15, "dcom: [" + str(seg_dcom) + "]", True)
-            #log.track(15, "dsiz: [" + str(seg_dsiz) + "]", True)
-
-        #b = bytearray()
-        #b.extend(seg_dcom)
-
-        #seg_unpk = msgpack.load(seg_dcom, use_list=True)
-        #seg_usiz = len(seg_unpk)
-
-        #if cfg.tracking:
-            #log.track(15, "unpk: [" + str(seg_unpk) + "]", True)
-            #log.track(15, "usiz: [" + str(seg_usiz) + "]", True)
-
         #---------------------------------------------------------------
         # Construct File Path, Name, and File.
         #---------------------------------------------------------------
-        if cfg.tracking:
-            log.track(2, "Identify Directory and Base Name.", True)
 
         if seg_type == 0:                               # COMMAND
+            if cfg.tracking:
+                log.track(2, "Process COMMAND.", True)
+                log.track(3, "Identify Directory and Base Name.", True)
+
             fpath = "/commands/"
-            cmd = int(str(data_unp))
-            if int(cmd) == 1:                      
+            cmd = int(data_unp)
+            
+            if cmd == 1:                      
                 fname = "scuttle"                       # Scuttle
             else:
                 if cfg.tracking:
-                    log.track(2, "WARNING: Got 'Unknown' Command: [" + str(cmd) + "]", True)
+                    log.track(3, "WARNING: Got 'Unknown' Command: [" + str(cmd) + "]", True)
+                    log.track(3, "No Implementation; Continue w/next SEGMENT.", True)
+                msg_pos += seg_size
+                continue
+        else:
+            if cfg.tracking:
+                log.track(2, "Process CONFIGURATION.", True)
+                log.track(3, "Identify Directory and Base File Name.", True)
+
+            if seg_type == 1:                               # SENSOR
+                fpath = "/sensors/"
+                fname = "sensor_cfg"
+
+            elif seg_type == 2:                             # NODE
+                fpath = "/proc_nodes/"
+                fname = "proc_node_cfg"
+                
+            elif seg_type == 3:                             # GEOFENCE
+                fpath = "/geofence/"
+                fname = "geofence_cfg"
+
+            elif seg_type == 4:                             # RULE
+                fpath = "/rules/"
+                fname = "smarttrig_rule"
+
+            elif seg_type == 5:                             # TRIGGER
+                fpath = "/trig/"
+                fname = "smarttrig_cfg"
+
+            elif seg_type == 6:                             # ACTION
+                fpath = "/action/"
+                fname = "action_seq"
+                
+            elif seg_type == 7:                             # SCHEDULE
+                fpath = "/sched/"
+                fname = "task"
+                
+            else:
+                if cfg.tracking:
+                    log.track(2, "WARNING: Got 'Unknown' C&C Segment TYPE.", True)
                     log.track(2, "No Implementation; Continue w/next SEGMENT.", True)
                 msg_pos += seg_size
                 continue
 
-        elif seg_type == 1:                             # SENSOR
-            fpath = "/sensors/"
-            fname = "sensor_cfg"
-
-        elif seg_type == 2:                             # NODE
-            fpath = "/proc_nodes/"
-            fname = "proc_node_cfg"
-            
-        elif seg_type == 3:                             # GEOFENCE
-            fpath = "/geofence/"
-            fname = "geofence_cfg"
-
-        elif seg_type == 4:                             # RULE
-            fpath = "/rules/"
-            fname = "smarttrig_rule"
-
-        elif seg_type == 5:                             # TRIGGER
-            fpath = "/trig/"
-            fname = "smarttrig_cfg"
-
-        else:
-            if cfg.tracking:
-                log.track(2, "WARNING: Got 'Unknown' C&C Segment TYPE.", True)
-                log.track(2, "No Implementation; Continue w/next SEGMENT.", True)
-            msg_pos += seg_size
-            continue
-
         if cfg.tracking:
-            log.track(3, "bpath: [" + str(fpath) + "]", True)
-            log.track(3, "bname: [" + str(fname) + "]", True)
-            log.track(2, "Construct File Path, Name, and File.", True)
+            log.track(4, "bpath: [" + str(fpath) + "]", True)
+            log.track(4, "bname: [" + str(fname) + "]", True)
+            log.track(3, "Construct File Path, Name, and File.", True)
 
         try:
             fpath = str(nepi_home) + str(fpath)
@@ -330,10 +383,11 @@ for msgnum in range(0, len(cnc_msgs)):
             if cfg.tracking:
                 log.track(3, "ffile: [" + str(ffile) + "]", True)
             if seg_type > 0:
-                fpars = json.loads(data_raw)    # Use raw data for now (is a string)
-                if cfg.tracking:
-                    log.track(15, "fpars: [" + str(fpars) + "]", True)
-                fdump = json.dumps(fpars, indent=4, sort_keys=False)
+                # This can be used if the JSON requires 'expansion.'
+                #fpars = json.loads(data_unp)
+                #if cfg.tracking:
+                    #log.track(15, "fpars: [" + str(fpars) + "]", True)
+                fdump = json.dumps(data_unp, indent=4, sort_keys=False)
                 if cfg.tracking:
                     log.track(15, "fdump: [" + str(fdump) + "]", True)
             else:
@@ -343,19 +397,18 @@ for msgnum in range(0, len(cnc_msgs)):
             if cfg.tracking:
                 log.track(3, "Problem(s) Constructing C&C File.", True)
                 log.track(3, "ERROR: [" + str(e) + "]", True)
-                log.track(3, "Continue w/next MESSAGE.", True)
-            break
+                log.track(3, "Continue w/next SEGMENT.", True)
+            continue
 
         if cfg.tracking:
-            log.track(2, "Create the File.", True)
+            log.track(2, "Create Config File for the SDK.", True)
 
         success = writeFloatFile(cfg, log, 3, True, ffile, str(fdump))
         if success[0]:
             sdk_action = True   # Got at least 1 C&C message for the SDK.
-        else:
-            if cfg.tracking:
-                log.track(2, "ERROR: Unable to Create C&C File.", True)
-                log.track(2, "No Implementation; Continue w/next SEGMENT.", True)
+        
+        if cfg.tracking:
+                log.track(2, "Continue w/next SEGMENT.", True)
 
         msg_pos += seg_size
         continue

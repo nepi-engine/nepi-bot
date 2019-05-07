@@ -14,6 +14,11 @@
 ##  Revision History
 ##  ----------------
 ##  
+##  Revision:   1.13 2019/05/06  10:50:00
+##  Comment:    Add support for 'zlib' and 'msgpack' reporting.
+##  Developer:  John benJohn, Leonardo, New Jersey
+##  Platform:   Ubuntu 16.05; Python 2.7.12
+##
 ##  Revision:   1.12 2019/05/01  13:55:00
 ##  Comment:    Add Iridium SP attempt and timeout support.
 ##  Developer:  John benJohn, Leonardo, New Jersey
@@ -199,6 +204,8 @@ class BotLog(object):
             self.track(_lev+1, "sys_status_file: " + str(self.cfg.sys_status_file), True)
             self.track(_lev+1, "data_dir: " + str(self.cfg.data_dir), True)
             self.track(_lev+1, "data_dir_path: " + str(self.cfg.data_dir_path), True)
+            self.track(_lev+1, "data_zlib: " + str(self.cfg.data_zlib), True)
+            self.track(_lev+1, "data_msgpack: " + str(self.cfg.data_msgpack), True)
             self.track(_lev+1, "db_file: " + str(self.cfg.db_file), True)
             self.track(_lev+1, "log_dir: " + str(self.cfg.log_dir), True)
             self.track(_lev+1, "br_log_name: " + str(self.cfg.br_log_name), True)

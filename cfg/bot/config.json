@@ -16,6 +16,8 @@
     "packet_size": 1024,
     "sys_status_file": "sys_status.json",
     "data_dir": "data",
+    "data_zlib": 1,
+    "data_msgpack": 1,
     "db_dir": "db",
     "db_name": "float.db",
     "log_dir": "log",
