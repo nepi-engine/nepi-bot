@@ -134,12 +134,12 @@ if not cfg.comms:
 
     #msg_b64 = "AAH8AQgkAGtaWZyaV5xfFJ+ZwrysILEoMbd4YtMKMAMoxLS0LDGnNFUEABhUAGteVZCfU5menxefmcK+PDUvMSknNYVhRVlqUUlmcmrx5KbFOYklpx3MJtYnbVtXuyQnPy/99IGQHjf5+Yw7oHLG5fJmajq7oHLBbEcS3jYsxKcPADA5AGtam5hckpmfF1+cWhifmcK6HMItnty0EiqRmcK4JjexIj6ltCgRJCCCJMOEInOWKQJJjhVVjvkFAA=="
 
-    #msg_b64 = "AAH8ARhUAGteVZCfU5menxefmcK+PDUvMSknNYVhRVlqUUlmcmrx5KbFOYklpx3MJtYnbVtXuyQnPy/99IGQHjf5+Yw7oHLG5fJmajq7oHLBbEcS3jYsxKcPABBhAGtbmZefkhpfUlmQuri4IHlFZl5xSWJecirj2uKi5HiEXElFyhqQCEyeYXVeakFmfH5pSUFpCcOygsSixNziKU0rwIz4zBSGpWWJOaVgfQhBRoggA0KEBSLigBBhhYhwAAAgcABrXV5UmpMan5nCtTw1LzEpJzWFcUVBUWpuZnFq8aTmNcW5iUUlJUWZ6UAVDCsy84pLEvOSU5lWpxWlFsaXZBSlFmectt85EwRmoapmhatmQFbNuDYxuSQzPy++GCiUmSK4KjczL74gtSgzP+UsnwAACCQAa1pZnJpXnF8Un5nCvKwgsSgxt3hi0wowAyjEtLQsMac0VQQAKEMAa15XnJtYVFJSlJkeX1JZkMqxIjOvuCQxLzmVbVlBYlFibvHkphVgRnxmCsPSssSc0lRGhAgTROQs+wWEGDNE7Mx/ADhBAGtdkpOZl8qzNjG5JDM/L744tTA+M4VvVXFJYlFJfElmbuq5mGgD12UFqUWZ+SlnZRTW5SZWxBelFqSWZII0/AcAMDkAa1qbmFySmZ8XX5xaGJ+Zwrocwi2e3LQSKpGZwrgmN7EiPqW0KBEkIIIkw4Qic5YpAkmOFVWO+QUA"
+    msg_b64 = "AAH8ARhUAGteVZCfU5menxefmcK+PDUvMSknNYVhRVlqUUlmcmrx5KbFOYklpx3MJtYnbVtXuyQnPy/99IGQHjf5+Yw7oHLG5fJmajq7oHLBbEcS3jYsxKcPABBhAGtbmZefkhpfUlmQuri4IHlFZl5xSWJecirj2uKi5HiEXElFyhqQCEyeYXVeakFmfH5pSUFpCcOygsSixNziKU0rwIz4zBSGpWWJOaVgfQhBRoggA0KEBSLigBBhhYhwAAAgcABrXV5UmpMan5nCtTw1LzEpJzWFcUVBUWpuZnFq8aTmNcW5iUUlJUWZ6UAVDCsy84pLEvOSU5lWpxWlFsaXZBSlFmectt85EwRmoapmhatmQFbNuDYxuSQzPy++GCiUmSK4KjczL74gtSgzP+UsnwAACCQAa1pZnJpXnF8Un5nCvKwgsSgxt3hi0wowAyjEtLQsMac0VQQAKEMAa15XnJtYVFJSlJkeX1JZkMqxIjOvuCQxLzmVbVlBYlFibvHkphVgRnxmCsPSssSc0lRGhAgTROQs+wWEGDNE7Mx/ADhBAGtdkpOZl8qzNjG5JDM/L744tTA+M4VvVXFJYlFJfElmbuq5mGgD12UFqUWZ+SlnZRTW5SZWxBelFqSWZII0/AcAMDkAa1qbmFySmZ8XX5xaGJ+Zwrocwi2e3LQSKpGZwrgmN7EiPqW0KBEkIIIkw4Qic5YpAkmOFVWO+QUA"
 
     #msg_b64 = "AAH8ARhjAGteVZCfU5menxefmcK9PDUvMSknNYVxRVlqUUlmcmrx5KbFOYklpx0sD/1tW/GHd0lOfl766QMhPG6OOh9+QeWMynUXKv26DpULaDuS8LZhIVTOQT31b9etXTA5Aw7Htw+lADhBAGtdkpOZl8qzNjG5JDM/L744tTA+M4VvVXFJYlFJfElmbuq5mGgD12UFqUWZ+SlnZRTW5SZWxBelFqSWZII0/AcA"
 
     # This is Bot Config Changes.
-    msg_b64 = "AAH8AQCB/eteUpycX3Ta/uZMEJi1pLA0Mee0/WNjMFhSUpSZzrikJDM39bT9SYiKpQWlRelA7sbXrXI7At+syC1Ojy/OrEo9y6izpKSyIHW5Z1FmSmZp7pKM/OKS9ZkQjl5eakGmXmb+koL8opKV+impZfqhwU6GS5ISS1POqjYsK4AYwcQAAA=="
+    #msg_b64 = "AAH8AQCB/eteUpycX3Ta/uZMEJi1pLA0Mee0/WNjMFhSUpSZzrikJDM39bT9SYiKpQWlRelA7sbXrXI7At+syC1Ojy/OrEo9y6izpKSyIHW5Z1FmSmZp7pKM/OKS9ZkQjl5eakGmXmb+koL8opKV+impZfqhwU6GS5ISS1POqjYsK4AYwcQAAA=="
 
     success = [ True, None, None ]
     msg_raw = msg_b64.decode('base64')
@@ -377,31 +377,31 @@ for msgnum in range(0, len(cnc_msgs)):
                 log.track(3, "Identify Directory and Base File Name.", True)
 
             if seg_type == 1:                               # SENSOR
-                fpath = "/sensors/"
+                fpath = "/cfg/sensors/"
                 fname = "sensor_cfg"
 
             elif seg_type == 2:                             # NODE
-                fpath = "/proc_nodes/"
+                fpath = "/cfg/proc_nodes/"
                 fname = "proc_node_cfg"
                 
             elif seg_type == 3:                             # GEOFENCE
-                fpath = "/geofence/"
+                fpath = "/cfg/geofence/"
                 fname = "geofence_cfg"
 
             elif seg_type == 4:                             # RULE
-                fpath = "/rules/"
+                fpath = "/cfg/rules/"
                 fname = "smarttrig_rule"
 
             elif seg_type == 5:                             # TRIGGER
-                fpath = "/trig/"
+                fpath = "/cfg/trig/"
                 fname = "smarttrig_cfg"
 
             elif seg_type == 6:                             # ACTION
-                fpath = "/action/"
+                fpath = "/cfg/action/"
                 fname = "action_seq"
                 
             elif seg_type == 7:                             # SCHEDULE
-                fpath = "/sched/"
+                fpath = "/cfg/sched/"
                 fname = "task"
                 
             else:
@@ -418,7 +418,7 @@ for msgnum in range(0, len(cnc_msgs)):
             log.track(3, "Construct File Path, Name, and File.", True)
 
         try:
-            fpath = str(nepi_home) + "/cfg/" + str(fpath)
+            fpath = str(nepi_home) + str(fpath)
             if cfg.tracking:
                 log.track(3, "fpath: [" + str(fpath) + "]", True)
             if seg_type > 0:
