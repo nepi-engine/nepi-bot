@@ -14,6 +14,11 @@
 ##  Revision History
 ##  ----------------
 ##  
+##  Revision:   1.14 2019/05/09  09:05:00
+##  Comment:    Added formal/robust Connection closure.
+##  Developer:  John benJohn, Leonardo, New Jersey
+##  Platform:   Ubuntu 16.05; Python 2.7.12
+##
 ##  Revision:   1.13 2019/04/15  11:00:00
 ##  Comment:    Upgrade to new Node Type'code' Conversion Table.
 ##  Developer:  John benJohn, Leonardo, New Jersey
@@ -382,19 +387,19 @@ class BotDB(object):
     #-------------------------------------------------------------------
         if self.cfg.tracking:
             self.log.track(_lev, "Entering DB update() Module.", True)
-            self.log.track(_lev+1, "_lev: " + str(_lev), True)
+            self.log.track(_lev+13, "_lev: " + str(_lev), True)
             self.log.track(_lev+13, "_sql: " + str(_sql), True)
 
         try:
             cursor = self.dbc.cursor()
             if self.cfg.tracking:
-                self.log.track(_lev+1, "Got Cursor.", True)
+                self.log.track(_lev+13, "Got Cursor.", True)
             cursor.execute(str(_sql))
             if self.cfg.tracking:
-                self.log.track(_lev+1, "SQL Executed.", True)
+                self.log.track(_lev+13, "SQL Executed.", True)
             self.dbc.commit()
             if self.cfg.tracking:
-                self.log.track(_lev+1, "Update Committed.", True)
+                self.log.track(_lev+13, "Update Committed.", True)
         except Exception as e:
             enum = "DB007"
             emsg = "update(): [" + str(e) + "]"
@@ -668,20 +673,10 @@ class BotDB(object):
             #-----------------------------------------------------------
             # Close the Database.
             #-----------------------------------------------------------
-            if self.cfg.tracking:
-                self.log.track(_lev+1, "Close the Database.", True)
 
-            try:
-                self.dbr.close()
-                self.dbr = None
-                if self.cfg.tracking:
-                    self.log.track(_lev+2, "Closed.", True)
-            except Exception as e:
-                if self.cfg.tracking:
-                   self.log.track(_lev+2, "WARNING: DB Failed to Close Properly.", True)
-                   self.log.track(_lev+2, "ERR MSG: [" + str(e) + "]", True)
+            success = self.close(_lev+1)
             
-            return [ True, None, None ]
+            return success
 
         except Exception as e:
             if self.cfg.tracking:
@@ -691,4 +686,43 @@ class BotDB(object):
                     self.log.errtrack(str(enum), str(emsg))
                 return [ False, str(enum), str(emsg) ]
 
-            
+    #-------------------------------------------------------------------
+    def close(self, _lev):
+    #-------------------------------------------------------------------
+        if self.cfg.tracking:
+            self.log.track(_lev, "Close the DB Connection.", True)
+            self.log.track(_lev+13, "_lev: " + str(_lev), True)
+
+        rtrn = True
+        enum = None
+        emsg = None
+
+        if self.dbr:
+            try:
+                self.dbr.close()
+                
+                if self.cfg.tracking:
+                    self.log.track(_lev+1, "Reset Connection Closed.", True)
+            except Exception as e:
+                rtrn = False
+                enum = "DB198"
+                emsg = "close(): [" + str(e) + "]"
+                if self.cfg.tracking:
+                    self.log.track(_lev+1, str(enum) + ": " + str(emsg), True)
+                    
+        if self.dbc:
+            try:
+                self.dbc.close()
+                self.dbc = None
+                
+                if self.cfg.tracking:
+                    self.log.track(_lev+1, "Main Connection Closed.", True)
+            except Exception as e:
+                rtrn = False
+                enum = "DB199"
+                emsg = "close(): [" + str(e) + "]"
+                if self.cfg.tracking:
+                    self.log.track(_lev+1, str(enum) + ": " + str(emsg), True)
+    
+        return [ rtrn, enum, emsg ]
+

@@ -14,6 +14,16 @@
 ##  Revision History
 ##  ----------------
 ##  
+##  Revision:   1.6 2019/05/08  14:45:00
+##  Comment:    Added Housekeeping Functionality.
+##  Developer:  John benJohn, Leonardo, New Jersey
+##  Platform:   Ubuntu 16.05; Python 2.7.12
+##
+##  Revision:   1.5 2019/05/08  11:00:00
+##  Comment:    Added Robust DB Connection Closures.
+##  Developer:  John benJohn, Leonardo, New Jersey
+##  Platform:   Ubuntu 16.05; Python 2.7.12
+##
 ##  Revision:   1.4 2019/05/01  15:50:00
 ##  Comment:    New bot61; rewrite; added all C&C management.
 ##  Developer:  John benJohn, Leonardo, New Jersey
@@ -57,16 +67,8 @@ from botlog import BotLog
 from botdb import BotDB
 #from botmsg import BotMsg
 from botcomm import BotComm
-from bothelp import writeFloatFile
+from bothelp import writeFloatFile, resetCfgValue
 
-
-#def inflate(data):
-    #decompress = zlib.decompressobj(
-            #-zlib.MAX_WBITS  # see above
-    #)
-    #inflated = decompress.decompress(data)
-    #inflated += decompress.flush()
-    #return inflated
 
 ########################################################################
 ##  Instantiate a BotCfg Configuration Class Object (from 'botcfg.py')
@@ -81,21 +83,6 @@ cfg.initcfg()
 
 log = BotLog(cfg, "BOT-RECV")
 log.initlog(0)
-
-########################################################################
-##  Instantiate a BotDB Database Class (from 'botdb.py').
-########################################################################
-
-db = BotDB(cfg, log, 0)
-success, dbconn = db.getconn(0)
-
-if success[0]:
-    dbActiveFlag = True         # Flag reserved to future use.
-else:
-    dbActiveFlag = False
-
-if cfg.tracking:
-    log.track(1, "DB Active Status: " + str(dbActiveFlag), True)
 
 ########################################################################
 # Instantiate a BotComm Communication Class Object (from 'botcomm.py').
@@ -141,7 +128,7 @@ if not cfg.comms:
     #msg_b64 = "GGMAa15VkJ9TmZ6fF5+Zwr08NS8xKSc1hXFFWWpRSWZyavHkpsU5iSWnHSwP/W1b8Yd3SU5+XvrpAyE8bo46H35B5YzKdRcq/boOlQtoO5LwtmEhVM5BPfVv161dMDkDDse3D6UAOEEAa12Sk5mXyrM2MbkkMz8vvji1MD4zhW9VcUliUUl8SWZu6rmYaAPXZQWpRZn5KWdlFNblJlbEF6UWpJZkgjT8BwA="
 
     # This is 1) scuttle, 2) geofence, 2) node, and 3) rules.
-    msg_b64 = "AAH8ARhUAGteVZCfU5menxefmcK+PDUvMSknNYVhRVlqUUlmcmrx5KbFOYklpx3MJtYnbVtXuyQnPy/99IGQHjf5+Yw7oHLG5fJmajq7oHLBbEcS3jYsxKcPABBhAGtbmZefkhpfUlmQuri4IHlFZl5xSWJecirj2uKi5HiEXElFyhqQCEyeYXVeakFmfH5pSUFpCcOygsSixNziKU0rwIz4zBSGpWWJOaVgfQhBRoggA0KEBSLigBBhhYhwAAAgcABrXV5UmpMan5nCtTw1LzEpJzWFcUVBUWpuZnFq8aTmNcW5iUUlJUWZ6UAVDCsy84pLEvOSU5lWpxWlFsaXZBSlFmectt85EwRmoapmhatmQFbNuDYxuSQzPy++GCiUmSK4KjczL74gtSgzP+UsnwAA"
+    #msg_b64 = "AAH8ARhUAGteVZCfU5menxefmcK+PDUvMSknNYVhRVlqUUlmcmrx5KbFOYklpx3MJtYnbVtXuyQnPy/99IGQHjf5+Yw7oHLG5fJmajq7oHLBbEcS3jYsxKcPABBhAGtbmZefkhpfUlmQuri4IHlFZl5xSWJecirj2uKi5HiEXElFyhqQCEyeYXVeakFmfH5pSUFpCcOygsSixNziKU0rwIz4zBSGpWWJOaVgfQhBRoggA0KEBSLigBBhhYhwAAAgcABrXV5UmpMan5nCtTw1LzEpJzWFcUVBUWpuZnFq8aTmNcW5iUUlJUWZ6UAVDCsy84pLEvOSU5lWpxWlFsaXZBSlFmectt85EwRmoapmhatmQFbNuDYxuSQzPy++GCiUmSK4KjczL74gtSgzP+UsnwAA"
 
     #msg_b64 = "AAH8AQgkAGtaWZyaV5xfFJ+ZwrysILEoMbd4YtMKMAMoxLS0LDGnNFUEAChDAGteV5ybWFRSUpSZHl9SWZDKsSIzr7gkMS85lW1ZQWJRYm7x5KYVYEZ8ZgrD0rLEnNJURoQIE0TkLPsFhBgzROzMfwA4QQBrXZKTmZfKszYxuSQzPy++OLUwPjOFb1VxSWJRSXxJZm7quZhoA9dlBalFmfkpZ2UU1uUmVsQXpRaklmSCNPwHAA=="
 
@@ -150,6 +137,9 @@ if not cfg.comms:
     #msg_b64 = "AAH8ARhUAGteVZCfU5menxefmcK+PDUvMSknNYVhRVlqUUlmcmrx5KbFOYklpx3MJtYnbVtXuyQnPy/99IGQHjf5+Yw7oHLG5fJmajq7oHLBbEcS3jYsxKcPABBhAGtbmZefkhpfUlmQuri4IHlFZl5xSWJecirj2uKi5HiEXElFyhqQCEyeYXVeakFmfH5pSUFpCcOygsSixNziKU0rwIz4zBSGpWWJOaVgfQhBRoggA0KEBSLigBBhhYhwAAAgcABrXV5UmpMan5nCtTw1LzEpJzWFcUVBUWpuZnFq8aTmNcW5iUUlJUWZ6UAVDCsy84pLEvOSU5lWpxWlFsaXZBSlFmectt85EwRmoapmhatmQFbNuDYxuSQzPy++GCiUmSK4KjczL74gtSgzP+UsnwAACCQAa1pZnJpXnF8Un5nCvKwgsSgxt3hi0wowAyjEtLQsMac0VQQAKEMAa15XnJtYVFJSlJkeX1JZkMqxIjOvuCQxLzmVbVlBYlFibvHkphVgRnxmCsPSssSc0lRGhAgTROQs+wWEGDNE7Mx/ADhBAGtdkpOZl8qzNjG5JDM/L744tTA+M4VvVXFJYlFJfElmbuq5mGgD12UFqUWZ+SlnZRTW5SZWxBelFqSWZII0/AcAMDkAa1qbmFySmZ8XX5xaGJ+Zwrocwi2e3LQSKpGZwrgmN7EiPqW0KBEkIIIkw4Qic5YpAkmOFVWO+QUA"
 
     #msg_b64 = "AAH8ARhjAGteVZCfU5menxefmcK9PDUvMSknNYVxRVlqUUlmcmrx5KbFOYklpx0sD/1tW/GHd0lOfl766QMhPG6OOh9+QeWMynUXKv26DpULaDuS8LZhIVTOQT31b9etXTA5Aw7Htw+lADhBAGtdkpOZl8qzNjG5JDM/L744tTA+M4VvVXFJYlFJfElmbuq5mGgD12UFqUWZ+SlnZRTW5SZWxBelFqSWZII0/AcA"
+
+    # This is Bot Config Changes.
+    msg_b64 = "AAH8AQCB/eteUpycX3Ta/uZMEJi1pLA0Mee0/WNjMFhSUpSZzrikJDM39bT9SYiKpQWlRelA7sbXrXI7At+syC1Ojy/OrEo9y6izpKSyIHW5Z1FmSmZp7pKM/OKS9ZkQjl5eakGmXmb+koL8opKV+impZfqhwU6GS5ISS1POqjYsK4AYwcQAAA=="
 
     success = [ True, None, None ]
     msg_raw = msg_b64.decode('base64')
@@ -261,8 +251,8 @@ for msgnum in range(0, len(cnc_msgs)):
             if cfg.tracking:
                 log.track(15, "data_hex: [" + str(data_hex) + "]", True)
 
-            if seg_type == 0:           # If Command, we grab the 1 byte 
-                data_unp = data_hex     # of data in it's 'hex' value.
+            if seg_type == 0 and (int(seg_flag) != 1):  # If Cmd, grab byte 1 of 
+                data_unp = data_hex                     # data in its hex value.
             else:
                 data_unp = struct.unpack(data_fmt, data_raw)[0]
                 if cfg.tracking:
@@ -307,10 +297,64 @@ for msgnum in range(0, len(cnc_msgs)):
             break
 
         #---------------------------------------------------------------
-        # Construct File Path, Name, and File.
+        # Process the Bot Config, Command, or SDK Config Messages.
         #---------------------------------------------------------------
 
-        if seg_type == 0:                               # COMMAND
+        if int(seg_flag) == 1:  # --------------------------- BOT CONFIG
+            if cfg.tracking:
+                log.track(2, "Process BOT CONFIG.", True)
+
+            for key in data_unp:
+                val = data_unp[key]
+
+                if cfg.tracking:
+                    log.track(3, "Process keyword: [" + str(key) + "]", True)
+                    log.track(4, "val: [" + str(val) + "]", True)
+
+                if str(key) == "scor":
+                    nkey = "pipo_scor_wt"
+                elif str(key) == "qual":
+                    nkey = "pipo_qual_wt"
+                elif str(key) == "size":
+                    nkey = "pipo_size_wt"
+                elif str(key) == "trig":
+                    nkey = "pipo_trig_wt"
+                elif str(key) == "time":
+                    nkey = "pipo_time_wt"
+                elif str(key) == "msg_size":
+                    nkey = "max_msg_size"
+                elif str(key) == "type":
+                    nkey = "type"
+                elif str(key) == "host":
+                    nkey = "host"
+                elif str(key) == "port":
+                    nkey = "port"
+                elif str(key) == "baud":
+                    nkey = "baud"
+                elif str(key) == "p_size":
+                    nkey = "packet_size"
+                else:
+                    if cfg.tracking:
+                        log.track(3, "Unknown 'keyword' received: [" + str(key) + "]", True)
+                        log.track(3, "Continue w/next KEYWORD.", True)
+
+                    msg_pos += seg_size
+                    continue
+
+                if cfg.tracking:
+                    log.track(4, "CFG: [" + str(nkey) + "]", True)
+
+                log.track(3, "Update the Bot Config File.", True)
+                resetCfgValue(cfg, log, 4, str(nkey), val)
+
+            if cfg.tracking:
+                log.track(3, "DONE with Bot Config Updates.", True)
+                log.track(3, "Continue w/next SEGMENT.", True)
+
+            msg_pos += seg_size
+            continue
+
+        elif seg_type == 0:     # --------------------------- COMMAND
             if cfg.tracking:
                 log.track(2, "Process COMMAND.", True)
                 log.track(3, "Identify Directory and Base Name.", True)
@@ -324,9 +368,10 @@ for msgnum in range(0, len(cnc_msgs)):
                 if cfg.tracking:
                     log.track(3, "WARNING: Got 'Unknown' Command: [" + str(cmd) + "]", True)
                     log.track(3, "No Implementation; Continue w/next SEGMENT.", True)
+
                 msg_pos += seg_size
                 continue
-        else:
+        else:   # ------------------------------------------- CONFIGURATION
             if cfg.tracking:
                 log.track(2, "Process CONFIGURATION.", True)
                 log.track(3, "Identify Directory and Base File Name.", True)
@@ -363,6 +408,7 @@ for msgnum in range(0, len(cnc_msgs)):
                 if cfg.tracking:
                     log.track(2, "WARNING: Got 'Unknown' C&C Segment TYPE.", True)
                     log.track(2, "No Implementation; Continue w/next SEGMENT.", True)
+
                 msg_pos += seg_size
                 continue
 
@@ -372,7 +418,7 @@ for msgnum in range(0, len(cnc_msgs)):
             log.track(3, "Construct File Path, Name, and File.", True)
 
         try:
-            fpath = str(nepi_home) + str(fpath)
+            fpath = str(nepi_home) + "/cfg/" + str(fpath)
             if cfg.tracking:
                 log.track(3, "fpath: [" + str(fpath) + "]", True)
             if seg_type > 0:
@@ -398,6 +444,8 @@ for msgnum in range(0, len(cnc_msgs)):
                 log.track(3, "Problem(s) Constructing C&C File.", True)
                 log.track(3, "ERROR: [" + str(e) + "]", True)
                 log.track(3, "Continue w/next SEGMENT.", True)
+            
+            msg_pos += seg_size
             continue
 
         if cfg.tracking:
@@ -468,6 +516,69 @@ if sdk_action:
 else:
     if cfg.tracking:
         log.track(1, "NO Messages Processed: Ignore SDK Notification.", True)
+
+########################################################################
+# Bot-Recv and General Housekeeping.
+########################################################################
+
+if cfg.tracking:
+    log.track(0, "Perform Housekeeping.", True)
+    log.track(1, "DB Housekeeping.", True)
+
+db = BotDB(cfg, log, 2)
+success, dbconn = db.getconn(2)
+
+if success[0]:
+    if cfg.tracking:
+        log.track(2, "Delete 'meta' Rows Below Purge Rating OR > 5 Days Old.", True)
+
+    fivedaysago = int(time.time()) - (60 * 60 * 24 * 5)
+
+    sql = "DELETE FROM meta WHERE pipo < '" + str(cfg.purge_rating) + "' OR timestamp < '" + str(fivedaysago) + "'"
+    success = db.update(3, sql)
+
+    if not success[0]:
+        if cfg.tracking:
+            log.track(3, "Well ... This is Awkward.", True)
+    else:
+        if cfg.tracking:
+            log.track(3, "DONE.", True)
+
+    if cfg.tracking:
+        log.track(2, "Delete 'meta' Rows That Have Been Sent.", True)
+
+    sql = "DELETE FROM meta WHERE state = '2'"
+    success = db.update(3, sql)
+
+    if not success[0]:
+        if cfg.tracking:
+            log.track(3, "Well ... This is Awkward.", True)
+    else:
+        if cfg.tracking:
+            log.track(3, "DONE.", True)
+
+    if cfg.tracking:
+        log.track(2, "Delete 'status' Rows That Have Been Sent.", True)
+
+    sql = "DELETE FROM status WHERE state = '2'"
+    success = db.update(3, sql)
+
+    if not success[0]:
+        if cfg.tracking:
+            log.track(3, "Well ... This is Awkward.", True)
+    else:
+        if cfg.tracking:
+            log.track(3, "DONE.", True)
+
+else:
+    if cfg.tracking:
+        log.track(3, "DB Housekeeping Terminated.", True)
+
+if cfg.tracking:
+    log.track(1, "General Housekeeping.", True)
+    log.track(2, "DONE.", True)
+
+success = db.close(1)
 
 ########################################################################
 # Application Complete: EXIT the Bot-Recv Subsystem.

@@ -399,7 +399,7 @@ def resetCfgValue(cfg, log, lev, key, val):
         with open(cfg.cfgfile, 'r') as cfile:
             cdata = json.load(cfile)
 
-        cdata[str(key)] = str(val)
+        cdata[str(key)] = val
 
         with open(cfg.cfgfile, 'w') as cfile:
             json.dump(cdata, cfile, indent=4)

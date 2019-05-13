@@ -14,6 +14,16 @@
 ##  Revision History
 ##  ----------------
 ##  
+##  Revision:   1.12 2019/05/09  12:30:00
+##  Comment:    Add correct DB closure upon Subsystem Exit.
+##  Developer:  John benJohn, Leonardo, New Jersey
+##  Platform:   Ubuntu 16.05; Python 2.7.12
+##
+##  Revision:   1.11 2019/05/09  11:55:00
+##  Comment:    Fix State setting from 1 to 2 when Sent.
+##  Developer:  John benJohn, Leonardo, New Jersey
+##  Platform:   Ubuntu 16.05; Python 2.7.12
+##
 ##  Revision:   1.10 2019/04/16  13:45:00
 ##  Comment:    Status/Meta Selection Loop Enhancements.
 ##  Developer:  John benJohn, Leonardo, New Jersey
@@ -191,7 +201,7 @@ if success[0]:
             if cfg.tracking:
                 log.track(1, "All Archive PIPOs Recalculated; Reset Config JSON.", True)
 
-            resetCfgValue(cfg, log, 2, "wt_changed", "0")
+            resetCfgValue(cfg, log, 2, "wt_changed", 0)
 
 ########################################################################
 # Retrieve a list of the Float's Data Folders; Sort and Reverse.
@@ -706,7 +716,7 @@ if sm.len > 0:
         if cfg.tracking:
             log.track(1, "Update Bit-Packed Meta Record(s) to 'sent' Status.", True)
 
-        sql = "UPDATE meta SET state = '1' WHERE state = '1'"
+        sql = "UPDATE meta SET state = '2' WHERE state = '1'"
         success = db.update(2, sql)
         if not success[0]:
             if cfg.tracking:
@@ -769,6 +779,7 @@ else:
     if cfg.tracking:
         log.track(1, "NO Housekeeping to be Done.", True)
     
+success = db.close(0)
 
 ########################################################################
 # Close the Bot-Send Subsystem.

@@ -133,7 +133,7 @@ class BotCfg(object):
                 self.br_log_name = "brlog.txt"
                 self.bs_log_name = "bslog.txt"
                 self.bu_log_name = "bulog.txt"
-                self.wt_changed = False
+                self.wt_changed = 0
                 self.pipo_scor_wt = 0.5
                 self.pipo_qual_wt = 0.5
                 self.pipo_size_wt = 0.5
@@ -167,7 +167,7 @@ class BotCfg(object):
                 self.br_log_name = "brlog.txt"
                 self.bs_log_name = "bslog.txt"
                 self.bu_log_name = "bulog.txt"
-                self.wt_changed = False
+                self.wt_changed = 0
                 self.pipo_scor_wt = 0.5
                 self.pipo_qual_wt = 0.5
                 self.pipo_size_wt = 0.5
@@ -233,7 +233,7 @@ class BotCfg(object):
             self.bs_log_file = nepi_home + "/" + self.log_dir + "/" + self.bs_log_name
             self.bu_log_name = str(self.bot_cfg_json["bu_log_name"])
             self.bu_log_file = nepi_home + "/" + self.log_dir + "/" + self.bu_log_name
-            self.wt_changed = bool(self.bot_cfg_json["wt_changed"])
+            self.wt_changed = int(self.bot_cfg_json["wt_changed"])
             self.pipo_scor_wt = float(self.bot_cfg_json["pipo_scor_wt"])
             self.pipo_qual_wt = float(self.bot_cfg_json["pipo_qual_wt"])
             self.pipo_size_wt = float(self.bot_cfg_json["pipo_size_wt"])
