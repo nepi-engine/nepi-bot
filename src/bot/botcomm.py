@@ -594,7 +594,7 @@ class BotComm(object):
     #-------------------------------------------------------------------
     # Initiate SBD Session.
     #-------------------------------------------------------------------
-    def initiate_sbd(self, _lev, action, num, wait_time=1000):
+    def initiate_sbd(self, _lev, action, num, wait_time=60):
         # Send MO buffer to the GSS & Receive MT queued at the GSS
         # Command:  +SBDIX
         # Response: <MO status>,<MOMSN>,<MT status>,<MTMSN>,<MT length>,<MT queued>
@@ -619,7 +619,7 @@ class BotComm(object):
                 self.log.track(_lev+1, "SBD Session Initiated.", True)
 
             if action == 'send':
-                while (mo_sent == False or mt_received == False or (mt_queued > 0 and num > 0)) and start_time < timeout:
+                while (mo_sent == False or mt_received == False or (mt_queued > 0 and num > 0)) and time.time() < timeout:
                     signal_strength = self.check_signal_quality(_lev+1)
 
                     if int(signal_strength) > 2:
@@ -653,11 +653,11 @@ class BotComm(object):
                                 if self.cfg.tracking:
                                     self.log.track(_lev+1, "MT SBD messages queued to be transferred: " + str(mt_queued) + " messages", True)
 
-                            time.sleep(5)
+                            time.sleep(4)
                         else:
                             if self.cfg.tracking:
                                 self.log.track(_lev+1, "No SBD response received.", True)
-                            time.sleep(5)
+                            time.sleep(4)
                             count += 1
                 if self.cfg.tracking:
                     self.log.track(_lev+1, "Number of retry: " + str(count), True)
@@ -666,7 +666,7 @@ class BotComm(object):
                 # print mt_msg_list
 
             elif action == 'receive':
-                while (mt_received == False or (mt_queued > 0 and num > 0)) and start_time < timeout:
+                while (mt_received == False or (mt_queued > 0 and num > 0)) and time.time() < timeout:
                     signal_strength = self.check_signal_quality(_lev+1)
 
                     if int(signal_strength) > 2:
@@ -697,12 +697,12 @@ class BotComm(object):
                                 if self.cfg.tracking:
                                     self.log.track(_lev+1, "MT SBD messages queued to be transferred: " + str(mt_queued) + " messages", True)
 
-                            time.sleep(5)
+                            time.sleep(4)
 
                         else:
                             if self.cfg.tracking:
                                 self.log.track(_lev+1, "No SBD response received.", True)
-                            time.sleep(5)
+                            time.sleep(4)
                             count += 1
 
                 if self.cfg.tracking:
