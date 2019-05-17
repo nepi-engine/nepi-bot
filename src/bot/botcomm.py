@@ -612,8 +612,9 @@ class BotComm(object):
             mt_received = False
             mt_queued = 0
             count = 1
-            start_time = time.time()
-            timeout = start_time + wait_time
+            #start_time = time.time()
+            #timeout = start_time + wait_time
+            timeout = time.time() + wait_time
 
             if self.cfg.tracking:
                 self.log.track(_lev+1, "SBD Session Initiated.", True)
