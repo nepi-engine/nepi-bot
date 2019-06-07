@@ -132,7 +132,7 @@ class BotMsg(object):
             else:
                 longi_sgn   = 0                                 # sign bit is 0
                 longi_mic   = float(longi_raw * 1000000.0)      # longitude microdegrees
-            longi_adj       = int(math.floor(longi_mic))        # s/b <= 29 bits
+            longi_adj       = int(math.floor(longi_mic))        # s/b <= 28 bits
 
             trig_wk_ct      = int(_rec[17])                     # trig_wake_count
             trig_wk_adj     = int(trig_wk_ct % 1024)            # s/b <= 10 bits
@@ -253,7 +253,7 @@ class BotMsg(object):
             else:
                 lati_sgn    = 0                                 # sign bit is 0
                 lati_mic    = float(lati_raw * 1000000.0)       # latitude microdegrees
-            lati_adj        = int(math.floor(lati_mic))         # s/b <= 28 bits
+            lati_adj        = int(math.floor(lati_mic))         # s/b <= 27 bits
 
             pack6b32 = (int(swinc_adj)<<28) + (int(lati_sgn)<<27) + int(lati_adj)
 

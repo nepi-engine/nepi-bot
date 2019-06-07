@@ -14,6 +14,16 @@
 ##  Revision History
 ##  ----------------
 ##  
+##  Revision:   1.15 2019/06/03  16:15:00
+##  Comment:    Add DB housekeeping purge supression reporting.
+##  Developer:  John benJohn, Leonardo, New Jersey
+##  Platform:   Ubuntu 16.05; Python 2.7.12
+##
+##  Revision:   1.14 2019/06/03  14:30:00
+##  Comment:    Add log_clear test prior to clearing log.
+##  Developer:  John benJohn, Leonardo, New Jersey
+##  Platform:   Ubuntu 16.05; Python 2.7.12
+##
 ##  Revision:   1.13 2019/05/06  10:50:00
 ##  Comment:    Add support for 'zlib' and 'msgpack' reporting.
 ##  Developer:  John benJohn, Leonardo, New Jersey
@@ -133,23 +143,24 @@ class BotLog(object):
 
         # If logging, we're writing to a file on SD Card.
         if self.cfg.logging > -1:
-            # Remove exising file.
-            if os.path.exists(self.file):
-                try:
-                    os.remove(self.file)
-                except:
-                    pass
+            # Remove existing file.
+            if self.cfg.log_clear:
+                if os.path.exists(self.file):
+                    try:
+                        os.remove(self.file)
+                    except:
+                        pass
 
-            if not os.path.exists(os.path.dirname(self.file)):
-                try:
-                    os.makedirs(os.path.dirname(self.file))
-                except Exception as e:
-                    self.cfg.logging = -1   # Turn off Logging
-                    enum = "LOG002"
-                    emsg = "initlog(): Can't Make Path: [" + str(e) + "]: Logging Turned OFF."
-                    if self.cfg.tracking:
-                        self.track(_lev+2, str(enum) + ": " + str(emsg), True)
-                    return [ False, str(enum), str(emsg) ]
+                if not os.path.exists(os.path.dirname(self.file)):
+                    try:
+                        os.makedirs(os.path.dirname(self.file))
+                    except Exception as e:
+                        self.cfg.logging = -1   # Turn off Logging
+                        enum = "LOG002"
+                        emsg = "initlog(): Can't Make Path: [" + str(e) + "]: Logging Turned OFF."
+                        if self.cfg.tracking:
+                            self.track(_lev+2, str(enum) + ": " + str(emsg), True)
+                        return [ False, str(enum), str(emsg) ]
 
             # Save whatever debugging is and turn off temporarily.
             dbgsav = self.cfg.debugging
@@ -197,6 +208,7 @@ class BotLog(object):
             self.track(_lev+1, "type: " + str(self.cfg.type), True)
             self.track(_lev+1, "host: " + str(self.cfg.host), True)
             self.track(_lev+1, "port: " + str(self.cfg.port), True)
+            self.track(_lev+1, "baud: " + str(self.cfg.baud), True)
             self.track(_lev+1, "isp_open_attm: " + str(self.cfg.isp_open_attm), True)
             self.track(_lev+1, "isp_open_tout: " + str(self.cfg.isp_open_tout), True)
             self.track(_lev+1, "protocol: " + str(self.cfg.protocol), True)
@@ -207,7 +219,10 @@ class BotLog(object):
             self.track(_lev+1, "data_zlib: " + str(self.cfg.data_zlib), True)
             self.track(_lev+1, "data_msgpack: " + str(self.cfg.data_msgpack), True)
             self.track(_lev+1, "db_file: " + str(self.cfg.db_file), True)
+            self.track(_lev+1, "db_name: " + str(self.cfg.db_name), True)
+            self.track(_lev+1, "db_deletes: " + str(self.cfg.db_deletes), True)
             self.track(_lev+1, "log_dir: " + str(self.cfg.log_dir), True)
+            self.track(_lev+1, "log_clear: " + str(self.cfg.log_clear), True)
             self.track(_lev+1, "br_log_name: " + str(self.cfg.br_log_name), True)
             self.track(_lev+1, "br_log_file: " + str(self.cfg.br_log_file), True)
             self.track(_lev+1, "bs_log_name: " + str(self.cfg.bs_log_name), True)
@@ -218,6 +233,7 @@ class BotLog(object):
             self.track(_lev+1, "pipo_scor_wt: " + str(self.cfg.pipo_trig_wt), True)
             self.track(_lev+1, "pipo_qual_wt: " + str(self.cfg.pipo_qual_wt), True)
             self.track(_lev+1, "pipo_trig_wt: " + str(self.cfg.pipo_trig_wt), True)
+            self.track(_lev+1, "pipo_size_wt: " + str(self.cfg.pipo_size_wt), True)
             self.track(_lev+1, "pipo_time_wt: " + str(self.cfg.pipo_time_wt), True)
             self.track(_lev+1, "purge_rating: " + str(self.cfg.purge_rating), True)
             self.track(_lev+1, "max_msg_size: " + str(self.cfg.max_msg_size), True)

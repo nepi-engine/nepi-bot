@@ -14,6 +14,11 @@
 ##  Revision History
 ##  ----------------
 ##  
+##  Revision:   1.13 2019/06/04  15:00:00
+##  Comment:    Add tracking robustness; add log_clear parm.
+##  Developer:  John benJohn, Leonardo, New Jersey
+##  Platform:   Ubuntu 16.05; Python 2.7.12
+##
 ##  Revision:   1.12 2019/05/09  12:30:00
 ##  Comment:    Add correct DB closure upon Subsystem Exit.
 ##  Developer:  John benJohn, Leonardo, New Jersey
@@ -126,6 +131,10 @@ if not success[0]:
 ########################################################################
 
 pipo = BotPIPO(cfg, log, 0, db)
+success = pipo.initPIPO(0)
+
+if not success[0]:
+    sys.exit(1)
 
 ########################################################################
 # Instantiate a NEPI-Bot Message Class (from 'botmsg.py').
@@ -139,16 +148,16 @@ sm = BotMsg(cfg, log, 1)
 
 if cfg.tracking:
     log.track(0, "Recalculate Archived PIPO Ratings.", True)
-    log.track(1, "Select 'Active' Records from Database.", True)
+    log.track(1, "Select 'Active' Meta Records from Database.", True)
 
 sql = "SELECT rowid, numerator, trigger, quality, score, metafile, norm FROM meta WHERE state = '0'"
 success, rows = db.getResults(2, sql, False)
 
 if success[0]:
     if rows == []:
-        log.track(1, "No Active Records in Database; Continue.", True)
+        log.track(1, "No Active Meta Records in Database; Continue.", True)
     else:
-        log.track(1, "Active Records in Database.", True)
+        log.track(1, "Active Meta Records in Database.", True)
 
         if cfg.wt_changed:
             if cfg.tracking:
@@ -166,7 +175,7 @@ if success[0]:
             meta = str(row[5])
             norm = float(row[6])
             if cfg.tracking:
-                log.track(1, "Reevaluating Data Product ID: " + str(rwid), True)
+                log.track(1, "Reevaluating Meta Record ID: " + str(rwid), True)
                 log.track(2, "Numr: " + str(numr), True)
                 log.track(2, "Trig: " + str(trig), True)
                 log.track(2, "Qual: " + str(qual), True)
@@ -209,10 +218,13 @@ if success[0]:
 #
 # If attempt to get Data Product folders fails, this may be a temporary
 # condition; just carry on because older Data Products may still be
-# eligible for an uplink.
+# eligible for an uplink. The 'allfolders' array is guaranteed to be
+# null if empty or on error.  The 'success' array can be safely ignored
+# if desired since 'allfolders' reflects the correct meaning whether
+# folders exist, don't exist, or an error occurs.  Sorting and Reversing
 
 if cfg.tracking:
-    log.track(0, "Get ALL Data Folders in Data Dir.", True)
+    log.track(0, "Get ALL Data Folders in Official Data Directory.", True)
 
 success, allfolders = getAllFolderNames(cfg, log, 1, cfg.data_dir_path, True, True)
 
@@ -244,13 +256,14 @@ for dir in allfolders:
     success, status_json = readFloatFile(cfg, log, 2, status_file_path, False, True)
 
     if success[0]:
-        if cfg.tracking:
-            log.track(1, "INSERT Status Record into DB 'status' Table.", True)
-
         # Insert Status Record and capture the DB 'rowid' (which will be
         # the DB foreign key - or, pointer - back to this record in the
         # DB, that is, embedded in all subsequent Data Product records
-        # associated with this Status record.
+        # associated with this Status record).
+
+        if cfg.tracking:
+            log.track(1, "INSERT Status Record into DB 'status' Table.", True)
+
         success, status_rowid = db.pushstat(2, status_json)
         if not success[0]:
             if cfg.tracking:
@@ -265,7 +278,7 @@ for dir in allfolders:
     else:
         if cfg.tracking:
             log.track(2, "Status File NOT Acquired.", True)
-            log.track(2, "Consider Entire DP Folder Corrupt; DESTROY.", True)
+            log.track(2, "Consider Entire DP Folder Corrupt; Delete it.", True)
 
         deleteFolder(cfg, log, 3, data_prod_folder)
         if cfg.tracking:
@@ -427,12 +440,12 @@ success, allfolders = getAllFolderNames(cfg, log, 2, cfg.data_dir_path, True, Tr
 if not success[0]:
     if cfg.tracking:
         log.track(1, "UNABLE to perform Clean-Up.", True)
-elif (allfolders == None) or (allfolders == []):
+elif not allfolders:
     if cfg.tracking:
         log.track(1, "Nothing remaining to Clean-Up.", True)
 else:
     for folder in allfolders:
-        dir = cfg.data_dir_path + "/" + str(dir)
+        dir = cfg.data_dir_path + "/" + str(folder)
         deleteFolder(cfg, log, 1, dir)
 
 if cfg.tracking:
@@ -468,16 +481,20 @@ else:
     success, new_stat_results = db.getResults(2, sql, False)
 
     if success[0]:
-        if new_stat_results == None:
+        if not new_stat_results:
             if cfg.tracking:
                 log.track(2, "Can't Find 'Latest' Active Status Record in DB.", True)
-                log.track(3, "Ignore; Continue.", True)
+                log.track(2, "Ignore; Continue with Data Products.", True)
         else:
+            new_stat_rowid = new_stat_results[0][0]
+            new_stat_state = new_stat_results[0][1]
+            new_stat_stamp = float(new_stat_results[0][6])
+
             if cfg.tracking:
                 log.track(2, "Found 'Latest' Active Status Record in Database.", True)
-                log.track(3, "rowid=[" + str(new_stat_results[0][0]) + "]", True)
-                log.track(3, "state=[" + str(new_stat_results[0][1]) + "]", True)
-                log.track(3, "timestamp=[" + str(float(new_stat_results[0][6])) + "]", True)
+                log.track(3, "rowid=[" + str(new_stat_rowid) + "]", True)
+                log.track(3, "state=[" + str(new_stat_state) + "]", True)
+                log.track(3, "stamp=[" + str(new_stat_stamp) + "]", True)
                 log.track(2, "Add This 'Latest' Status Record to Uplink Message.", True)
 
             success = sm.packstat(3, new_stat_results[0])
@@ -486,20 +503,20 @@ else:
                     log.track(1, "Latest Status Record Successfully Packed.", True)
                     log.track(1, "Update Status Record 'state' to 'packed.'", True)
 
-                    sql = "UPDATE status SET state = '1' WHERE rowid = '" + str(new_stat_results[0][0]) + "'"
+                    sql = "UPDATE status SET state = '1' WHERE rowid = '" + str(new_stat_rowid) + "'"
                     success = db.update(2, sql)
                     if not success[0]:
                         if cfg.tracking:
                             log.track(1, "Well ... This is Awkward.", True)
                             log.track(1, "Probably Come Back to Bite Us in the Ass.'", True)
-                            log.track(1, "May Eventually Repack This Same Status Record.", True)
+                            log.track(1, "We May Eventually Repack This Same Status Record.", True)
             else:
                 if cfg.tracking:
                     log.track(2, "Can't Pack 'Latest' Active Status Record.", True)
-                    log.track(2, "Ignore; Continue.", True)
+                    log.track(2, "Ignore; Continue with Data Products.", True)
     else:
         if cfg.tracking:
-            log.track(2, "ERROR Accessing 'Latest' Active Status Record from DB.", True)
+            log.track(2, "Can't Access 'Latest' Active Status Record from DB.", True)
             log.track(2, "Ignore; Continue with Data Products.", True)
 
 
@@ -516,7 +533,7 @@ sql = "SELECT rowid, * FROM meta WHERE state = '0' ORDER BY pipo DESC LIMIT 32"
 success, meta_rows = db.getResults(1, sql, False)
 
 if success[0]:
-    if meta_rows == None:
+    if not meta_rows:
         if cfg.tracking:
             log.track(1, "NO Active Data Products in Database; Continue.", True)
     else:
@@ -545,7 +562,7 @@ if meta_rows:
         stat_timestamp = 0
         if cfg.tracking:
             log.track(1, "Process Meta Data Product ID #" + str(metaID), True)
-            log.track(2, "Get State/Timestamp of Associated Status Record.", True)
+            log.track(2, "Get Associated Status Record.", True)
             log.track(3, "Status FK: " + str(statusFK), True)
 
         # If not already packed in this Message, get it out of the 'status'
@@ -558,7 +575,8 @@ if meta_rows:
             if not assoc_statrec:
                 if cfg.tracking:
                     log.track(3, "Can't Access Assoc Status Record in DB.", True)
-                    log.track(3, "Likely a Stale Record; Ignore this DP; Continue.", True)
+                    log.track(3, "Likely a Previously-Sent Status Record.", True)
+                    log.track(3, "Ignore; Continue with Next Data Product.", True)
                 continue
             else:
                 stat_state = assoc_statrec[0][1]
@@ -566,33 +584,33 @@ if meta_rows:
 
                 if stat_state == 1:
                     if cfg.tracking:
-                        log.track(3, "Assoc Status Record JUST PACKED into This Msg.", True)
-                        log.track(4, "State:     " + str(stat_state), True)
-                        log.track(4, "Timestamp: " + str(stat_timestamp), True)
-                elif assoc_statrec[0][1] > 0:
+                        log.track(3, "Assoc SR JUST PACKED into This Msg.", True)
+                        log.track(4, "State: " + str(stat_state), True)
+                        log.track(4, "Stamp: " + str(stat_timestamp), True)
+                elif stat_state == 2:
                     if cfg.tracking:
-                        log.track(3, "Assoc Status Record Previously Sent per DB.", True)
-                        log.track(4, "State:     " + str(stat_state), True)
-                        log.track(4, "Timestamp: " + str(stat_timestamp), True)
+                        log.track(3, "Assoc SR Previously Sent per DB.", True)
+                        log.track(4, "State: " + str(stat_state), True)
+                        log.track(4, "Stamp: " + str(stat_timestamp), True)
                 else:
                     if cfg.tracking:
-                        log.track(3, "Assoc Status Record FOUND in DB, but NOT Sent.", True)
-                        log.track(3, "PACK it into THIS Uplink Message.", True)
-                        log.track(4, "State:     " + str(stat_state), True)
-                        log.track(4, "Timestamp: " + str(stat_timestamp), True)
-                    success = sm.packstat(4, assoc_statrec[0])
+                        log.track(3, "Assoc SR FOUND in DB, but NOT Sent.", True)
+                        log.track(4, "State: " + str(stat_state), True)
+                        log.track(4, "Stamp: " + str(stat_timestamp), True)
+                        log.track(2, "PACK it into THIS Uplink Message.", True)
+                    success = sm.packstat(3, assoc_statrec[0])
                     if success[0]:
                         if cfg.tracking:
-                            log.track(3, "PACKED FK Status Record into Message.", True)
+                            log.track(3, "PACKED Assoc SR into This Message.", True)
                     else:
                         if cfg.tracking:
-                            log.track(3, "Can't PACK FK Status Record into Message.", True)
-                            log.track(3, "IGNORE this DP; Continue. ", True)
+                            log.track(3, "Can't PACK Assoc SR into Message.", True)
+                            log.track(3, "Ignore; Continue with Next Data Product.", True)
                         continue
         else:
             if cfg.tracking:
-                log.track(3, "Status Record NOT Available from DB.", True)
-                log.track(3, "Ignore This DP; Continue.", True)
+                log.track(3, "Assoc SR NOT Available from DB.", True)
+                log.track(3, "Ignore; Continue with Next Data Product.", True)
             continue
 
         #---------------------------------------------------------------
@@ -621,6 +639,7 @@ if meta_rows:
         node_index = int(node_results[0][4])
         node_stage = int(node_results[0][5])
         next_index = node_stage + 1
+
         if cfg.tracking:
             log.track(3, "Got Node Type/Instance: "+ str(ntype) + "/" + str(ninst), True)
             log.track(4, "Index: " + str(node_index), True)
@@ -645,7 +664,7 @@ if meta_rows:
                     if cfg.tracking:
                         log.track(4, "Well ... This is Awkward.", True)
                         log.track(4, "Probably Come Back to Bite Us in the Ass.'", True)
-                        log.track(4, "May Eventually Repack This Same Meta Record.", True)
+                        log.track(4, "We May Eventually Repack This Same Meta Record.", True)
         else:
             if cfg.tracking:
                 log.track(3, "Can't PACK Data Product Record.", True)
@@ -665,8 +684,6 @@ if meta_rows:
                     log.track(2, "Well ... This is Awkward.", True)
                     log.track(2, "Probably Come Back to Bite Us in the Ass.'", True)
                     log.track(2, "Will wind up reverting back to 'std' DP Delivery.", True)
-
-        
 
 if cfg.tracking:
     log.track(1, "Final Message Complete.", True)
@@ -690,7 +707,7 @@ if sm.len > 0:
     success = bc.close(1)
 else:
     if cfg.tracking:
-        log.track(1, "NO Message to Send.", True)
+        log.track(1, "NO Uplink Message to Send.", True)
 
 ########################################################################
 # Database Housekeeping.
@@ -737,7 +754,6 @@ if sm.len > 0:
         else:
             if cfg.tracking:
                 log.track(2, "Done.", True)
-
     else:
         if cfg.tracking:
             log.track(1, "Reset Bit-Packed Status Record(s) to 'new/active' Status.", True)
@@ -777,7 +793,7 @@ if sm.len > 0:
                 log.track(2, "Done.", True)
 else:
     if cfg.tracking:
-        log.track(1, "NO Housekeeping to be Done.", True)
+        log.track(1, "NO Message = NO Housekeeping to be Done.", True)
     
 success = db.close(0)
 

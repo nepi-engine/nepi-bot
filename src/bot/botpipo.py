@@ -63,20 +63,46 @@ class BotPIPO(object):
         self.cfg = _cfg
         self.log = _log
         self.db = _db
-        self.scor = self.cfg.pipo_scor_wt
-        self.qual = self.cfg.pipo_qual_wt
-        self.size = self.cfg.pipo_size_wt
-        self.trig = self.cfg.pipo_trig_wt
-        self.time = self.cfg.pipo_time_wt
-        self.purg = self.cfg.purge_rating
+        self.exec_age  = 0.0
         if self.cfg.tracking:
             self.log.track(_lev, 'Creating PIPO Class Object.', True)
-            self.log.track(_lev+1, "scor = " + str(self.scor), True)
-            self.log.track(_lev+1, "qual = " + str(self.qual), True)
-            self.log.track(_lev+1, "size = " + str(self.size), True)
-            self.log.track(_lev+1, "trig = " + str(self.trig), True)
-            self.log.track(_lev+1, "time = " + str(self.time), True)
-            self.log.track(_lev+1, "purg = " + str(self.purg), True)
+            self.log.track(_lev+1, "_cfg =     " + str(_cfg), True)
+            self.log.track(_lev+1, "_log =     " + str(_log), True)
+            self.log.track(_lev+1, "_lev =     " + str(_lev), True)
+            self.log.track(_lev+1, "_db =      " + str(_cfg), True)
+            self.log.track(_lev+1, "^scor_wt = " + str(self.cfg.pipo_scor_wt), True)
+            self.log.track(_lev+1, "^qual_wt = " + str(self.cfg.pipo_qual_wt), True)
+            self.log.track(_lev+1, "^size_wt = " + str(self.cfg.pipo_size_wt), True)
+            self.log.track(_lev+1, "^trig_wt = " + str(self.cfg.pipo_trig_wt), True)
+            self.log.track(_lev+1, "^time_wt = " + str(self.cfg.pipo_time_wt), True)
+
+    #---------------------------------------------------------------
+    # initPIPO() Class Module.
+    #---------------------------------------------------------------
+    # Calculate the Time of This Wake-up Execution in MINUTES.
+
+    def initPIPO(self, _lev):
+        if self.cfg.tracking:
+            self.log.track(_lev, "Entering 'initPIPO()' Module", True)
+            self.log.track(_lev+1, "_lev = " + str(_lev), True)
+            self.log.track(_lev+1, "Calculate Exec Time in Minutes.", True)
+
+        try:
+            ts = time.time()
+            self.exec_age = int(math.floor(ts / 60)) * 1.0
+        except Exception as e:
+            enum = "P120"
+            emsg = "computeDenominator(): [" + str(e) + "]"
+            if self.cfg.tracking:
+                self.log.track(_lev+2, "ERROR: " + str(enum) + ": " + str(emsg), True)
+
+            self.exec_age = 0.0
+            return [ False, str(enum), str(emsg) ]
+
+        if self.cfg.tracking:
+            self.log.track(_lev+2, "^exec_age (min): " + str(self.exec_age), True)
+
+        return [ True, None, None ] 
 
     #---------------------------------------------------------------
     # getPIPO() class module.
@@ -316,16 +342,16 @@ class BotPIPO(object):
                         if self.cfg.tracking:
                             self.log.track(lev+1, "Ignore; Continue.", True)
 
-        chg_msg_size = chg_head_bytes + chg_data_bytes
+            chg_msg_size = chg_head_bytes + chg_data_bytes
 
-        if self.cfg.tracking:
-            self.log.track(lev+1, "Chg ELIGIBLE:   " + str(chg_eligible), True)
-            self.log.track(lev+1, "Chg Head Bytes: " + str(chg_head_bytes), True)
-            self.log.track(lev+1, "Chg Data List:  " + str(chg_data_list), True)
-            self.log.track(lev+1, "Chg Data Items: " + str(chg_data_items), True)
-            self.log.track(lev+1, "Chg Data Type:  " + str(chg_data_type), True)
-            self.log.track(lev+1, "Chg Data Bytes: " + str(chg_data_bytes), True)
-            self.log.track(lev+1, "Chg MSG Size:   " + str(chg_msg_size), True)
+            if self.cfg.tracking:
+                self.log.track(lev+1, "Chg ELIGIBLE:   " + str(chg_eligible), True)
+                self.log.track(lev+1, "Chg Head Bytes: " + str(chg_head_bytes), True)
+                self.log.track(lev+1, "Chg Data List:  " + str(chg_data_list), True)
+                self.log.track(lev+1, "Chg Data Items: " + str(chg_data_items), True)
+                self.log.track(lev+1, "Chg Data Type:  " + str(chg_data_type), True)
+                self.log.track(lev+1, "Chg Data Bytes: " + str(chg_data_bytes), True)
+                self.log.track(lev+1, "Chg MSG Size:   " + str(chg_msg_size), True)
     
         #-----------------------------------------------------------
         # Get Normalized Data Product Size.
@@ -340,7 +366,7 @@ class BotPIPO(object):
         # size is too big for transmission, rendering it ineligible.
         # If that's the case, insure the ineligible status.
         if not success[0]:
-            chg_eligible = True     # Force to 'Ineligible'
+            chg_eligible = False    # Force to 'Ineligible'
             if self.cfg.tracking:
                 self.log.track(lev, "Data Product NOT ELIGIBLE for Uplink.", True)
 
@@ -350,7 +376,17 @@ class BotPIPO(object):
         if self.cfg.tracking:
             self.log.track(lev, "Get PIPO Formula Numerator.", True)
         
-        success, numerator = self.computeNumerator(lev+1, float(metajson["node_id_score"]), float(metajson["quality"]), norm, trigger)
+        try:
+            idscore = float(metajson["node_id_score"])
+            quality = float(metajson["quality"])
+        except Exception as e:
+            enum = "P018"
+            emsg = "getPipo(): PIPO Numerator Values Error: " + str(e)
+            if self.cfg.tracking:
+                self.log.errtrack(str(enum), str(emsg))
+            return [ False, str(enum), str(emsg) ], None
+
+        success, numerator = self.computeNumerator(lev+1, idscore, quality, norm, trigger)
 
         # Calculation of the PIPO Numerator should NEVER fail; it's
         # a simple multiplier and adder calculation.  If it does,
@@ -363,7 +399,16 @@ class BotPIPO(object):
         if self.cfg.tracking:
             self.log.track(lev, "Get PIPO Formula Denominator.", True)
 
-        success, denominator = self.computeDenominator(lev+1, float(metajson["timestamp"]))
+        try:
+            tstamp = float(metajson["timestamp"])
+        except Exception as e:
+            enum = "P018"
+            emsg = "getPipo(): PIPO Numerator 'timestamp' Error: " + str(e)
+            if self.cfg.tracking:
+                self.log.errtrack(str(enum), str(emsg))
+            return [ False, str(enum), str(emsg) ], None
+
+        success, denominator = self.computeDenominator(lev+1, tstamp)
 
         # Calculation of the PIPO Denominator should NEVER fail; it's
         # a simple multiplier and adder calculation.  If it does,
@@ -417,62 +462,59 @@ class BotPIPO(object):
     #---------------------------------------------------------------
     # computeNumerator() class module.
     #---------------------------------------------------------------
-    def computeNumerator(self, lev, sco, qua, siz, trg):
+    def computeNumerator(self, _lev, _sco, _qua, _siz, _trg):
         if self.cfg.tracking:
-            self.log.track(lev, "Entering 'computeNumerator() Module.", True)
-            self.log.track(lev+1, "lev: " + str(lev), True)
-            self.log.track(lev+1, "sco: " + str(sco), True)
-            self.log.track(lev+1, "qua: " + str(qua), True)
-            self.log.track(lev+1, "siz: " + str(siz), True)
-            self.log.track(lev+1, "trg: " + str(trg), True)
+            self.log.track(_lev, "Entering 'computeNumerator() Module.", True)
+            self.log.track(_lev+1, "_lev: " + str(_lev), True)
+            self.log.track(_lev+1, "_sco: " + str(_sco), True)
+            self.log.track(_lev+1, "_qua: " + str(_qua), True)
+            self.log.track(_lev+1, "_siz: " + str(_siz), True)
+            self.log.track(_lev+1, "_trg: " + str(_trg), True)
 
         try:
-            scor = (self.cfg.pipo_scor_wt**2) * sco
-            qual = (self.cfg.pipo_qual_wt**2) * qua
-            size = (self.cfg.pipo_size_wt**2) * siz
-            trig = (self.cfg.pipo_trig_wt**2) * trg
+            scor = (_sco**2) * self.cfg.pipo_scor_wt
+            qual = (_qua**2) * self.cfg.pipo_qual_wt
+            size = (_siz**2) * self.cfg.pipo_size_wt
+            trig = (_trg**2) * self.cfg.pipo_trig_wt
             numerator = (scor + qual + size + trig) * 1.0
         except Exception as e:
             return [ False, "P110", "PIPO Numerator Calculation Error: " + str(e)], 0.0
 
         if self.cfg.tracking:
-            self.log.track(lev+1, "scor comp: " + str(scor), True)
-            self.log.track(lev+1, "qual comp: " + str(qual), True)
-            self.log.track(lev+1, "size comp: " + str(size), True)
-            self.log.track(lev+1, "trig comp: " + str(trig), True)
-            self.log.track(lev+1, "numerator: " + str(numerator), True)
+            self.log.track(_lev+1, "scor comp: " + str(scor), True)
+            self.log.track(_lev+1, "qual comp: " + str(qual), True)
+            self.log.track(_lev+1, "size comp: " + str(size), True)
+            self.log.track(_lev+1, "trig comp: " + str(trig), True)
+            self.log.track(_lev+1, "numerator: " + str(numerator), True)
 
         return [True, None, None ], numerator
 
     #---------------------------------------------------------------
     # computeDenominator() class module.
     #---------------------------------------------------------------
-    def computeDenominator(self, lev, ts):
+    def computeDenominator(self, _lev, _ts):
         if self.cfg.tracking:
-            self.log.track(lev, "Entering 'computeDenominator() Module.", True)
-            self.log.track(lev+1, "lev: " + str(lev), True)
-            self.log.track(lev+1, "ts:  " + str(ts), True)
+            self.log.track(_lev, "Entering 'computeDenominator() Module.", True)
+            self.log.track(_lev+1, "_lev: " + str(_lev), True)
+            self.log.track(_lev+1, "_ts:  " + str(_ts), True)
 
         try:
-            ts = time.time()
-            now = int(math.floor(ts / 3600)) * 1.0
-            #st = os.stat(metafile)
-            meta_age = int(math.floor(float(ts) / 3600)) * 1.0
-            pipo_age = (now - meta_age) * 1.0
+            meta_age = int(math.floor(float(_ts) / 60)) * 1.0
+            pipo_age = (self.exec_age - meta_age) * 1.0
             denominator = (pipo_age * self.cfg.pipo_time_wt) + 1.0
         except Exception as e:
             enum = "P120"
             emsg = "computeDenominator(): [" + str(e) + "]"
             if self.cfg.tracking:
-                self.log.track(lev+1, "ERROR: " + str(enum) + ": " + str(emsg), True)
+                self.log.track(_lev+1, "ERROR: " + str(enum) + ": " + str(emsg), True)
 
             return [ False, str(enum), str(emsg) ], 0.5
 
         if self.cfg.tracking:
-            self.log.track(lev+1, "System Time:      " + str(float(ts)), True)
-            self.log.track(lev+1, "Now Age (hours):  " + str(now), True)
-            self.log.track(lev+1, "Meta Age (hours): " + str(meta_age), True)
-            self.log.track(lev+1, "PIPO Age (hours): " + str(pipo_age), True)
-            self.log.track(lev+1, "PIPO Denominator: " + str(denominator), True)
+            self.log.track(_lev+1, "System Time:      " + str(float(_ts)), True)
+            self.log.track(_lev+1, "Exec Age (min):   " + str(self.exec_age), True)
+            self.log.track(_lev+1, "Meta Age (min):   " + str(meta_age), True)
+            self.log.track(_lev+1, "PIPO Age (min):   " + str(pipo_age), True)
+            self.log.track(_lev+1, "PIPO Denominator: " + str(denominator), True)
 
         return [True, None, None ], denominator

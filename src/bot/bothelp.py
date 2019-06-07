@@ -14,6 +14,11 @@
 ##  Revision History
 ##  ----------------
 ##  
+##  Revision:   1.10 2019/06/05  09:55:00
+##  Comment:    Fix getAll* Modules to return [] on errors.
+##  Developer:  John benJohn, Leonardo, New Jersey
+##  Platform:   Ubuntu 16.05; Python 2.7.12
+##
 ##  Revision:   1.9 2019/04/24  10:25:00
 ##  Comment:    Update triggerScoreLookup(); add try/except logic.
 ##  Developer:  John benJohn, Leonardo, New Jersey
@@ -77,21 +82,21 @@ from pylocker import Locker
 def getAllFolderNames(_cfg, _log, _lev, _dir, _sortflag, _revflag):
     if _cfg.tracking :
         _log.track(_lev, "Entering 'getAllFolderNames()' Module.", True)
-        _log.track(_lev+13, "_cfg:  " + str(_cfg), True)
-        _log.track(_lev+13, "_log:  " + str(_log), True)
-        _log.track(_lev+13, "_lev:  " + str(_lev), True)
-        _log.track(_lev+13, "_dir:  " + str(_dir), True)
-        _log.track(_lev+13, "_sort: " + str(_sortflag), True)
-        _log.track(_lev+13, "_rev:  " + str(_revflag), True)
+        _log.track(_lev+13, "_cfg: " + str(_cfg), True)
+        _log.track(_lev+13, "_log: " + str(_log), True)
+        _log.track(_lev+13, "_lev: " + str(_lev), True)
+        _log.track(_lev+13, "_dir: " + str(_dir), True)
+        _log.track(_lev+13, "_srt: " + str(_sortflag), True)
+        _log.track(_lev+13, "_rev: " + str(_revflag), True)
 
+    try:
         if not os.path.isdir(_dir):
             enum = "BH001"
             emsg = "getAllFolderNames(): Argument Not a Directory."
             if _cfg.tracking:
                 _log.errtrack(str(enum), str(emsg))
-            return [ False, str(enum), str(emsg) ], None
+            return [ False, str(enum), str(emsg) ], []
 
-    try:
         #all_dirs = os.listdir(dir)
         #all_dirs = filter(os.path.isdir, os.listdir(dir))
         #all_dirs = [d for d in os.listdir(dir) if os.path.isdir(d)] 
@@ -119,7 +124,7 @@ def getAllFolderNames(_cfg, _log, _lev, _dir, _sortflag, _revflag):
         emsg = "getAllFolderNames(): [" + str(e) + "]"
         if _cfg.tracking:
             _log.errtrack(str(enum), str(emsg))
-        return [ False, str(enum), str(emsg) ], None
+        return [ False, str(enum), str(emsg) ], []
 
 ########################################################################
 # Return List of All File Names in a Dir; Optional: Sort and Reverse.
@@ -128,12 +133,12 @@ def getAllFolderNames(_cfg, _log, _lev, _dir, _sortflag, _revflag):
 def getAllFileNames(_cfg, _log, _lev, _dir, _sortflag, _revflag):
     if _cfg.tracking :
         _log.track(_lev, "Entering 'getAllFileNames()' Module.", True)
-        _log.track(_lev+13, "_cfg:  " + str(_cfg), True)
-        _log.track(_lev+13, "_log:  " + str(_log), True)
-        _log.track(_lev+13, "_lev:  " + str(_lev), True)
-        _log.track(_lev+13, "_dir:  " + str(_dir), True)
-        _log.track(_lev+13, "_sort: " + str(_sortflag), True)
-        _log.track(_lev+13, "_rev:  " + str(_revflag), True)
+        _log.track(_lev+13, "_cfg: " + str(_cfg), True)
+        _log.track(_lev+13, "_log: " + str(_log), True)
+        _log.track(_lev+13, "_lev: " + str(_lev), True)
+        _log.track(_lev+13, "_dir: " + str(_dir), True)
+        _log.track(_lev+13, "_srt: " + str(_sortflag), True)
+        _log.track(_lev+13, "_rev: " + str(_revflag), True)
 
     try:
         if not os.path.isdir(_dir):
@@ -141,9 +146,10 @@ def getAllFileNames(_cfg, _log, _lev, _dir, _sortflag, _revflag):
             emsg = "getAllFileNames(): Not a Directory."
             if _cfg.tracking:
                 _log.errtrack(str(enum), str(emsg))
-            return [ False, str(enum), str(emsg) ], None
+            return [ False, str(enum), str(emsg) ], []
 
         all_files = os.listdir(_dir)
+
         if _sortflag:
             if _cfg.tracking:
                 _log.track(_lev+1, "Sort Requested.", True)
@@ -168,7 +174,7 @@ def getAllFileNames(_cfg, _log, _lev, _dir, _sortflag, _revflag):
         emsg = "getAllFileNames(): [" + str(e) + "]"
         if _cfg.tracking:
             _log.errtrack(str(enum), str(emsg))
-        return [ False, str(enum), str(emsg) ], None
+        return [ False, str(enum), str(emsg) ], []
 
 ########################################################################
 ##  Read a File from the Float's SD drive; optional lock or JSON-parse.

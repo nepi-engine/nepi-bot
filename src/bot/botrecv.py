@@ -485,8 +485,6 @@ if sdk_action:
         sdkproc = "/opt/numurus/ros/nepi-utilities/process-updates.sh"
         sdkwhat = "Live Float Mode"
     else:
-        #sdkproc = "/mnt/hgfs/Numurus/Float61/src/tst/sdktest.sh"
-        #sdkproc = "../../src/tst/sdktest.sh"
         sdkproc = str(nepi_home) + "/src/tst/sdktest.sh"
         sdkwhat = "Local Non-Float Mode."
 
@@ -531,44 +529,49 @@ success, dbconn = db.getconn(2)
 if success[0]:
     if cfg.tracking:
         log.track(2, "Delete 'meta' Rows Below Purge Rating OR > 5 Days Old.", True)
+        log.track(3, "db_deletes: " + str(cfg.db_deletes), True)
 
-    fivedaysago = int(time.time()) - (60 * 60 * 24 * 5)
+    if cfg.db_deletes:
+        fivedaysago = int(time.time()) - (60 * 60 * 24 * 5)
 
-    sql = "DELETE FROM meta WHERE pipo < '" + str(cfg.purge_rating) + "' OR timestamp < '" + str(fivedaysago) + "'"
-    success = db.update(3, sql)
+        sql = "DELETE FROM meta WHERE pipo < '" + str(cfg.purge_rating) + "' OR timestamp < '" + str(fivedaysago) + "'"
+        success = db.update(3, sql)
 
-    if not success[0]:
+        if not success[0]:
+            if cfg.tracking:
+                log.track(3, "Well ... This is Awkward.", True)
+        else:
+            if cfg.tracking:
+                log.track(3, "DONE.", True)
+
         if cfg.tracking:
-            log.track(3, "Well ... This is Awkward.", True)
+            log.track(2, "Delete 'meta' Rows That Have Been Sent.", True)
+
+        sql = "DELETE FROM meta WHERE state = '2'"
+        success = db.update(3, sql)
+
+        if not success[0]:
+            if cfg.tracking:
+                log.track(3, "Well ... This is Awkward.", True)
+        else:
+            if cfg.tracking:
+                log.track(3, "DONE.", True)
+
+        if cfg.tracking:
+            log.track(2, "Delete 'status' Rows That Have Been Sent.", True)
+
+        sql = "DELETE FROM status WHERE state = '2'"
+        success = db.update(3, sql)
+
+        if not success[0]:
+            if cfg.tracking:
+                log.track(3, "Well ... This is Awkward.", True)
+        else:
+            if cfg.tracking:
+                log.track(3, "DONE.", True)
     else:
         if cfg.tracking:
-            log.track(3, "DONE.", True)
-
-    if cfg.tracking:
-        log.track(2, "Delete 'meta' Rows That Have Been Sent.", True)
-
-    sql = "DELETE FROM meta WHERE state = '2'"
-    success = db.update(3, sql)
-
-    if not success[0]:
-        if cfg.tracking:
-            log.track(3, "Well ... This is Awkward.", True)
-    else:
-        if cfg.tracking:
-            log.track(3, "DONE.", True)
-
-    if cfg.tracking:
-        log.track(2, "Delete 'status' Rows That Have Been Sent.", True)
-
-    sql = "DELETE FROM status WHERE state = '2'"
-    success = db.update(3, sql)
-
-    if not success[0]:
-        if cfg.tracking:
-            log.track(3, "Well ... This is Awkward.", True)
-    else:
-        if cfg.tracking:
-            log.track(3, "DONE.", True)
+            log.track(3, "DB Record Purge/Delete Supressed.", True)
 
 else:
     if cfg.tracking:

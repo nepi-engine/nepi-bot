@@ -14,6 +14,16 @@
 ##  Revision History
 ##  ----------------
 ##  
+##  Revision:   1.11 2019/06/03  16:15:00
+##  Comment:    Add DB housekeeping purge supression.
+##  Developer:  John benJohn, Leonardo, New Jersey
+##  Platform:   Ubuntu 16.05; Python 2.7.12
+##
+##  Revision:   1.10 2019/06/03  14:45:00
+##  Comment:    Add log_clear to manage log clearing.
+##  Developer:  John benJohn, Leonardo, New Jersey
+##  Platform:   Ubuntu 16.05; Python 2.7.12
+##
 ##  Revision:   1.9 2019/05/05  10:45:00
 ##  Comment:    Refactor various 'int' declarations to 'bool' status.
 ##  Developer:  John benJohn, Leonardo, New Jersey
@@ -126,10 +136,12 @@ class BotCfg(object):
                 self.sys_status_file = "sys_status_file"
                 self.db_dir = "db"
                 self.db_name = "float.db"
+                self.db_deletes = 1
                 self.data_dir = "data"
                 self.data_zlib = True
                 self.data_msgpack = True
                 self.log_dir = "log"
+                self.log_clear = True
                 self.br_log_name = "brlog.txt"
                 self.bs_log_name = "bslog.txt"
                 self.bu_log_name = "bulog.txt"
@@ -160,10 +172,12 @@ class BotCfg(object):
                 self.sys_status_file = "sys_status_file"
                 self.db_dir = "db"
                 self.db_name = "float.db"
+                self.db_deletes = 1
                 self.data_dir = "data"
                 self.data_zlib = True
                 self.data_msgpack = True
                 self.log_dir = "log"
+                self.log_clear = True
                 self.br_log_name = "brlog.txt"
                 self.bs_log_name = "bslog.txt"
                 self.bu_log_name = "bulog.txt"
@@ -225,8 +239,10 @@ class BotCfg(object):
             self.data_msgpack = bool(self.bot_cfg_json["data_msgpack"])
             self.db_dir = str(self.bot_cfg_json["db_dir"])
             self.db_name = str(self.bot_cfg_json["db_name"])
+            self.db_deletes = str(self.bot_cfg_json["db_deletes"])
             self.db_file = nepi_home + "/" + self.db_dir + "/" + self.db_name
             self.log_dir = str(self.bot_cfg_json["log_dir"])
+            self.log_clear = str(self.bot_cfg_json["log_clear"])
             self.br_log_name = str(self.bot_cfg_json["br_log_name"])
             self.br_log_file = nepi_home + "/" + self.log_dir + "/" + self.br_log_name
             self.bs_log_name = str(self.bot_cfg_json["bs_log_name"])
