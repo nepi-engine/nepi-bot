@@ -364,6 +364,8 @@ for msgnum in range(0, len(cnc_msgs)):
             
             if cmd == 1:                      
                 fname = "scuttle"                       # Scuttle
+            elif cmd == 2:
+                fname = "ping"                          # Ping
             else:
                 if cfg.tracking:
                     log.track(3, "WARNING: Got 'Unknown' Command: [" + str(cmd) + "]", True)
