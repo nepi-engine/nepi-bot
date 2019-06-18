@@ -150,7 +150,7 @@ if cfg.tracking:
     log.track(0, "Recalculate Archived PIPO Ratings.", True)
     log.track(1, "Select 'Active' Meta Records from Database.", True)
 
-sql = "SELECT rowid, numerator, trigger, quality, score, metafile, norm FROM meta WHERE state = '0'"
+sql = "SELECT rowid, numerator, trigger, quality, score, timestamp, norm FROM meta WHERE state = '0'"
 success, rows = db.getResults(2, sql, False)
 
 if success[0]:
@@ -172,7 +172,7 @@ if success[0]:
             trig = float(row[2])
             qual = float(row[3])
             scor = float(row[4])
-            meta = str(row[5])
+            stmp = float(row[5])
             norm = float(row[6])
             if cfg.tracking:
                 log.track(1, "Reevaluating Meta Record ID: " + str(rwid), True)
@@ -180,8 +180,8 @@ if success[0]:
                 log.track(2, "Trig: " + str(trig), True)
                 log.track(2, "Qual: " + str(qual), True)
                 log.track(2, "Scor: " + str(scor), True)
+                log.track(2, "Stmp: " + str(stmp), True)
                 log.track(2, "Norm: " + str(norm), True)
-                log.track(2, "Meta: " + str(meta), True)
 
             if cfg.wt_changed:
                 if cfg.tracking:
@@ -194,7 +194,7 @@ if success[0]:
 
             if cfg.tracking:
                 log.track(2, "Recalculate Denominator.", True)
-            success, denominator = pipo.computeDenominator(3, meta)
+            success, denominator = pipo.computeDenominator(3, stmp)
 
             if cfg.tracking:
                 log.track(2, "Recalculcate PIPO Rating: ", False)
