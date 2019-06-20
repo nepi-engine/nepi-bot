@@ -69,6 +69,7 @@ from botdb import BotDB
 from botcomm import BotComm
 from bothelp import writeFloatFile, resetCfgValue
 
+v_botrecv = "bot61-20190620"
 
 ########################################################################
 ##  Instantiate a BotCfg Configuration Class Object (from 'botcfg.py')
@@ -81,7 +82,7 @@ cfg.initcfg()
 ##  Instantiate a BotLog Debug/Log Class Object (from 'botlog.py')
 ########################################################################
 
-log = BotLog(cfg, "BOT-RECV")
+log = BotLog(cfg, "BOT-RECV", v_botrecv)
 log.initlog(0)
 
 ########################################################################

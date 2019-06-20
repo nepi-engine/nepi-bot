@@ -95,7 +95,15 @@ import os
 import sys
 import time
 import errno
-from botdefs import Machines, nepi_home, bot_cfg_file, bot_db_file
+from botcfg import v_botcfg
+from botcomm import v_botcomm
+from botdb import v_botdb
+from botdefs import Machines, nepi_home, bot_cfg_file, bot_db_file, v_botdefs
+from bothelp import v_bothelp
+from botmsg import v_botmsg
+from botpipo import v_botpipo
+
+v_botlog = "bot61-20190620"
 
 ########################################################################
 ##  A Class for creating and managing various NEPI-Bot Log Files.
@@ -103,19 +111,24 @@ from botdefs import Machines, nepi_home, bot_cfg_file, bot_db_file
 
 class BotLog(object):
 
-    def __init__(self, _cfg, _which):
+    def __init__(self, _cfg, _which, _version):
         self.cfg = _cfg
         self.name = str(_which)
+        self.verison = str(_version)
         self.file = None
+        self.app = None
         self.indent = "                          "
 
         if str(_which) == "BOT-RECV":
             self.file = self.cfg.br_log_file
+            self.app = "botrecv"
         elif str(_which) == "BOT-SEND":
             self.file = self.cfg.bs_log_file
+            self.app = "botsend"
         else:
             self.file = self.cfg.bu_log_file
             self.name = "UNKNOWN"
+            self.app = "unknown"
 
     def initlog(self, _lev):
         # If debugging, we're writing to the console.
@@ -182,6 +195,17 @@ class BotLog(object):
             self.cfg.tracking = False
 
         if self.cfg.tracking:
+            self.track(_lev, "Using Bot Software Versions:" , True)
+            self.track(_lev+1, "botcfg:  " + str(v_botcfg) , True)
+            self.track(_lev+1, "botcomm: " + str(v_botcomm) , True)
+            self.track(_lev+1, "botdb:   " + str(v_botdb) , True)
+            self.track(_lev+1, "botdefs: " + str(v_botdefs) , True)
+            self.track(_lev+1, "bothelp: " + str(v_bothelp) , True)
+            self.track(_lev+1, "botlog:  " + str(v_botlog) , True)
+            self.track(_lev+1, "botmsg:  " + str(v_botmsg) , True)
+            self.track(_lev+1, "botpipo: " + str(v_botpipo) , True)
+            self.track(_lev+1, self.app + ": " + str(self.verison) , True)
+
             if self.cfg.factory:
                 self.track(_lev, "Could Not Open Bot Cfg File: " + str(bot_cfg_file), True)
                 self.track(_lev, "Using Factory Def Cfg: " + str(self.cfg.state), True)

@@ -79,6 +79,8 @@ from botdefs import Machine, Machines
 from botdefs import nepi_home, bot_cfg_file
 from bothelp import readFloatFile
 
+v_botcfg = "bot61-20190620"
+
 ########################################################################
 ##  Class: BotCfg (Retrieve the NEPI-Bot Configuration File).
 ########################################################################

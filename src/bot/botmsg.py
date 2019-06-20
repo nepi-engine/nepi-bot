@@ -41,6 +41,8 @@ from struct import *
 import ctypes
 import botdefs
 
+v_botmsg = "bot61-20190620"
+
 ########################################################################
 ##  The Float's Message Class Library
 ########################################################################

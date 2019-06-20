@@ -75,6 +75,8 @@ import shutil
 import botdefs
 from pylocker import Locker
 
+v_bothelp = "bot61-20190620"
+
 ########################################################################
 # Retrieve a list of the Float's Data Folders; Sort and Reverse.
 ########################################################################

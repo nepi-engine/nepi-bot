@@ -42,6 +42,8 @@ import uuid
 ##  Useful Global Variable Definitions.
 ########################################################################
 
+v_botdefs = "bot61-20190620"
+
 # Identify running platform using a Python2 kludge for mocking Enums.
 # ALPHA represents local (developer) testing on private platforms; TEST
 # represent Numurus testing; FLOAT represents active, Float production.

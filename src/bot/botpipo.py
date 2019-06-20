@@ -53,6 +53,8 @@ import math
 import time 
 from bothelp import readFloatFile
 
+v_botpipo = "bot61-20190620"
+
 ########################################################################
 ##  The Float PIPO Class
 ########################################################################

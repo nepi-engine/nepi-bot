@@ -102,6 +102,8 @@ from bothelp import getAllFolderNames, getAllFileNames
 from bothelp import readFloatFile, triggerScoreLookup, resetCfgValue
 from bothelp import deleteFolder, deleteDataProduct
 
+v_botsend = "bot61-20190620"
+
 ########################################################################
 # Instantiate a NEPI-Bot Configuration Class (from 'botcfg.py')
 ########################################################################
@@ -113,7 +115,7 @@ cfg.initcfg()
 ##  Instantiate Bot-Send Debug/Log Object (from 'botlog.py')
 ########################################################################
 
-log = BotLog(cfg, "BOT-SEND")
+log = BotLog(cfg, "BOT-SEND", v_botsend)
 log.initlog(0)
 
 ########################################################################

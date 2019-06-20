@@ -46,14 +46,16 @@
 ##
 ########################################################################
 
+v_botcomm = "bot61-20190620"
+
 import os
 import time
 import serial
 import socket
 import struct
 from binascii import unhexlify
-from botcfg import BotCfg
-from botlog import BotLog
+#from botcfg import BotCfg
+#from botlog import BotLog
 
 ########################################################################
 ##  The Float Communications Class
