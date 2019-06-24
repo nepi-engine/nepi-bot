@@ -79,7 +79,7 @@ from botdefs import Machine, Machines
 from botdefs import nepi_home, bot_cfg_file
 from bothelp import readFloatFile
 
-v_botcfg = "bot61-20190620"
+v_botcfg = "bot61-20190624"
 
 ########################################################################
 ##  Class: BotCfg (Retrieve the NEPI-Bot Configuration File).
@@ -241,17 +241,17 @@ class BotCfg(object):
             self.data_msgpack = bool(self.bot_cfg_json["data_msgpack"])
             self.db_dir = str(self.bot_cfg_json["db_dir"])
             self.db_name = str(self.bot_cfg_json["db_name"])
-            self.db_deletes = str(self.bot_cfg_json["db_deletes"])
+            self.db_deletes = bool(self.bot_cfg_json["db_deletes"])
             self.db_file = nepi_home + "/" + self.db_dir + "/" + self.db_name
             self.log_dir = str(self.bot_cfg_json["log_dir"])
-            self.log_clear = str(self.bot_cfg_json["log_clear"])
+            self.log_clear = bool(self.bot_cfg_json["log_clear"])
             self.br_log_name = str(self.bot_cfg_json["br_log_name"])
             self.br_log_file = nepi_home + "/" + self.log_dir + "/" + self.br_log_name
             self.bs_log_name = str(self.bot_cfg_json["bs_log_name"])
             self.bs_log_file = nepi_home + "/" + self.log_dir + "/" + self.bs_log_name
             self.bu_log_name = str(self.bot_cfg_json["bu_log_name"])
             self.bu_log_file = nepi_home + "/" + self.log_dir + "/" + self.bu_log_name
-            self.wt_changed = int(self.bot_cfg_json["wt_changed"])
+            self.wt_changed = bool(self.bot_cfg_json["wt_changed"])
             self.pipo_scor_wt = float(self.bot_cfg_json["pipo_scor_wt"])
             self.pipo_qual_wt = float(self.bot_cfg_json["pipo_qual_wt"])
             self.pipo_size_wt = float(self.bot_cfg_json["pipo_size_wt"])
