@@ -14,6 +14,11 @@
 ##  Revision History
 ##  ----------------
 ##  
+##  Revision:   1.6 2019/06/24  10:00:00
+##  Comment:    Add new 'int16' Data Type for Alex.
+##  Developer:  John benJohn, Leonardo, New Jersey
+##  Platform:   Ubuntu 16.05; Python 2.7.12
+##
 ##  Revision:   1.5 2019/04/19  13:30:00
 ##  Comment:    Fix max sizes in size normalization() method.
 ##  Developer:  John benJohn, Leonardo, New Jersey
@@ -53,7 +58,7 @@ import math
 import time 
 from bothelp import readFloatFile
 
-v_botpipo = "bot61-20190620"
+v_botpipo = "bot61-20190624"
 
 ########################################################################
 ##  The Float PIPO Class
@@ -258,6 +263,8 @@ class BotPIPO(object):
             std_data_bytes = std_data_items * 8
         elif std_data_type == "float32" or std_data_type == "int32":
             std_data_bytes = std_data_items * 4
+        elif std_data_type == "int16":
+            std_data_bytes = std_data_items * 2
         elif std_data_type == "uint8":
             std_data_bytes = std_data_items * 1
         else:
@@ -332,6 +339,8 @@ class BotPIPO(object):
                             chg_data_bytes = chg_data_items * 8
                         elif chg_data_type == "float32" or chg_data_type == "int32":
                             chg_data_bytes = chg_data_items * 4
+                        elif std_data_type == "int16":
+                            chg_data_bytes = chg_data_items * 2
                         elif chg_data_type == "uint8":
                             chg_data_bytes = chg_data_items * 1
                         else:

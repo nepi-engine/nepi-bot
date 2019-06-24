@@ -14,6 +14,16 @@
 ##  Revision History
 ##  ----------------
 ##
+##  Revision:   1.8 2019/06/23  15:00:00
+##  Comment:    Reintroduce versioning of Module.
+##  Developer:  John benJohn, Leonardo, New Jersey
+##  Platform:   Ubuntu 16.05; Python 2.7.12
+##
+##  Revision:   1.7 2019/06/02  14:00:00
+##  Comment:    Fix; Switch SBDWT to SBDWB and SBDRT to SBDRB. Latch the True value of mo_sent/mo_received.
+##  Developer:  Kevin Ramada; University of Washington
+##  Platform:   Ubuntu 16.05; Python 2.7.12
+##
 ##  Revision:   1.6 2019/05/02  14:00:00
 ##  Comment:    Fix; Reversed isactive() method returns.
 ##  Developer:  John benJohn, Leonardo, New Jersey
@@ -46,7 +56,7 @@
 ##
 ########################################################################
 
-v_botcomm = "bot61-20190620"
+v_botcomm = "bot61-20190624"
 
 import os
 import time
@@ -605,6 +615,11 @@ class BotComm(object):
 
                 return signal_strength
 
+            else:
+                if self.cfg.tracking:
+                    self.log.track(_lev+1, "Sig Qual: [0]", True)
+                return 0
+
         except Exception as e:
             enum = "BC181"
             emsg = str(e)
@@ -650,7 +665,7 @@ class BotComm(object):
                         response = self.acquire_response(b"AT+SBDIX")
                         if response is not False:
                             response = response.strip()
-                            response = response.split('+SBDIX :')[1]
+                            response = response.split('+SBDIX:')[1]
                             response = response.split(',')
 
                             mo_status = int(response[0])
@@ -705,7 +720,7 @@ class BotComm(object):
                         response = self.acquire_response(b"AT+SBDIX")
                         if response is not False:
                             response = response.strip()
-                            response = response.split('+SBDIX: ')[1]
+                            response = response.split('+SBDIX:')[1]
                             response = response.split(',')
 
                             mt_status = int(response[2])

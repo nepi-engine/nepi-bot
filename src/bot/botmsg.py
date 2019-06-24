@@ -14,6 +14,11 @@
 ##  Revision History
 ##  ----------------
 ##  
+##  Revision:   1.4 2019/06/24  10:00:00
+##  Comment:    Add new 'int16' Data Type for Alex.
+##  Developer:  John benJohn, Leonardo, New Jersey
+##  Platform:   Ubuntu 16.05; Python 2.7.12
+##
 ##  Revision:   1.3 2019/04/16  07:00:00
 ##  Comment:    Major Revision; Total DATA Msg Format Change.
 ##  Developer:  John benJohn, Leonardo, New Jersey
@@ -41,7 +46,7 @@ from struct import *
 import ctypes
 import botdefs
 
-v_botmsg = "bot61-20190620"
+v_botmsg = "bot61-20190624"
 
 ########################################################################
 ##  The Float's Message Class Library
@@ -491,6 +496,8 @@ class BotMsg(object):
                     dt_adj      = 0
                 elif dt_raw == "int32":
                     dt_adj      = 1
+                elif dt_raw == "int16":
+                    dt_adj      = 3
                 else:
                     dt_adj      = 2
 
@@ -502,6 +509,10 @@ class BotMsg(object):
                     dt_fmt      = ">B"
                     dt_byt      = 1
                     dt_adj      = 0
+                elif dt_raw == "int16":
+                    dt_fmt      = ">h"
+                    dt_byt      = 2
+                    dt_adj      = 3
                 elif dt_raw == "int32":
                     dt_fmt      = ">i"
                     dt_byt      = 4
