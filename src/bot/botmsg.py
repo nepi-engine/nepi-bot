@@ -473,7 +473,7 @@ class BotMsg(object):
             heading_deg     = float(heading_raw * 100.0)        # heading centidegrees
             heading_adj     = int(math.floor(heading_deg))      # s/b <= 16 bits
 
-            pitch_raw       = int(_rec[22])                     # pitch raw
+            pitch_raw       = int(float(_rec[22]))              # pitch raw
             if pitch_raw < 0:
                 pitch_sgn   = 1                                 # pitch sign bit (-)
                 pitch_adj   = pitch_raw * -1                    # s/b <= 5 bits
@@ -481,7 +481,7 @@ class BotMsg(object):
                 pitch_sgn   = 0                                 # pitch sign bit (+)
                 pitch_adj   = pitch_raw                         # s/b <= 5 bits
 
-            roll_raw        = int(_rec[23])                     # roll raw
+            roll_raw        = int(float(_rec[23]))              # roll raw
             if roll_raw < 0:
                 roll_sgn    = 1                                 # roll sign bit (-)
                 roll_adj    = roll_raw * -1                     # s/b <= 5 bits
