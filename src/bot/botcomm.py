@@ -660,7 +660,7 @@ class BotComm(object):
                 while (mo_sent == False or mt_received == False or (mt_queued > 0 and num > 0)) and time.time() < timeout:
                     signal_strength = self.check_signal_quality(_lev+1)
 
-                    if int(signal_strength) > 2:
+                    if int(signal_strength) >= 1:
 
                         response = self.acquire_response(b"AT+SBDIX")
                         if response is not False:
@@ -715,7 +715,7 @@ class BotComm(object):
                 while (mt_received == False or (mt_queued > 0 and num > 0)) and time.time() < timeout:
                     signal_strength = self.check_signal_quality(_lev+1)
 
-                    if int(signal_strength) > 2:
+                    if int(signal_strength) >= 1:
 
                         response = self.acquire_response(b"AT+SBDIX")
                         if response is not False:
