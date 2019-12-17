@@ -143,7 +143,7 @@ class BotLog(object):
                 self.track(0, "FATAL CONFIG ERR: " + str(self.cfg.enum), True)
                 self.track(0, "FATAL CONFIG ERR: " + str(self.cfg.emsg), True)
                 self.track(0, "", True)
-                sys.exit(1)
+                sys.exit(6)
             else:
                 self.track(0, "STARTING '" + str(self.name) + "' DEBUGGING:", True)
                 if self.name == "UNKNOWN":

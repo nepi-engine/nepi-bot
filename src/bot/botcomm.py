@@ -13,6 +13,15 @@
 ##
 ##  Revision History
 ##  ----------------
+##  Revision:   1.9 2019/11/12  10:00:00
+##  Comment:    Change to exit after succeessful send
+##  Developer:  Jason Seawall, Seattle WA
+##  Platform:   Ubuntu 16.05; Python 2.7.12
+##
+##  Revision:   1.8 2019/09/23  10:00:00
+##  Comment:    Change Iridium timing to attempt MT buffer emptying.
+##  Developer:  John benJohn, Leonardo, New Jersey
+##  Platform:   Ubuntu 16.05; Python 2.7.12
 ##
 ##  Revision:   1.8 2019/06/23  15:00:00
 ##  Comment:    Reintroduce versioning of Module.
@@ -56,7 +65,7 @@
 ##
 ########################################################################
 
-v_botcomm = "bot61-20190624"
+v_botcomm = "bot61-20191112"
 
 import os
 import time
@@ -97,7 +106,7 @@ class BotComm(object):
             self.log.track(_lev, "Establish Communcations Connection.", True)
             self.log.track(_lev+13, "^typ: " + str(self.typ), True)
             self.log.track(_lev+13, "_lev: " + str(_lev), True)
-        
+
         #---------------------------------------------------------------
         # Determine Comms Active Status; Bail Gracefully if Inactive.
         #---------------------------------------------------------------
@@ -135,7 +144,7 @@ class BotComm(object):
                             self.serialport.open()
                         except Exception as e:
                             pass
-                        
+
                         if  self.serialport.isOpen():
                             break
 
@@ -220,7 +229,7 @@ class BotComm(object):
             else:
                 if self.cfg.tracking:
                     self.log.track(_lev+1, "IP Connection ALREADY Exists.", True)
-            
+
             return [ True, None, None ]
 
         #---------------------------------------------------------------
@@ -374,7 +383,7 @@ class BotComm(object):
         #---------------------------------------------------------------
         if not self.isactive(_lev+1):
             return [ True, None, None ], []
-        
+
         #---------------------------------------------------------------
         # Send on the 'Iridium' Connection.
         #---------------------------------------------------------------
@@ -479,7 +488,7 @@ class BotComm(object):
                 if self.cfg.tracking:
                     self.log.track(_lev+1, str(enum) + ": " + str(emsg), True)
 
-                return [ False, str(enum), str(emsg) ]    
+                return [ False, str(enum), str(emsg) ]
 
         #---------------------------------------------------------------
         # Close the 'Ethernet' IP Connection.
@@ -506,7 +515,7 @@ class BotComm(object):
             else:
                 if self.cfg.tracking:
                     self.log.track(_lev+1, "NO IP Comm Connection to Close.", True)
-                
+
             return [ True, None, None ]
 
         #---------------------------------------------------------------
@@ -540,13 +549,13 @@ class BotComm(object):
             #self.log.track(_lev, "Entering 'acquire_response()' Method .", True)
             #self.log.track(_lev+13, "_lev: " + str(_lev), True)
             #self.log.track(_lev+13, "^typ: " + str(self.typ), True)
-       
+
         if self.typ == 'Iridium':
             # if isinstance(command, str):
             #     command = command.encode("utf-8")
             try:
                 self.serialport.write(command + b'\r')
-                
+
             except Exception as e:
                 enum = "BC171"
                 emsg = str(e)
@@ -587,7 +596,7 @@ class BotComm(object):
                     break
 
             return False
-            
+
         else:
             enum = "BC173"
             emsg = "close(): UNKNOWN Comm Type [" + str(self.typ) + "]"
@@ -657,7 +666,9 @@ class BotComm(object):
                 self.log.track(_lev+1, "SBD Session Initiated.", True)
 
             if action == 'send':
-                while (mo_sent == False or mt_received == False or (mt_queued > 0 and num > 0)) and time.time() < timeout:
+######################stop multiple connection attempts after success###########################
+                while (mo_sent == False and num > 0 and time.time() < timeout):
+#                while (mo_sent == False or mt_received == False or (mt_queued > 0 and num > 0)) and time.time() < timeout:
                     signal_strength = self.check_signal_quality(_lev+1)
 
                     if int(signal_strength) >= 1:
@@ -691,11 +702,11 @@ class BotComm(object):
                                 if self.cfg.tracking:
                                     self.log.track(_lev+1, "MT SBD messages queued to be transferred: " + str(mt_queued) + " messages", True)
 
-                            time.sleep(4)
+                            time.sleep(1)
                         else:
                             if self.cfg.tracking:
                                 self.log.track(_lev+1, "No SBD response received.", True)
-                            time.sleep(4)
+                            time.sleep(3)
                             count += 1
 
                 if self.cfg.tracking:
@@ -715,7 +726,7 @@ class BotComm(object):
                 while (mt_received == False or (mt_queued > 0 and num > 0)) and time.time() < timeout:
                     signal_strength = self.check_signal_quality(_lev+1)
 
-                    if int(signal_strength) >= 1:
+                    if int(signal_strength) > 2:
 
                         response = self.acquire_response(b"AT+SBDIX")
                         if response is not False:
@@ -743,12 +754,12 @@ class BotComm(object):
                                 if self.cfg.tracking:
                                     self.log.track(_lev+1, "MT SBD messages queued to be transferred: " + str(mt_queued) + " messages", True)
 
-                            time.sleep(4)
+                            time.sleep(1)
 
                         else:
                             if self.cfg.tracking:
                                 self.log.track(_lev+1, "No SBD response received.", True)
-                            time.sleep(4)
+                            time.sleep(3)
                             count += 1
 
                 if self.cfg.tracking:

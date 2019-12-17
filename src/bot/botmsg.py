@@ -13,7 +13,12 @@
 ##
 ##  Revision History
 ##  ----------------
-##  
+##
+##  Revision:   1.5 2019/09/23  12:00:00
+##  Comment:    Changes/fixes to support better pack mgmt.
+##  Developer:  John benJohn, Leonardo, New Jersey
+##  Platform:   Ubuntu 16.05; Python 2.7.12
+##
 ##  Revision:   1.4 2019/06/24  10:00:00
 ##  Comment:    Add new 'int16' Data Type for Alex.
 ##  Developer:  John benJohn, Leonardo, New Jersey
@@ -46,7 +51,7 @@ from struct import *
 import ctypes
 import botdefs
 
-v_botmsg = "bot61-20190624"
+v_botmsg = "bot61-20190923"
 
 ########################################################################
 ##  The Float's Message Class Library
@@ -62,7 +67,7 @@ class BotMsg(object):
         self.buf = ""
         self.len = 0
         self.fmtstat = ">IQIIIII"
-        
+
         if self.cfg.tracking:
             self.log.track(_lev, "Creating BotMsg Class Object.", True)
             self.log.track(_lev+1, "_cfg:    " + str(self.cfg), True)
@@ -299,6 +304,10 @@ class BotMsg(object):
 
             buf1 = pack(self.fmtstat, pack1b32, pack2b64, pack3b32, pack4b32, pack5b32, pack6b32, pack7b24)
 
+            if self.cfg.tracking:
+                self.log.track(_lev+2, "SR Pack Len: " + str(len(str(buf1))), True)
+                self.log.track(_lev+2, "SR Pack Hex: " + str(buf1.encode("hex")), True)
+
         except Exception as e:
             enum = "MSG101"
             emsg = "packstat(): [" + str(e)  + "]"
@@ -307,27 +316,27 @@ class BotMsg(object):
             return [ False, str(enum), str(emsg) ]
 
         #---------------------------------------------------------------
-        # Make sure we have room for this Status Record. 
+        # Make sure we have room for this Status Record.
         #---------------------------------------------------------------
 
-        if self.len + len(buf1) > self.cfg.max_msg_size:
+        if self.len + len(str(buf1)) > self.cfg.max_msg_size:
             enum = "MSG102"
             emsg = "packstat(): INSUFFICIENT ROOM to pack Status Record."
             if self.cfg.tracking:
                 self.log.track(_lev, str(enum) + ": " + str(emsg), True)
                 self.log.track(_lev+1, "Max Msg Size: " + str(self.cfg.max_msg_size), True)
                 self.log.track(_lev+1, "Cur Msg Size: " + str(self.len), True)
-                self.log.track(_lev+1, "DP Msg Size:  " + str(len(str(buf1))), True)
+                self.log.track(_lev+1, "This SR Size:  " + str(len(str(buf1))), True)
 
             return [ False, str(enum), str(emsg) ]
 
         self.buf += str(buf1)
-        self.len += len(self.buf)
+        self.len += len(str(buf1))
 
         if self.cfg.tracking:
             self.log.track(_lev+1, "Status Record PACKED.", True)
-            self.log.track(_lev+2, "^len: " + str(self.len), True)
-            self.log.track(_lev+2, "^buf: " + str(self.buf.encode("hex")), True)
+            self.log.track(_lev+2, "Now Msg Siz: " + str(self.len), True)
+            self.log.track(_lev+2, "Now Msg Hex: " + str(self.buf.encode("hex")), True)
 
         return [ True, None, None ]
 
@@ -342,45 +351,15 @@ class BotMsg(object):
             self.log.track(_lev+13, "_rec:     " + str(_rec), True)
             self.log.track(_lev+1, "_tim:     " + str(_tim), True)
             self.log.track(_lev+1, "_idx:     " + str(_idx), True)
-            #self.log.track(_lev+1, "Insure Segment Will Fit.", True)
 
-        self.len = len(self.buf)
         chg_file     = str(_rec[20])
         chg_eligible = int(_rec[21])
 
         if self.cfg.tracking:
-            self.log.track(_lev+1, "^len:     " + str(self.len), True)
-            self.log.track(_lev+1, "^buf:     " + str(self.buf.encode("hex")), True)
-            self.log.track(_lev+1, "chg_file: " + str(chg_file), True)
-            self.log.track(_lev+1, "eligible: " + str(chg_eligible), True)
-
-        #self.tmp = ""
-
-        #std_len      = int(_rec[16])
-        #chg_len      = int(_rec[17])
-
-        #if chg_eligible:
-            #seg_len = chg_len
-        #else:
-            #seg_len = std_len
-
-        #if self.cfg.tracking:
-            #self.log.track(_lev+2, "maxsize:  " + str(self.cfg.max_msg_size), True)
-            #self.log.track(_lev+2, "cursize:  " + str(self.len), True)
-            #self.log.track(_lev+2, "stdsize:  " + str(std_len), True)
-            #self.log.track(_lev+2, "chgsize:  " + str(chg_len), True)
-            #self.log.track(_lev+2, "chg_file: " + str(chg_file), True)
-            #self.log.track(_lev+2, "eligible: " + str(chg_eligible), True)
-            #self.log.track(_lev+2, "seg_len:  " + str(seg_len), True)
-
-        #if (self.len + seg_len) > self.cfg.max_msg_size:
-            #enum = "MSG103"
-            #emsg = "packmeta(): No room left to pack this Meta Record."
-            #if self.cfg.tracking:
-                #self.log.track(_lev, str(enum) + ": " + str(emsg), True)
-
-            #return [ False, str(enum), str(emsg) ]
-
+            self.log.track(_lev+1, "Cur Msg Len: " + str(self.len), True)
+            self.log.track(_lev+1, "Cur Msg Hex: " + str(self.buf.encode("hex")), True)
+            self.log.track(_lev+1, "chg_file:    " + str(chg_file), True)
+            self.log.track(_lev+1, "eligible:    " + str(chg_eligible), True)
 
         #---------------------------------------------------------------
         # Pack the Segment's Common Header (bytes 0-3) Pt 1.
@@ -423,7 +402,7 @@ class BotMsg(object):
                 else:
                     data_kind   = 1                             # Process a 'chg'
                     data_change = 1                             # Yes Change from Previous
-        
+
         except Exception as e:
             enum = "MSG112"
             emsg = "packmeta(): Error Calculating 1b32: " + str(e)
@@ -473,7 +452,7 @@ class BotMsg(object):
             heading_deg     = float(heading_raw * 100.0)        # heading centidegrees
             heading_adj     = int(math.floor(heading_deg))      # s/b <= 16 bits
 
-            pitch_raw       = int(float(_rec[22]))              # pitch raw
+            pitch_raw       = int(_rec[22])                     # pitch raw
             if pitch_raw < 0:
                 pitch_sgn   = 1                                 # pitch sign bit (-)
                 pitch_adj   = pitch_raw * -1                    # s/b <= 5 bits
@@ -481,7 +460,7 @@ class BotMsg(object):
                 pitch_sgn   = 0                                 # pitch sign bit (+)
                 pitch_adj   = pitch_raw                         # s/b <= 5 bits
 
-            roll_raw        = int(float(_rec[23]))              # roll raw
+            roll_raw        = int(_rec[23])                     # roll raw
             if roll_raw < 0:
                 roll_sgn    = 1                                 # roll sign bit (-)
                 roll_adj    = roll_raw * -1                     # s/b <= 5 bits
@@ -665,38 +644,37 @@ class BotMsg(object):
                 return [ False, str(enum), str(emsg) ]
 
             if self.cfg.tracking:
-                self.log.track(_lev+2, "std3(len):  " + str(len(str(std3))), True)
-                self.log.track(_lev+2, "std3(hex):  " + str(std3).encode("hex"), True)
+                self.log.track(_lev+2, "DP Pack Len: " + str(len(str(std3))), True)
+                self.log.track(_lev+2, "DP Pack Hex: " + str(std3).encode("hex"), True)
                 self.log.track(_lev+1, "Load Segment into the Uplink Message.", True)
- 
+
         else:
             if self.cfg.tracking:
                 self.log.track(_lev+1, "Bitpack 'chg' DATA bits 96+ (bytes 12+).", True)
                 self.log.track(_lev+1, "NOT IMPLEMENTED YET.", True)
 
-
         #---------------------------------------------------------------
-        # Again, make sure we have room for this Data Product. 
+        # Again, make sure we have room for this Data Product.
         #---------------------------------------------------------------
 
-        chklen = self.len + len(str(std3))
-        if chklen > self.cfg.max_msg_size:
+        if self.len + len(str(std3)) > self.cfg.max_msg_size:
             enum = "MSG199"
             emsg = "packmeta(): INSUFFICIENT ROOM to pack this Data Product."
             if self.cfg.tracking:
                 self.log.track(_lev, str(enum) + ": " + str(emsg), True)
-                self.log.track(_lev+1, "Max Msg Size: " + str(self.cfg.max_msg_size), True)
-                self.log.track(_lev+1, "Cur Msg Size: " + str(self.len), True)
-                self.log.track(_lev+1, "DP Msg Size:  " + str(len(str(std3))), True)
+                self.log.track(_lev+1, "Max Msg Len: " + str(self.cfg.max_msg_size), True)
+                self.log.track(_lev+1, "Cur Msg Len: " + str(self.len), True)
+                self.log.track(_lev+1, "DP Pack Len: " + str(len(str(std3))), True)
 
             return [ False, str(enum), str(emsg) ]
 
         self.buf += str(std3)
-        self.len += len(self.buf)
+        self.len += len(str(std3))
 
         if self.cfg.tracking:
-            self.log.track(_lev+2, "^len now: " + str(len(self.buf)), True)
-            self.log.track(_lev+2, "^buf now: " + self.buf.encode("hex"), True)
-        
+            self.log.track(_lev+1, "Data Product PACKED.", True)
+            self.log.track(_lev+2, "Now Msg Siz: " + str(self.len), True)
+            self.log.track(_lev+2, "Now Msg Hex: " + str(self.buf.encode("hex")), True)
+
         return [ True, None, None ]
 

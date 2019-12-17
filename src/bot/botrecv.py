@@ -9,11 +9,25 @@
 ##  Numurus LLC.  It is confidential and must not be made public or
 ##  copied in any form.  It is loaned subject to return upon demand
 ##  and is not to be used directly or indirectly in any way detrimental
-##  to our interests. 
+##  to our interests.
 ##
 ##  Revision History
 ##  ----------------
-##  
+##  Revision:   1.7 2019/12/06  10:00:00
+##  Comment:    Have botrecv exit with a 0 rather then and error
+##  Developer:  Jason Seawall, Seattle, WA
+##  Platform:   Ubuntu 16.05; Python 2.7.12##
+##
+##  Revision:   1.7 2019/11/12  10:00:00
+##  Comment:    Have BotRcv excit on initialization. Everything done in BotSend
+##  Developer:  Jason Seawall, Seattle, WA
+##  Platform:   Ubuntu 16.05; Python 2.7.12
+##
+##  Revision:   1.6 2019/09/23  10:00:00
+##  Comment:    Changes to recv timing to attempt MT queue emptying.
+##  Developer:  John benJohn, Leonardo, New Jersey
+##  Platform:   Ubuntu 16.05; Python 2.7.12
+##
 ##  Revision:   1.6 2019/05/08  14:45:00
 ##  Comment:    Added Housekeeping Functionality.
 ##  Developer:  John benJohn, Leonardo, New Jersey
@@ -69,7 +83,7 @@ from botdb import BotDB
 from botcomm import BotComm
 from bothelp import writeFloatFile, resetCfgValue
 
-v_botrecv = "bot61-20190620"
+v_botrecv = "bot61-20191206"
 
 ########################################################################
 ##  Instantiate a BotCfg Configuration Class Object (from 'botcfg.py')
@@ -92,10 +106,14 @@ log.initlog(0)
 bc = BotComm(cfg, log, cfg.type, 0)
 success = bc.getconn(0)
 
-if not success[0]:
+#######################Turn BotRcv Off#################################################
+#######################Turn BotRcv Off#################################################
+#######################Turn BotRcv Off#################################################
+if 1:
+#if not success[0]:
     if cfg.tracking:
         log.track(0, "EXIT the 'BotRecv' Subsystem.", True)
-    sys.exit(1)
+    sys.exit(0)
 
 ########################################################################
 ##  Retrieve any Pending C&C Downlink Messages.
@@ -104,7 +122,7 @@ if not success[0]:
 if cfg.tracking:
     log.track(0, "Retrieve All Pending 'C&C' Downlink Messages.", True)
 
-success, cnc_msgs = bc.receive(1, 5)
+success, cnc_msgs = bc.receive(1, 50)
 
 # For Test; These are base64 test-level message (base64 used for either
 # Slack or email communication)  They're pasted in here and can be
@@ -135,12 +153,15 @@ if not cfg.comms:
 
     #msg_b64 = "AAH8AQgkAGtaWZyaV5xfFJ+ZwrysILEoMbd4YtMKMAMoxLS0LDGnNFUEABhUAGteVZCfU5menxefmcK+PDUvMSknNYVhRVlqUUlmcmrx5KbFOYklpx3MJtYnbVtXuyQnPy/99IGQHjf5+Yw7oHLG5fJmajq7oHLBbEcS3jYsxKcPADA5AGtam5hckpmfF1+cWhifmcK6HMItnty0EiqRmcK4JjexIj6ltCgRJCCCJMOEInOWKQJJjhVVjvkFAA=="
 
-    msg_b64 = "AAH8ARhUAGteVZCfU5menxefmcK+PDUvMSknNYVhRVlqUUlmcmrx5KbFOYklpx3MJtYnbVtXuyQnPy/99IGQHjf5+Yw7oHLG5fJmajq7oHLBbEcS3jYsxKcPABBhAGtbmZefkhpfUlmQuri4IHlFZl5xSWJecirj2uKi5HiEXElFyhqQCEyeYXVeakFmfH5pSUFpCcOygsSixNziKU0rwIz4zBSGpWWJOaVgfQhBRoggA0KEBSLigBBhhYhwAAAgcABrXV5UmpMan5nCtTw1LzEpJzWFcUVBUWpuZnFq8aTmNcW5iUUlJUWZ6UAVDCsy84pLEvOSU5lWpxWlFsaXZBSlFmectt85EwRmoapmhatmQFbNuDYxuSQzPy++GCiUmSK4KjczL74gtSgzP+UsnwAACCQAa1pZnJpXnF8Un5nCvKwgsSgxt3hi0wowAyjEtLQsMac0VQQAKEMAa15XnJtYVFJSlJkeX1JZkMqxIjOvuCQxLzmVbVlBYlFibvHkphVgRnxmCsPSssSc0lRGhAgTROQs+wWEGDNE7Mx/ADhBAGtdkpOZl8qzNjG5JDM/L744tTA+M4VvVXFJYlFJfElmbuq5mGgD12UFqUWZ+SlnZRTW5SZWxBelFqSWZII0/AcAMDkAa1qbmFySmZ8XX5xaGJ+Zwrocwi2e3LQSKpGZwrgmN7EiPqW0KBEkIIIkw4Qic5YpAkmOFVWO+QUA"
+    #msg_b64 = "AAH8ARhUAGteVZCfU5menxefmcK+PDUvMSknNYVhRVlqUUlmcmrx5KbFOYklpx3MJtYnbVtXuyQnPy/99IGQHjf5+Yw7oHLG5fJmajq7oHLBbEcS3jYsxKcPABBhAGtbmZefkhpfUlmQuri4IHlFZl5xSWJecirj2uKi5HiEXElFyhqQCEyeYXVeakFmfH5pSUFpCcOygsSixNziKU0rwIz4zBSGpWWJOaVgfQhBRoggA0KEBSLigBBhhYhwAAAgcABrXV5UmpMan5nCtTw1LzEpJzWFcUVBUWpuZnFq8aTmNcW5iUUlJUWZ6UAVDCsy84pLEvOSU5lWpxWlFsaXZBSlFmectt85EwRmoapmhatmQFbNuDYxuSQzPy++GCiUmSK4KjczL74gtSgzP+UsnwAACCQAa1pZnJpXnF8Un5nCvKwgsSgxt3hi0wowAyjEtLQsMac0VQQAKEMAa15XnJtYVFJSlJkeX1JZkMqxIjOvuCQxLzmVbVlBYlFibvHkphVgRnxmCsPSssSc0lRGhAgTROQs+wWEGDNE7Mx/ADhBAGtdkpOZl8qzNjG5JDM/L744tTA+M4VvVXFJYlFJfElmbuq5mGgD12UFqUWZ+SlnZRTW5SZWxBelFqSWZII0/AcAMDkAa1qbmFySmZ8XX5xaGJ+Zwrocwi2e3LQSKpGZwrgmN7EiPqW0KBEkIIIkw4Qic5YpAkmOFVWO+QUA"
 
     #msg_b64 = "AAH8ARhjAGteVZCfU5menxefmcK9PDUvMSknNYVxRVlqUUlmcmrx5KbFOYklpx0sD/1tW/GHd0lOfl766QMhPG6OOh9+QeWMynUXKv26DpULaDuS8LZhIVTOQT31b9etXTA5Aw7Htw+lADhBAGtdkpOZl8qzNjG5JDM/L744tTA+M4VvVXFJYlFJfElmbuq5mGgD12UFqUWZ+SlnZRTW5SZWxBelFqSWZII0/AcA"
 
     # This is Bot Config Changes.
     #msg_b64 = "AAH8AQCB/eteUpycX3Ta/uZMEJi1pLA0Mee0/WNjMFhSUpSZzrikJDM39bT9SYiKpQWlRelA7sbXrXI7At+syC1Ojy/OrEo9y6izpKSyIHW5Z1FmSmZp7pKM/OKS9ZkQjl5eakGmXmb+koL8opKV+impZfqhwU6GS5ISS1POqjYsK4AYwcQAAA=="
+
+    # This tests 'no messages'
+    msg_b64 = ""
 
     success = [ True, None, None ]
     msg_raw = msg_b64.decode('base64')
@@ -162,7 +183,7 @@ if not success[0]:
     success = bc.close(1)
     if cfg.tracking:
         log.track(0, "EXIT the Bot-Recv Subsystem.", True)
-    sys.exit(1)
+    sys.exit(3)
 elif (cnc_msgs == None) or (len(cnc_msgs) == 0):
     if cfg.tracking:
         log.track(1, "NO C&C Downlink Messages in Queue.", True)
@@ -171,7 +192,7 @@ elif (cnc_msgs == None) or (len(cnc_msgs) == 0):
     if cfg.tracking:
         log.track(0, "EXIT the Bot-Recv Subsystem.", True)
     sys.exit(0)
-    
+
 if cfg.tracking:
     log.track(1, "C&C Downlink Messages Received.", True)
     log.track(14, "Total: [" + str(len(cnc_msgs)) + "]", True)
@@ -206,7 +227,7 @@ for msgnum in range(0, len(cnc_msgs)):
         if cfg.tracking:
             log.track(2, "Evaluating Segment Header.", True)
 
-        try:    
+        try:
             seg_head = struct.unpack('>I', msg[msg_pos:msg_pos+4])[0]
             seg_prot = (seg_head & 0xc0000000) >> 30    # 'protocol'    (bits 0-1)
             seg_type = (seg_head & 0x38000000) >> 27    # 'config type' (bits 2-4)
@@ -252,7 +273,7 @@ for msgnum in range(0, len(cnc_msgs)):
             if cfg.tracking:
                 log.track(15, "data_hex: [" + str(data_hex) + "]", True)
 
-            if seg_type == 0 and (int(seg_flag) != 1):  # If Cmd, grab byte 1 of 
+            if seg_type == 0 and (int(seg_flag) != 1):  # If Cmd, grab byte 1 of
                 data_unp = data_hex                     # data in its hex value.
             else:
                 data_unp = struct.unpack(data_fmt, data_raw)[0]
@@ -362,8 +383,8 @@ for msgnum in range(0, len(cnc_msgs)):
 
             fpath = "/commands/"
             cmd = int(data_unp)
-            
-            if cmd == 1:                      
+
+            if cmd == 1:
                 fname = "scuttle"                       # Scuttle
             elif cmd == 2:
                 fname = "ping"                          # Ping
@@ -386,7 +407,7 @@ for msgnum in range(0, len(cnc_msgs)):
             elif seg_type == 2:                             # NODE
                 fpath = "/cfg/proc_nodes/"
                 fname = "proc_node_cfg"
-                
+
             elif seg_type == 3:                             # GEOFENCE
                 fpath = "/cfg/geofence/"
                 fname = "geofence_cfg"
@@ -402,11 +423,11 @@ for msgnum in range(0, len(cnc_msgs)):
             elif seg_type == 6:                             # ACTION
                 fpath = "/cfg/action/"
                 fname = "action_seq"
-                
+
             elif seg_type == 7:                             # SCHEDULE
                 fpath = "/cfg/sched/"
                 fname = "task"
-                
+
             else:
                 if cfg.tracking:
                     log.track(2, "WARNING: Got 'Unknown' C&C Segment TYPE.", True)
@@ -447,7 +468,7 @@ for msgnum in range(0, len(cnc_msgs)):
                 log.track(3, "Problem(s) Constructing C&C File.", True)
                 log.track(3, "ERROR: [" + str(e) + "]", True)
                 log.track(3, "Continue w/next SEGMENT.", True)
-            
+
             msg_pos += seg_size
             continue
 
@@ -457,7 +478,7 @@ for msgnum in range(0, len(cnc_msgs)):
         success = writeFloatFile(cfg, log, 3, True, ffile, str(fdump))
         if success[0]:
             sdk_action = True   # Got at least 1 C&C message for the SDK.
-        
+
         if cfg.tracking:
                 log.track(2, "Continue w/next SEGMENT.", True)
 
@@ -502,7 +523,9 @@ if sdk_action:
         if os.path.isfile(str(sdkproc)):
             #Popen([str(sdkproc)])
             #Popen(['nohup', str(sdkproc)])
-            Popen(['nohup', "/bin/sh " + str(sdkproc)], stdout=devnull, stderr=devnull)
+            proc = Popen(['nohup', "/bin/sh", str(sdkproc)], stdout=devnull, stderr=devnull)
+            rc = proc.wait()
+            log.track(1, "{} returned {}".format(str(sdkproc), rc), True)
         else:
             raise("Can't find SDK Notification Process.")
 
