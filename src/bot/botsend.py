@@ -1,15 +1,15 @@
 ########################################################################
 ##
-##  Module: botsend.py
-##  --------------------
+# Module: botsend.py
+# --------------------
 ##
-##  (c) Copyright 2019 by Numurus LLC
+# (c) Copyright 2019 by Numurus LLC
 ##
-##  This document, and all information therein, is the property of
-##  Numurus LLC.  It is confidential and must not be made public or
-##  copied in any form.  It is loaned subject to return upon demand
-##  and is not to be used directly or indirectly in any way detrimental
-##  to our interests.
+# This document, and all information therein, is the property of
+# Numurus LLC.  It is confidential and must not be made public or
+# copied in any form.  It is loaned subject to return upon demand
+# and is not to be used directly or indirectly in any way detrimental
+# to our interests.
 ##
 ########################################################################
 
@@ -51,7 +51,7 @@ cfg = BotCfg()
 cfg.initcfg()
 
 ########################################################################
-##  Instantiate Bot-Send Debug/Log Object (from 'botlog.py')
+# Instantiate Bot-Send Debug/Log Object (from 'botlog.py')
 ########################################################################
 
 log = BotLog(cfg, "BOT-SEND", v_botsend)
@@ -128,7 +128,8 @@ if success[0]:
             if cfg.wt_changed:
                 if cfg.tracking:
                     log.track(2, "Recalculate Numerator.", True)
-                success, numerator = pipo.computeNumerator(3, scor, qual, norm, trig)
+                success, numerator = pipo.computeNumerator(
+                    3, scor, qual, norm, trig)
             else:
                 if cfg.tracking:
                     log.track(2, "Use existing Numerator." + str(numr), True)
@@ -144,13 +145,16 @@ if success[0]:
             if cfg.tracking:
                 log.track(2, str(pipo_rating), True)
 
-            sql = "UPDATE meta SET numerator=" + str(numerator) + ", pipo=" + str(pipo_rating) + " WHERE rowid=" + str(rwid)
+            sql = "UPDATE meta SET numerator=" + \
+                str(numerator) + ", pipo=" + str(pipo_rating) + \
+                " WHERE rowid=" + str(rwid)
 
             success = db.update(2, sql)
 
         if cfg.wt_changed:
             if cfg.tracking:
-                log.track(1, "All Archive PIPOs Recalculated; Reset Config JSON.", True)
+                log.track(
+                    1, "All Archive PIPOs Recalculated; Reset Config JSON.", True)
 
             resetCfgValue(cfg, log, 2, "wt_changed", 0)
 
@@ -168,7 +172,8 @@ if success[0]:
 if cfg.tracking:
     log.track(0, "Get ALL Data Folders in Official Data Directory.", True)
 
-success, allfolders = getAllFolderNames(cfg, log, 1, cfg.data_dir_path, True, True)
+success, allfolders = getAllFolderNames(
+    cfg, log, 1, cfg.lb_data_dir_path, True, True)
 
 ########################################################################
 # Retrieve New (All) Status and Data Product Files; Populate the DB.
@@ -177,16 +182,16 @@ success, allfolders = getAllFolderNames(cfg, log, 1, cfg.data_dir_path, True, Tr
 haveNewStatus = 0
 
 for dir in allfolders:
-    #-------------------------------------------------------------------
+    # -------------------------------------------------------------------
     # Deal With Status Record First.
-    #-------------------------------------------------------------------
+    # -------------------------------------------------------------------
     # Get the ONLY sys_status.json file that should be in THIS Data
     # Product folder. Deconstruct it into a JSON object and load into
     # the 'status' table of the embedded DB.  If any failure detected,
     # DESTROY the entire DP Folder since, without this Status Record,
     # all the Data Products in this DP Folder are useless.
 
-    data_prod_folder = cfg.data_dir_path + "/" + str(dir)
+    data_prod_folder = cfg.lb_data_dir_path + "/" + str(dir)
     status_file_path = data_prod_folder + "/" + cfg.sys_status_file
     if cfg.tracking:
         log.track(0, "", True)
@@ -195,7 +200,8 @@ for dir in allfolders:
         log.track(1, "Status File: " + str(cfg.sys_status_file), True)
         log.track(1, "Consume File from DP Directory.", True)
 
-    success, status_json = readFloatFile(cfg, log, 2, status_file_path, False, True)
+    success, status_json = readFloatFile(
+        cfg, log, 2, status_file_path, False, True)
 
     if success[0]:
         # Insert Status Record and capture the DB 'rowid' (which will be
@@ -232,12 +238,13 @@ for dir in allfolders:
     if haveNewStatus == 0:
         haveNewStatus = status_rowid
         if cfg.tracking:
-            log.track(2, "Have at Least 1 New Status Record for Uplink Msg.", True)
+            log.track(
+                2, "Have at Least 1 New Status Record for Uplink Msg.", True)
             log.track(3, "ID: " + str(haveNewStatus), True)
 
-    #-------------------------------------------------------------------
+    # -------------------------------------------------------------------
     # Calculate Trigger Score
-    #-------------------------------------------------------------------
+    # -------------------------------------------------------------------
     if cfg.tracking:
         log.track(1, "Calculate Trigger Score.", True)
 
@@ -247,9 +254,9 @@ for dir in allfolders:
         log.track(2, "Wake Event Type: " + str(wet), True)
         log.track(2, "Wake Event ID: " + str(wei), True)
 
-    #-------------------------------------------------------------------
+    # -------------------------------------------------------------------
     # Find All META Data Files
-    #-------------------------------------------------------------------
+    # -------------------------------------------------------------------
     # The 'sys_status.json' file for this Data Folder is now in the DB;
     # we need to find ALL Meta Data files (*_meta.json) in this same
     # Folder (the Status File we're processing right now applies to all
@@ -258,7 +265,8 @@ for dir in allfolders:
         log.track(1, "Get ALL DP Files in This Data Folder.", True)
         log.track(2, "Folder:" + data_prod_folder, True)
 
-    success, allfiles = getAllFileNames(cfg, log, 2, data_prod_folder, False, False)
+    success, allfiles = getAllFileNames(
+        cfg, log, 2, data_prod_folder, False, False)
     if not success[0] or not allfiles:
         if cfg.tracking:
             log.track(2, "Data Folder File NOT ACCESSIBLE.", True)
@@ -284,21 +292,21 @@ for dir in allfolders:
         if cfg.tracking:
             log.track(2, "Continue.", True)
         continue
-            #log.track(2, "Update Status File with 'meta_state' of 1.", True)
+        #log.track(2, "Update Status File with 'meta_state' of 1.", True)
 
         #sql = "UPDATE status SET meta_state=1 WHERE rowid=" + str(status_rowid)
         #success = db.update(3, sql)
-        #if cfg.tracking:
-            #log.track(2, "Continue.", True)
-        #continue
+        # if cfg.tracking:
+        #log.track(2, "Continue.", True)
+        # continue
 
     if cfg.tracking:
         log.track(2, "Got All 'Meta' DP Files.", True)
         log.track(3, "Files: " + str(allmetafiles), True)
 
-    #-------------------------------------------------------------------
+    # -------------------------------------------------------------------
     # Process Each META File
-    #-------------------------------------------------------------------
+    # -------------------------------------------------------------------
     for mf in allmetafiles:
         # First, compose the full path to the Meta File.
         meta_file_path = data_prod_folder + "/" + mf
@@ -310,10 +318,12 @@ for dir in allfolders:
         # Now process each Meta File by calculating its PIPO Rating,
         # which evaluates the mandatory 'Standard' Data File and any
         # optional 'Change' Data File.
-        success, meta_json = readFloatFile(cfg, log, 3, meta_file_path, False, True)
+        success, meta_json = readFloatFile(
+            cfg, log, 3, meta_file_path, False, True)
         if not success[0]:
             if cfg.tracking:
-                log.track(2, "Can't Access the Data Product's 'Meta' File.", True)
+                log.track(
+                    2, "Can't Access the Data Product's 'Meta' File.", True)
                 log.track(2, "These DP Files are Useless; Remove Them.", True)
 
             deleteDataProduct(cfg, log, 3, meta_file_path)
@@ -321,9 +331,9 @@ for dir in allfolders:
                 log.track(2, "Move on to next DP; Continue.", True)
             continue
 
-        #---------------------------------------------------------------
+        # ---------------------------------------------------------------
         # Compute the PIPO Rating
-        #---------------------------------------------------------------
+        # ---------------------------------------------------------------
         # For each Meta File, get the PIPO rating (which also verifies
         # and returns the mandatory "Standard" and optional "Change"
         # Data Files that are identified in the Meta File).
@@ -342,14 +352,15 @@ for dir in allfolders:
                 log.track(2, "Move on to next DP; Continue.", True)
             continue
 
-        #---------------------------------------------------------------
+        # ---------------------------------------------------------------
         # INSERT the META Data Record into the Float's Database.
-        #---------------------------------------------------------------
+        # ---------------------------------------------------------------
         if cfg.tracking:
             log.track(2, "INSERT Meta Data Record into DB.", True)
 
         #success = db.pushmeta(3, meta_json, info[3], status_rowid, trigger, info[0], info[1], info[2], info[4], info[5], meta_file_path, stdfile, chgfile)
-        success = db.pushmeta(3, meta_json, info, status_rowid, trigger, meta_file_path)
+        success = db.pushmeta(3, meta_json, info,
+                              status_rowid, trigger, meta_file_path)
 
         if not success[0]:
             if cfg.tracking:
@@ -361,9 +372,9 @@ for dir in allfolders:
                 log.track(2, "Move on to next DP; Continue.", True)
             continue
 
-        #---------------------------------------------------------------
+        # ---------------------------------------------------------------
         # DONE LOOP-PROCESSING NEW SDK DATA PRODUCTS.
-        #---------------------------------------------------------------
+        # ---------------------------------------------------------------
 
 ########################################################################
 # Housekeeping of Data Directory.
@@ -377,7 +388,8 @@ if cfg.tracking:
     log.track(0, "Clean Up the Entire Data Directory.", True)
     log.track(1, "Get Remaining Data Folders in Data Dir.", True)
 
-success, allfolders = getAllFolderNames(cfg, log, 2, cfg.data_dir_path, True, True)
+success, allfolders = getAllFolderNames(
+    cfg, log, 2, cfg.lb_data_dir_path, True, True)
 
 if not success[0]:
     if cfg.tracking:
@@ -387,7 +399,7 @@ elif not allfolders:
         log.track(1, "Nothing remaining to Clean-Up.", True)
 else:
     for folder in allfolders:
-        dir = cfg.data_dir_path + "/" + str(folder)
+        dir = cfg.lb_data_dir_path + "/" + str(folder)
         deleteFolder(cfg, log, 1, dir)
 
 if cfg.tracking:
@@ -421,7 +433,8 @@ else:
     if success[0]:
         if not new_stat_results:
             if cfg.tracking:
-                log.track(2, "Can't Find Expected 'Latest' Active SR in DB.", True)
+                log.track(
+                    2, "Can't Find Expected 'Latest' Active SR in DB.", True)
                 log.track(2, "Ignore; Continue with Data Products.", True)
         else:
             new_stat_rowid = new_stat_results[0][0]
@@ -433,32 +446,40 @@ else:
                 log.track(3, "rowid=[" + str(new_stat_rowid) + "]", True)
                 log.track(3, "state=[" + str(new_stat_state) + "]", True)
                 log.track(3, "stamp=[" + str(new_stat_stamp) + "]", True)
-                log.track(2, "Add This 'Latest' Status Record to Uplink Message.", True)
+                log.track(
+                    2, "Add This 'Latest' Status Record to Uplink Message.", True)
 
             success = sm.packstat(3, new_stat_results[0])
             if success[0]:
                 if cfg.tracking:
                     log.track(1, "Latest Active SR Successfully Packed.", True)
-                    log.track(1, "Update Status Record 'state' to 'packed.'", True)
+                    log.track(
+                        1, "Update Status Record 'state' to 'packed.'", True)
 
-                sql = "UPDATE status SET state = '1' WHERE rowid = '" + str(new_stat_rowid) + "'"
+                sql = "UPDATE status SET state = '1' WHERE rowid = '" + \
+                    str(new_stat_rowid) + "'"
                 success = db.update(2, sql)
                 if success[0]:
                     if cfg.tracking:
-                        log.track(2, "Latest Active SR 'status Updated (Packed).", True)
+                        log.track(
+                            2, "Latest Active SR 'status Updated (Packed).", True)
                         log.track(2, "Continue now with Data Products.", True)
                 else:
                     if cfg.tracking:
                         log.track(2, "Well ... This is Awkward.", True)
-                        log.track(2, "We May Eventually Repack This Same Status Record.", True)
-                        log.track(2, "Ignore; Continue with Data Products.", True)
+                        log.track(
+                            2, "We May Eventually Repack This Same Status Record.", True)
+                        log.track(
+                            2, "Ignore; Continue with Data Products.", True)
             else:
                 if cfg.tracking:
-                    log.track(2, "Can't Pack 'Latest' Active Status Record.", True)
+                    log.track(
+                        2, "Can't Pack 'Latest' Active Status Record.", True)
                     log.track(2, "Ignore; Continue with Data Products.", True)
     else:
         if cfg.tracking:
-            log.track(2, "Can't Access 'Latest' Active Status Record from DB.", True)
+            log.track(
+                2, "Can't Access 'Latest' Active Status Record from DB.", True)
             log.track(2, "Ignore; Continue with Data Products.", True)
 
 
@@ -484,7 +505,8 @@ if success[0]:
             log.track(1, "Active Data Products FOUND in Database.", True)
             log.track(2, "Total: " + str(len(meta_rows)), True)
             for row in meta_rows:
-                log.track(14, "rowid=[" + str(row[0]) + "]  statid=[" + str(row[3]) + "]  pipo=[" + str(row[6]) + "]", True)
+                log.track(14, "rowid=[" + str(row[0]) + "]  statid=[" +
+                          str(row[3]) + "]  pipo=[" + str(row[6]) + "]", True)
 else:
     if cfg.tracking:
         log.track(1, "ERROR Finding Active Data Products in DB; Continue.", True)
@@ -510,15 +532,19 @@ if meta_rows:
         # If not already packed in this Message, get it out of the 'status'
         # Table in DB. Then, pack this Status Record in the uplink Message
         # and save the Status Record's timestamp.
-        #if not stat_sent_flag:
-        sql = "SELECT rowid, * FROM status WHERE rowid = '" + str(statusFK) + "'"
+        # if not stat_sent_flag:
+        sql = "SELECT rowid, * FROM status WHERE rowid = '" + \
+            str(statusFK) + "'"
         success, assoc_statrec = db.getResults(3, sql, False)
         if success[0]:
             if not assoc_statrec:
                 if cfg.tracking:
-                    log.track(3, "Can't Access Assoc Status Record in DB.", True)
-                    log.track(3, "Likely a Previously-Sent Status Record.", True)
-                    log.track(3, "Ignore; Continue with Next Data Product.", True)
+                    log.track(
+                        3, "Can't Access Assoc Status Record in DB.", True)
+                    log.track(
+                        3, "Likely a Previously-Sent Status Record.", True)
+                    log.track(
+                        3, "Ignore; Continue with Next Data Product.", True)
                 continue
             else:
                 stat_state = assoc_statrec[0][1]
@@ -526,7 +552,8 @@ if meta_rows:
 
                 if stat_state == 1:
                     if cfg.tracking:
-                        log.track(3, "Assoc SR JUST PACKED into This Msg.", True)
+                        log.track(
+                            3, "Assoc SR JUST PACKED into This Msg.", True)
                         log.track(4, "State: " + str(stat_state), True)
                         log.track(4, "Stamp: " + str(stat_timestamp), True)
                 elif stat_state == 2:
@@ -536,29 +563,36 @@ if meta_rows:
                         log.track(4, "Stamp: " + str(stat_timestamp), True)
                 else:
                     if cfg.tracking:
-                        log.track(3, "Assoc SR FOUND in DB, but NOT Sent.", True)
+                        log.track(
+                            3, "Assoc SR FOUND in DB, but NOT Sent.", True)
                         log.track(4, "State: " + str(stat_state), True)
                         log.track(4, "Stamp: " + str(stat_timestamp), True)
                         log.track(2, "PACK it into THIS Uplink Message.", True)
                     success = sm.packstat(3, assoc_statrec[0])
                     if success[0]:
                         if cfg.tracking:
-                            log.track(3, "PACKED Assoc SR into This Message.", True)
+                            log.track(
+                                3, "PACKED Assoc SR into This Message.", True)
 
-                        sql = "UPDATE status SET state = '1' WHERE rowid = '" + str(assoc_statrec[0][0]) + "'"
+                        sql = "UPDATE status SET state = '1' WHERE rowid = '" + \
+                            str(assoc_statrec[0][0]) + "'"
 
                         if cfg.tracking:
-                            log.track(3, "Update Assoc SR 'state' to 'packed.'", True)
+                            log.track(
+                                3, "Update Assoc SR 'state' to 'packed.'", True)
 
                         success = db.update(4, sql)
                         if success[0]:
                             if cfg.tracking:
-                                log.track(3, "Assoc SR Status Updated (Packed).", True)
+                                log.track(
+                                    3, "Assoc SR Status Updated (Packed).", True)
                         else:
                             if cfg.tracking:
                                 log.track(3, "Well ... This is Awkward.", True)
-                                log.track(3, "We May Eventually Repack This Same SR.", True)
-                                log.track(3, "Ignore; Continue with Next Data Product.", True)
+                                log.track(
+                                    3, "We May Eventually Repack This Same SR.", True)
+                                log.track(
+                                    3, "Ignore; Continue with Next Data Product.", True)
                             continue
         else:
             if cfg.tracking:
@@ -566,26 +600,30 @@ if meta_rows:
                 log.track(3, "Ignore; Continue with Next Data Product.", True)
             continue
 
-        #---------------------------------------------------------------
+        # ---------------------------------------------------------------
         # Get the Next 'index' value from 'node' Table in DB.
-        #---------------------------------------------------------------
+        # ---------------------------------------------------------------
         ntype = str(row[7])
         ninst = str(row[8])
         if cfg.tracking:
-            log.track(2, "Get the Next 'index' value from 'node' Table in DB", True)
+            log.track(
+                2, "Get the Next 'index' value from 'node' Table in DB", True)
 
-        sql = "SELECT rowid, * FROM node WHERE node_type = '"+ str(ntype) + "' AND node_instance = '" + str(ninst) + "' LIMIT 1"
+        sql = "SELECT rowid, * FROM node WHERE node_type = '" + \
+            str(ntype) + "' AND node_instance = '" + str(ninst) + "' LIMIT 1"
         success, node_results = db.getResults(3, sql, False)
 
         if not success[0] or not node_results:
             if cfg.tracking:
-                log.track(3, "Inaccessible Node Type/Instance: " + str(ntype) + "/" + str(ninst), True)
+                log.track(3, "Inaccessible Node Type/Instance: " +
+                          str(ntype) + "/" + str(ninst), True)
                 log.track(3, "Ignore This DP; Continue.", True)
             continue
 
         if not node_results:
             if cfg.tracking:
-                log.track(3, "Node Type/Instance NOT Found: " + str(ntype) + "/" + str(ninst), True)
+                log.track(3, "Node Type/Instance NOT Found: " +
+                          str(ntype) + "/" + str(ninst), True)
                 log.track(3, "Ignore This DP; Continue.", True)
             continue
 
@@ -594,14 +632,15 @@ if meta_rows:
         next_index = node_stage + 1
 
         if cfg.tracking:
-            log.track(3, "Got Node Type/Instance: "+ str(ntype) + "/" + str(ninst), True)
+            log.track(3, "Got Node Type/Instance: " +
+                      str(ntype) + "/" + str(ninst), True)
             log.track(4, "Index: " + str(node_index), True)
             log.track(4, "Stage: " + str(node_index), True)
             log.track(4, "Next:  " + str(next_index), True)
 
-        #---------------------------------------------------------------
+        # ---------------------------------------------------------------
         # Got Associated Status Record, so PACK this Data Product.
-        #---------------------------------------------------------------
+        # ---------------------------------------------------------------
         if cfg.tracking:
             log.track(2, "Pack This Data Product into Uplink Message.", True)
 
@@ -611,32 +650,39 @@ if meta_rows:
                 log.track(3, "PACKED Data Product Record into Message.", True)
                 log.track(3, "Update Meta Record 'state' to 'packed.'", True)
 
-                sql = "UPDATE meta SET state = '1' WHERE rowid = '" + str(row[0]) + "'"
+                sql = "UPDATE meta SET state = '1' WHERE rowid = '" + \
+                    str(row[0]) + "'"
                 success = db.update(4, sql)
                 if not success[0]:
                     if cfg.tracking:
                         log.track(4, "Well ... This is Awkward.", True)
-                        log.track(4, "Probably Come Back to Bite Us in the Ass.'", True)
-                        log.track(4, "We May Eventually Repack This Same Meta Record.", True)
+                        log.track(
+                            4, "Probably Come Back to Bite Us in the Ass.'", True)
+                        log.track(
+                            4, "We May Eventually Repack This Same Meta Record.", True)
         else:
             if cfg.tracking:
                 log.track(3, "Can't PACK Data Product Record.", True)
                 continue
 
-        #---------------------------------------------------------------
+        # ---------------------------------------------------------------
         # Data Product Packed; Update 'node' Table in DB.
-        #---------------------------------------------------------------
+        # ---------------------------------------------------------------
 
         if cfg.tracking:
             log.track(1, "Update 'node' Table with latest Index.'", True)
 
-            sql = "UPDATE node SET node_stage = '" + str(next_index) + "' WHERE rowid = '" + str(node_results[0][0]) + "'"
+            sql = "UPDATE node SET node_stage = '" + \
+                str(next_index) + "' WHERE rowid = '" + \
+                str(node_results[0][0]) + "'"
             success = db.update(2, sql)
             if not success[0]:
                 if cfg.tracking:
                     log.track(2, "Well ... This is Awkward.", True)
-                    log.track(2, "Probably Come Back to Bite Us in the Ass.'", True)
-                    log.track(2, "Will wind up reverting back to 'std' DP Delivery.", True)
+                    log.track(
+                        2, "Probably Come Back to Bite Us in the Ass.'", True)
+                    log.track(
+                        2, "Will wind up reverting back to 'std' DP Delivery.", True)
 
 if cfg.tracking:
     log.track(1, "Final Message Complete.", True)
@@ -658,15 +704,15 @@ if sm.len > 0:
         send_success, cnc_msgs = bc.send(1, sm.buf, 5)
         if send_success[0]:
             log.track(0, "send returned Success", True)
-            bcsuccess=1  #Added as gap fix for no scuttle
+            bcsuccess = 1  # Added as gap fix for no scuttle
         else:
             log.track(0, "send returned Not Success", True)
-            bcsuccess=0  #Added as gap fix for no scuttle
+            bcsuccess = 0  # Added as gap fix for no scuttle
     else:
-        send_success = [ False, None, None ]
+        send_success = [False, None, None]
         cnc_msgs = None
         log.track(0, "getconn returned Not Success", True)
-        bcsuccess=0  #Added as gap fix for no scuttle
+        bcsuccess = 0  # Added as gap fix for no scuttle
     success = bc.close(1)
 else:
     if cfg.tracking:
@@ -676,7 +722,7 @@ else:
 ########################################################################
 # Make sure any downlinked commands get processed.
 ########################################################################
-sdk_action=False
+sdk_action = False
 # Botcomm indicates no cnc_msgs with either None or an empty list.
 if cnc_msgs is None:
     cnc_msgs = list()
@@ -692,9 +738,9 @@ for msgnum in range(0, len(cnc_msgs)):
         log.track(2, "msg_pos: [" + str(msg_pos) + "]", True)
         log.track(2, "msg_len: [" + str(msg_len) + "]", True)
         log.track(14, "msg_hex: [" + str(msg_hex) + "] <-- s/b double.", True)
-    #-------------------------------------------------------------------
+    # -------------------------------------------------------------------
     # Loop Through the C&C Segments Until Message is Exhausted.
-    #-------------------------------------------------------------------
+    # -------------------------------------------------------------------
     while msg_pos < msg_len:
         # Even though msg 'header' is exactly 3 bytes, peel off 4 so
         # 'struct' can deal with it as a 32-bit integer. Ignore the
@@ -703,11 +749,16 @@ for msgnum in range(0, len(cnc_msgs)):
             log.track(2, "Evaluating Segment Header.", True)
         try:
             seg_head = struct.unpack('>I', msg[msg_pos:msg_pos+4])[0]
-            seg_prot = (seg_head & 0xc0000000) >> 30    # 'protocol'    (bits 0-1)
-            seg_type = (seg_head & 0x38000000) >> 27    # 'config type' (bits 2-4)
-            seg_size = (seg_head & 0x07ff0000) >> 16    # 'msg length'  (bits 5-15)
-            seg_indx = (seg_head & 0x0000fc00) >> 10    # 'cfg index'   (bits 16-21)
-            seg_flag = (seg_head & 0x00000300) >> 8     # 'msg flags'   (bits 22-23)
+            # 'protocol'    (bits 0-1)
+            seg_prot = (seg_head & 0xc0000000) >> 30
+            # 'config type' (bits 2-4)
+            seg_type = (seg_head & 0x38000000) >> 27
+            # 'msg length'  (bits 5-15)
+            seg_size = (seg_head & 0x07ff0000) >> 16
+            # 'cfg index'   (bits 16-21)
+            seg_indx = (seg_head & 0x0000fc00) >> 10
+            # 'msg flags'   (bits 22-23)
+            seg_flag = (seg_head & 0x00000300) >> 8
         except Exception as e:
             if cfg.tracking:
                 log.track(3, "Lost Control Evaluating This Message.", True)
@@ -721,16 +772,16 @@ for msgnum in range(0, len(cnc_msgs)):
             log.track(15, "seg_size:  [" + str(int(seg_size)) + "]", True)
             log.track(15, "seg_indx:  [" + str(int(seg_indx)) + "]", True)
             log.track(15, "seg_flag:  [" + str(int(seg_flag)) + "]", True)
-        #---------------------------------------------------------------
+        # ---------------------------------------------------------------
         # Position at Data and Decompress/Unpack.
-        #---------------------------------------------------------------
+        # ---------------------------------------------------------------
         msg_pos += 3    # Skip forward over the 3-byte segment 'header.'
         if cfg.tracking:
             log.track(2, "Bump Forward to Process Message Data.", True)
             log.track(15, "msg_pos:  [" + str(msg_pos) + "]", True)
             log.track(2, "Perform 'struct' Unpacking.", True)
         try:
-            data_fmt = ">" +str(seg_size) + "s"
+            data_fmt = ">" + str(seg_size) + "s"
             if cfg.tracking:
                 log.track(15, "data_fmt: [" + str(data_fmt) + "]", True)
             data_raw = msg[msg_pos:msg_pos+seg_size]
@@ -743,7 +794,8 @@ for msgnum in range(0, len(cnc_msgs)):
             if cfg.tracking:
                 log.track(15, "data_hex: [" + str(data_hex) + "]", True)
             if seg_type == 0 and (int(seg_flag) != 1):  # If Cmd, grab byte 1 of
-                data_unp = data_hex                     # data in its hex value.
+                # data in its hex value.
+                data_unp = data_hex
             else:
                 data_unp = struct.unpack(data_fmt, data_raw)[0]
                 if cfg.tracking:
@@ -755,20 +807,24 @@ for msgnum in range(0, len(cnc_msgs)):
                     data_dcmp = decompress.decompress(data_raw)
                     data_dcmp += decompress.flush()
                     if cfg.tracking:
-                        log.track(15, "data_dcmp: [" + str(data_dcmp) + "]", True)
+                        log.track(
+                            15, "data_dcmp: [" + str(data_dcmp) + "]", True)
                     data_dsiz = len(data_dcmp)
                     if cfg.tracking:
-                        log.track(15, "data_dsiz: [" + str(data_dsiz) + "]", True)
+                        log.track(
+                            15, "data_dsiz: [" + str(data_dsiz) + "]", True)
                     data_unp = data_dcmp
                 if cfg.data_msgpack:    # Are we using 'msgpack' unpacking?
                     if cfg.tracking:
                         log.track(2, "Perform 'msgpack' Unpacking.", True)
                     data_mpak = msgpack.unpackb(data_dcmp)
                     if cfg.tracking:
-                        log.track(16, "data_mpak: [" + str(data_mpak) + "]", True)
+                        log.track(
+                            16, "data_mpak: [" + str(data_mpak) + "]", True)
                     data_mlen = len(str(data_mpak))
                     if cfg.tracking:
-                        log.track(16, "data_mlen: [" + str(data_mlen) + "]", True)
+                        log.track(
+                            16, "data_mlen: [" + str(data_mlen) + "]", True)
                     data_unp = data_mpak
             if cfg.tracking:
                 log.track(15, "data_unp: [" + str(data_unp) + "]", True)
@@ -778,9 +834,9 @@ for msgnum in range(0, len(cnc_msgs)):
                 log.track(3, "ERROR: [" + str(e) + "]", True)
                 log.track(3, "Continue w/next MESSAGE.", True)
             break
-        #---------------------------------------------------------------
+        # ---------------------------------------------------------------
         # Process the Bot Config, Command, or SDK Config Messages.
-        #---------------------------------------------------------------
+        # ---------------------------------------------------------------
         if int(seg_flag) == 1:  # --------------------------- BOT CONFIG
             if cfg.tracking:
                 log.track(2, "Process BOT CONFIG.", True)
@@ -813,7 +869,8 @@ for msgnum in range(0, len(cnc_msgs)):
                     nkey = "packet_size"
                 else:
                     if cfg.tracking:
-                        log.track(3, "Unknown 'keyword' received: [" + str(key) + "]", True)
+                        log.track(
+                            3, "Unknown 'keyword' received: [" + str(key) + "]", True)
                         log.track(3, "Continue w/next KEYWORD.", True)
                     msg_pos += seg_size
                     continue
@@ -838,8 +895,10 @@ for msgnum in range(0, len(cnc_msgs)):
                 fname = "ping"                          # Ping
             else:
                 if cfg.tracking:
-                    log.track(3, "WARNING: Got 'Unknown' Command: [" + str(cmd) + "]", True)
-                    log.track(3, "No Implementation; Continue w/next SEGMENT.", True)
+                    log.track(
+                        3, "WARNING: Got 'Unknown' Command: [" + str(cmd) + "]", True)
+                    log.track(
+                        3, "No Implementation; Continue w/next SEGMENT.", True)
                 msg_pos += seg_size
                 continue
         else:   # ------------------------------------------- CONFIGURATION
@@ -869,8 +928,10 @@ for msgnum in range(0, len(cnc_msgs)):
                 fname = "task"
             else:
                 if cfg.tracking:
-                    log.track(2, "WARNING: Got 'Unknown' C&C Segment TYPE.", True)
-                    log.track(2, "No Implementation; Continue w/next SEGMENT.", True)
+                    log.track(
+                        2, "WARNING: Got 'Unknown' C&C Segment TYPE.", True)
+                    log.track(
+                        2, "No Implementation; Continue w/next SEGMENT.", True)
                 msg_pos += seg_size
                 continue
         if cfg.tracking:
@@ -891,8 +952,8 @@ for msgnum in range(0, len(cnc_msgs)):
             if seg_type > 0:
                 # This can be used if the JSON requires 'expansion.'
                 #fpars = json.loads(data_unp)
-                #if cfg.tracking:
-                    #log.track(15, "fpars: [" + str(fpars) + "]", True)
+                # if cfg.tracking:
+                #log.track(15, "fpars: [" + str(fpars) + "]", True)
                 fdump = json.dumps(data_unp, indent=4, sort_keys=False)
                 if cfg.tracking:
                     log.track(15, "fdump: [" + str(fdump) + "]", True)
@@ -912,7 +973,7 @@ for msgnum in range(0, len(cnc_msgs)):
         if success[0]:
             sdk_action = True   # Got at least 1 C&C message for the SDK.
         if cfg.tracking:
-                log.track(2, "Continue w/next SEGMENT.", True)
+            log.track(2, "Continue w/next SEGMENT.", True)
         msg_pos += seg_size
         continue
 ########################################################################
@@ -939,9 +1000,10 @@ if sdk_action:
             log.track(1, "Execute Popen w/nohup.", True)
         log.track(1, "Looking for sdkproc at: {}".format(str(sdkproc)), True)
         if os.path.isfile(str(sdkproc)):
-            #Popen([str(sdkproc)])
+            # Popen([str(sdkproc)])
             #Popen(['nohup', str(sdkproc)])
-            proc = Popen(['nohup', "/bin/sh", str(sdkproc)], stdout=devnull, stderr=devnull)
+            proc = Popen(['nohup', "/bin/sh", str(sdkproc)],
+                         stdout=devnull, stderr=devnull)
             rc = proc.wait()
             log.track(1, "{} returned {}".format(str(sdkproc), rc), True)
         else:
@@ -969,7 +1031,8 @@ if cfg.tracking:
 if sm.len > 0:
     if send_success[0]:
         if cfg.tracking:
-            log.track(1, "Update Bit-Packed Status Record(s) to 'sent' Status.", True)
+            log.track(
+                1, "Update Bit-Packed Status Record(s) to 'sent' Status.", True)
 
         sql = "UPDATE status SET state = '2' WHERE state = '1'"
         success = db.update(2, sql)
@@ -981,7 +1044,8 @@ if sm.len > 0:
                 log.track(2, "Done.", True)
 
         if cfg.tracking:
-            log.track(1, "Update Bit-Packed Meta Record(s) to 'sent' Status.", True)
+            log.track(
+                1, "Update Bit-Packed Meta Record(s) to 'sent' Status.", True)
 
         sql = "UPDATE meta SET state = '2' WHERE state = '1'"
         success = db.update(2, sql)
@@ -1006,7 +1070,8 @@ if sm.len > 0:
                 log.track(2, "Done.", True)
     else:
         if cfg.tracking:
-            log.track(1, "Reset Bit-Packed Status Record(s) to 'new/active' Status.", True)
+            log.track(
+                1, "Reset Bit-Packed Status Record(s) to 'new/active' Status.", True)
 
         sql = "UPDATE status SET state = '0' WHERE state = '1'"
         success = db.update(2, sql)
@@ -1018,7 +1083,8 @@ if sm.len > 0:
                 log.track(2, "Done.", True)
 
         if cfg.tracking:
-            log.track(1, "Reset Bit-Packed Meta Record(s) to 'new/active' Status.", True)
+            log.track(
+                1, "Reset Bit-Packed Meta Record(s) to 'new/active' Status.", True)
 
         sql = "UPDATE meta SET state = '0' WHERE state = '1'"
         success = db.update(2, sql)
@@ -1056,9 +1122,9 @@ if cfg.tracking:
     log.track(0, "Bot-Send Subsystem Closing.", True)
     log.track(0, "", True)
 
-if not bcsuccess:   #Added as gap fix for no scuttle
+if not bcsuccess:  # Added as gap fix for no scuttle
     log.track(0, "Bot-Send Sending Not Success.", True)
-    sys.exit(1)     #Added as gap fix for no scuttle
+    sys.exit(1)  # Added as gap fix for no scuttle
 else:
     log.track(0, "Bot-Send Sending Success.", True)
     sys.exit(0)
