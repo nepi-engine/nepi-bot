@@ -39,6 +39,8 @@ class BotCfg(object):
         self.lb_iridium = None
         self.lb_rs232 = None
         self.hp_ip = None
+        self.lb_conn_order = None
+        self.hb_conn_order = None
 
     def initcfg(self):
         try:
@@ -303,3 +305,6 @@ class BotCfg(object):
                 self.bot_cfg_json["lb_ip"]["pipo_time_wt"])
             self.lb_ip.purge_rating = float(
                 self.bot_cfg_json["lb_ip"]["purge_rating"])
+
+            self.lb_conn_order = self.bot_cfg_json["lb_conn_order"]
+            self.hb_conn_order = self.bot_cfg_json["hb_conn_order"]
