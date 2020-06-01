@@ -306,5 +306,32 @@ class BotCfg(object):
             self.lb_ip.purge_rating = float(
                 self.bot_cfg_json["lb_ip"]["purge_rating"])
 
+            self.lb_rs232.enabled = bool(
+                self.bot_cfg_json["lb_rs232"]["enabled"])
+            self.lb_rs232.type = str(
+                self.bot_cfg_json["lb_rs232"]["type"])
+            self.lb_rs232.port = str(self.bot_cfg_json["lb_rs232"]["port"])
+            self.lb_rs232.tout = int(self.bot_cfg_json["lb_rs232"]["tout"])
+            self.lb_rs232.open_attm = int(
+                self.bot_cfg_json["lb_rs232"]["open_attm"])
+            self.lb_rs232.open_tout = int(
+                self.bot_cfg_json["lb_rs232"]["open_tout"])
+            self.lb_rs232.max_msg_size = int(
+                self.bot_cfg_json["lb_rs232"]["max_msg_size"])
+            self.lb_rs232.packet_size = int(
+                self.bot_cfg_json["lb_rs232"]["packet_size"])
+            self.lb_rs232.pipo_scor_wt = float(
+                self.bot_cfg_json["lb_rs232"]["pipo_scor_wt"])
+            self.lb_rs232.pipo_qual_wt = float(
+                self.bot_cfg_json["lb_rs232"]["pipo_qual_wt"])
+            self.lb_rs232.pipo_size_wt = float(
+                self.bot_cfg_json["lb_rs232"]["pipo_size_wt"])
+            self.lb_rs232.pipo_trig_wt = float(
+                self.bot_cfg_json["lb_rs232"]["pipo_trig_wt"])
+            self.lb_rs232.pipo_time_wt = float(
+                self.bot_cfg_json["lb_rs232"]["pipo_time_wt"])
+            self.lb_rs232.purge_rating = float(
+                self.bot_cfg_json["lb_rs232"]["purge_rating"])
+
             self.lb_conn_order = self.bot_cfg_json["lb_conn_order"]
             self.hb_conn_order = self.bot_cfg_json["hb_conn_order"]
