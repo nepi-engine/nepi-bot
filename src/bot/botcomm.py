@@ -88,8 +88,8 @@ class BotComm(object):
                         self.log.track(_lev+1, "Open Serial Port", True)
                         self.log.track(_lev+14, "^open_attm: " +
                                        str(self.cfg.open_attm), True)
-                        self.log.track(_lev+14, "^isp_open_tout:  " +
-                                       str(self.cfg.isp_open_tout), True)
+                        self.log.track(_lev+14, "^open_tout:  " +
+                                       str(self.cfg.open_tout), True)
 
                     for incr in range(1, self.cfg.open_attm + 1):
                         try:
@@ -103,7 +103,7 @@ class BotComm(object):
                         if self.serialport.isOpen():
                             break
 
-                        time.sleep(self.cfg.isp_open_tout)
+                        time.sleep(self.cfg.open_tout)
 
                     if not self.serialport.isOpen():
                         raise Exception("Can't Get Port OPEN.")

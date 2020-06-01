@@ -169,8 +169,8 @@ class BotLog(object):
             self.track(_lev+1, "baud: " + str(self.cfg.baud), True)
             self.track(_lev+1, "open_attm: " +
                        str(self.cfg.open_attm), True)
-            self.track(_lev+1, "isp_open_tout: " +
-                       str(self.cfg.isp_open_tout), True)
+            self.track(_lev+1, "open_tout: " +
+                       str(self.cfg.open_tout), True)
             self.track(_lev+1, "protocol: " + str(self.cfg.protocol), True)
             self.track(_lev+1, "packet_size: " +
                        str(self.cfg.packet_size), True)

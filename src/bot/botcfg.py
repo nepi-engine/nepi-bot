@@ -231,7 +231,7 @@ class BotCfg(object):
             self.baud = int(self.bot_cfg_json["baud"])
             self.tout = int(self.bot_cfg_json["tout"])
             self.open_attm = int(self.bot_cfg_json["open_attm"])
-            self.isp_open_tout = int(self.bot_cfg_json["isp_open_tout"])
+            self.open_tout = int(self.bot_cfg_json["open_tout"])
             self.protocol = int(self.bot_cfg_json["protocol"])
             self.packet_size = int(self.bot_cfg_json["packet_size"])
             self.sys_status_file = str(self.bot_cfg_json["sys_status_file"])
