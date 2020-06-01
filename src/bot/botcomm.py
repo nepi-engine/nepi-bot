@@ -19,7 +19,7 @@ import socket
 import serial
 import time
 import os
-v_botcomm = "bot61-20191112"
+v_botcomm = "bot71-20200601"
 
 #from botcfg import BotCfg
 #from botlog import BotLog

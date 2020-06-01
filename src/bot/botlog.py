@@ -25,7 +25,7 @@ from bothelp import v_bothelp
 from botmsg import v_botmsg
 from botpipo import v_botpipo
 
-v_botlog = "bot61-20190620"
+v_botlog = "bot71-20200601"
 
 ########################################################################
 # A Class for creating and managing various NEPI-Bot Log Files.

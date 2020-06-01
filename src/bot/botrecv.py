@@ -1,15 +1,15 @@
 ########################################################################
 ##
-##  Module: botrecv.py
-##  --------------------
+# Module: botrecv.py
+# --------------------
 ##
-##  (c) Copyright 2019 by Numurus LLC
+# (c) Copyright 2019 by Numurus LLC
 ##
-##  This document, and all information therein, is the property of
-##  Numurus LLC.  It is confidential and must not be made public or
-##  copied in any form.  It is loaned subject to return upon demand
-##  and is not to be used directly or indirectly in any way detrimental
-##  to our interests.
+# This document, and all information therein, is the property of
+# Numurus LLC.  It is confidential and must not be made public or
+# copied in any form.  It is loaned subject to return upon demand
+# and is not to be used directly or indirectly in any way detrimental
+# to our interests.
 ##
 ########################################################################
 
@@ -36,17 +36,17 @@ from botdb import BotDB
 from botcomm import BotComm
 from bothelp import writeFloatFile, resetCfgValue
 
-v_botrecv = "bot61-20191206"
+v_botrecv = "bot71-20200601"
 
 ########################################################################
-##  Instantiate a BotCfg Configuration Class Object (from 'botcfg.py')
+# Instantiate a BotCfg Configuration Class Object (from 'botcfg.py')
 ########################################################################
 
 cfg = BotCfg()
 cfg.initcfg()
 
 ########################################################################
-##  Instantiate a BotLog Debug/Log Class Object (from 'botlog.py')
+# Instantiate a BotLog Debug/Log Class Object (from 'botlog.py')
 ########################################################################
 
 log = BotLog(cfg, "BOT-RECV", v_botrecv)
@@ -63,13 +63,13 @@ success = bc.getconn(0)
 #######################Turn BotRcv Off#################################################
 #######################Turn BotRcv Off#################################################
 if 1:
-#if not success[0]:
+    # if not success[0]:
     if cfg.tracking:
         log.track(0, "EXIT the 'BotRecv' Subsystem.", True)
     sys.exit(0)
 
 ########################################################################
-##  Retrieve any Pending C&C Downlink Messages.
+# Retrieve any Pending C&C Downlink Messages.
 ########################################################################
 
 if cfg.tracking:
@@ -82,7 +82,7 @@ success, cnc_msgs = bc.receive(1, 50)
 # uncommented for various levels of testing.
 if not cfg.comms:
     # The following 5 Iridium Messages are Good Bulk Tests from Jacob.
-    # These samples reflect all message types for bot61 Bitbucket Branch.
+    # These samples reflect all message types for bot71 Bitbucket Branch.
 
     # This is 1) geofence, 2) proc_node, and 3) rules.
     #msg_b64 = "GFQAa15VkJ9TmZ6fF5+Zwr48NS8xKSc1hWFFWWpRSWZyavHkpsU5iSWnHcwm1idtW1e7JCc/L/30gZAeN/n5jDugcsbl8mZqOrugcsFsRxLeNizEpw8AEGEAa1uZl5+SGl9SWZC6uLggeUVmXnFJYl5yKuPa4qLkeIRcSUXKGpAITJ5hdV5qQWZ8fmlJQWkJw7KCxKLE3OIpTSvAjPjMFIalZYk5pWB9CEFGiCADQoQFIuKAEGGFiHAAACBwAGtdXlSakxqfmcK1PDUvMSknNYVxRUFRam5mcWrxpOY1xbmJRSUlRZnpQBUMKzLziksS85JTmVanFaUWxpdkFKUWZ5y23zkTBGahqmaFq2ZAVs24NjG5JDM/L74YKJSZIrgqNzMvviC1KDM/5SyfAAA="
@@ -116,9 +116,9 @@ if not cfg.comms:
     # This tests 'no messages'
     msg_b64 = ""
 
-    success = [ True, None, None ]
+    success = [True, None, None]
     msg_raw = msg_b64.decode('base64')
-    cnc_msgs = [ msg_raw ]
+    cnc_msgs = [msg_raw]
 
     if cfg.tracking:
         log.track(1, "NO Comms Mode.", True)
@@ -127,7 +127,8 @@ if not cfg.comms:
         log.track(2, "msg_raw: [" + str(msg_raw) + "]", True)
         log.track(2, "len_raw: [" + str(len(msg_raw)) + "]", True)
         log.track(2, "msg_hex: [" + str(msg_raw).encode("hex") + "]", True)
-        log.track(2, "len_hex: [" + str(len(str(msg_raw).encode("hex"))) + "]", True)
+        log.track(
+            2, "len_hex: [" + str(len(str(msg_raw).encode("hex"))) + "]", True)
 
 if not success[0]:
     if cfg.tracking:
@@ -152,7 +153,7 @@ if cfg.tracking:
     log.track(0, "Take Action on ALL C&C Downlink Messages.", True)
 
 ########################################################################
-##  Parse C&C Downlink Messages and Take Appropriate Actions.
+# Parse C&C Downlink Messages and Take Appropriate Actions.
 ########################################################################
 
 sdk_action = False  # Used later to indicate we have to notify the SDK.
@@ -170,9 +171,9 @@ for msgnum in range(0, len(cnc_msgs)):
         log.track(2, "msg_len: [" + str(msg_len) + "]", True)
         log.track(14, "msg_hex: [" + str(msg_hex) + "] <-- s/b double.", True)
 
-    #-------------------------------------------------------------------
+    # -------------------------------------------------------------------
     # Loop Through the C&C Segments Until Message is Exhausted.
-    #-------------------------------------------------------------------
+    # -------------------------------------------------------------------
     while msg_pos < msg_len:
         # Even though msg 'header' is exactly 3 bytes, peel off 4 so
         # 'struct' can deal with it as a 32-bit integer. Ignore the
@@ -182,11 +183,16 @@ for msgnum in range(0, len(cnc_msgs)):
 
         try:
             seg_head = struct.unpack('>I', msg[msg_pos:msg_pos+4])[0]
-            seg_prot = (seg_head & 0xc0000000) >> 30    # 'protocol'    (bits 0-1)
-            seg_type = (seg_head & 0x38000000) >> 27    # 'config type' (bits 2-4)
-            seg_size = (seg_head & 0x07ff0000) >> 16    # 'msg length'  (bits 5-15)
-            seg_indx = (seg_head & 0x0000fc00) >> 10    # 'cfg index'   (bits 16-21)
-            seg_flag = (seg_head & 0x00000300) >> 8     # 'msg flags'   (bits 22-23)
+            # 'protocol'    (bits 0-1)
+            seg_prot = (seg_head & 0xc0000000) >> 30
+            # 'config type' (bits 2-4)
+            seg_type = (seg_head & 0x38000000) >> 27
+            # 'msg length'  (bits 5-15)
+            seg_size = (seg_head & 0x07ff0000) >> 16
+            # 'cfg index'   (bits 16-21)
+            seg_indx = (seg_head & 0x0000fc00) >> 10
+            # 'msg flags'   (bits 22-23)
+            seg_flag = (seg_head & 0x00000300) >> 8
         except Exception as e:
             if cfg.tracking:
                 log.track(3, "Lost Control Evaluating This Message.", True)
@@ -202,9 +208,9 @@ for msgnum in range(0, len(cnc_msgs)):
             log.track(15, "seg_indx:  [" + str(int(seg_indx)) + "]", True)
             log.track(15, "seg_flag:  [" + str(int(seg_flag)) + "]", True)
 
-        #---------------------------------------------------------------
+        # ---------------------------------------------------------------
         # Position at Data and Decompress/Unpack.
-        #---------------------------------------------------------------
+        # ---------------------------------------------------------------
         msg_pos += 3    # Skip forward over the 3-byte segment 'header.'
 
         if cfg.tracking:
@@ -213,7 +219,7 @@ for msgnum in range(0, len(cnc_msgs)):
             log.track(2, "Perform 'struct' Unpacking.", True)
 
         try:
-            data_fmt = ">" +str(seg_size) + "s"
+            data_fmt = ">" + str(seg_size) + "s"
             if cfg.tracking:
                 log.track(15, "data_fmt: [" + str(data_fmt) + "]", True)
             data_raw = msg[msg_pos:msg_pos+seg_size]
@@ -227,7 +233,8 @@ for msgnum in range(0, len(cnc_msgs)):
                 log.track(15, "data_hex: [" + str(data_hex) + "]", True)
 
             if seg_type == 0 and (int(seg_flag) != 1):  # If Cmd, grab byte 1 of
-                data_unp = data_hex                     # data in its hex value.
+                # data in its hex value.
+                data_unp = data_hex
             else:
                 data_unp = struct.unpack(data_fmt, data_raw)[0]
                 if cfg.tracking:
@@ -242,10 +249,12 @@ for msgnum in range(0, len(cnc_msgs)):
                     data_dcmp += decompress.flush()
 
                     if cfg.tracking:
-                        log.track(15, "data_dcmp: [" + str(data_dcmp) + "]", True)
+                        log.track(
+                            15, "data_dcmp: [" + str(data_dcmp) + "]", True)
                     data_dsiz = len(data_dcmp)
                     if cfg.tracking:
-                        log.track(15, "data_dsiz: [" + str(data_dsiz) + "]", True)
+                        log.track(
+                            15, "data_dsiz: [" + str(data_dsiz) + "]", True)
 
                     data_unp = data_dcmp
 
@@ -254,10 +263,12 @@ for msgnum in range(0, len(cnc_msgs)):
                         log.track(2, "Perform 'msgpack' Unpacking.", True)
                     data_mpak = msgpack.unpackb(data_dcmp)
                     if cfg.tracking:
-                        log.track(16, "data_mpak: [" + str(data_mpak) + "]", True)
+                        log.track(
+                            16, "data_mpak: [" + str(data_mpak) + "]", True)
                     data_mlen = len(str(data_mpak))
                     if cfg.tracking:
-                        log.track(16, "data_mlen: [" + str(data_mlen) + "]", True)
+                        log.track(
+                            16, "data_mlen: [" + str(data_mlen) + "]", True)
 
                     data_unp = data_mpak
 
@@ -271,9 +282,9 @@ for msgnum in range(0, len(cnc_msgs)):
                 log.track(3, "Continue w/next MESSAGE.", True)
             break
 
-        #---------------------------------------------------------------
+        # ---------------------------------------------------------------
         # Process the Bot Config, Command, or SDK Config Messages.
-        #---------------------------------------------------------------
+        # ---------------------------------------------------------------
 
         if int(seg_flag) == 1:  # --------------------------- BOT CONFIG
             if cfg.tracking:
@@ -310,7 +321,8 @@ for msgnum in range(0, len(cnc_msgs)):
                     nkey = "packet_size"
                 else:
                     if cfg.tracking:
-                        log.track(3, "Unknown 'keyword' received: [" + str(key) + "]", True)
+                        log.track(
+                            3, "Unknown 'keyword' received: [" + str(key) + "]", True)
                         log.track(3, "Continue w/next KEYWORD.", True)
 
                     msg_pos += seg_size
@@ -343,8 +355,10 @@ for msgnum in range(0, len(cnc_msgs)):
                 fname = "ping"                          # Ping
             else:
                 if cfg.tracking:
-                    log.track(3, "WARNING: Got 'Unknown' Command: [" + str(cmd) + "]", True)
-                    log.track(3, "No Implementation; Continue w/next SEGMENT.", True)
+                    log.track(
+                        3, "WARNING: Got 'Unknown' Command: [" + str(cmd) + "]", True)
+                    log.track(
+                        3, "No Implementation; Continue w/next SEGMENT.", True)
 
                 msg_pos += seg_size
                 continue
@@ -383,8 +397,10 @@ for msgnum in range(0, len(cnc_msgs)):
 
             else:
                 if cfg.tracking:
-                    log.track(2, "WARNING: Got 'Unknown' C&C Segment TYPE.", True)
-                    log.track(2, "No Implementation; Continue w/next SEGMENT.", True)
+                    log.track(
+                        2, "WARNING: Got 'Unknown' C&C Segment TYPE.", True)
+                    log.track(
+                        2, "No Implementation; Continue w/next SEGMENT.", True)
 
                 msg_pos += seg_size
                 continue
@@ -408,8 +424,8 @@ for msgnum in range(0, len(cnc_msgs)):
             if seg_type > 0:
                 # This can be used if the JSON requires 'expansion.'
                 #fpars = json.loads(data_unp)
-                #if cfg.tracking:
-                    #log.track(15, "fpars: [" + str(fpars) + "]", True)
+                # if cfg.tracking:
+                #log.track(15, "fpars: [" + str(fpars) + "]", True)
                 fdump = json.dumps(data_unp, indent=4, sort_keys=False)
                 if cfg.tracking:
                     log.track(15, "fdump: [" + str(fdump) + "]", True)
@@ -433,7 +449,7 @@ for msgnum in range(0, len(cnc_msgs)):
             sdk_action = True   # Got at least 1 C&C message for the SDK.
 
         if cfg.tracking:
-                log.track(2, "Continue w/next SEGMENT.", True)
+            log.track(2, "Continue w/next SEGMENT.", True)
 
         msg_pos += seg_size
         continue
@@ -474,9 +490,10 @@ if sdk_action:
         if cfg.tracking:
             log.track(1, "Execute Popen w/nohup.", True)
         if os.path.isfile(str(sdkproc)):
-            #Popen([str(sdkproc)])
+            # Popen([str(sdkproc)])
             #Popen(['nohup', str(sdkproc)])
-            proc = Popen(['nohup', "/bin/sh", str(sdkproc)], stdout=devnull, stderr=devnull)
+            proc = Popen(['nohup', "/bin/sh", str(sdkproc)],
+                         stdout=devnull, stderr=devnull)
             rc = proc.wait()
             log.track(1, "{} returned {}".format(str(sdkproc), rc), True)
         else:
@@ -513,7 +530,9 @@ if success[0]:
     if cfg.db_deletes:
         fivedaysago = int(time.time()) - (60 * 60 * 24 * 5)
 
-        sql = "DELETE FROM meta WHERE pipo < '" + str(cfg.purge_rating) + "' OR timestamp < '" + str(fivedaysago) + "'"
+        sql = "DELETE FROM meta WHERE pipo < '" + \
+            str(cfg.purge_rating) + "' OR timestamp < '" + \
+            str(fivedaysago) + "'"
         success = db.update(3, sql)
 
         if not success[0]:
@@ -570,4 +589,3 @@ if cfg.tracking:
     log.track(0, "EXIT the 'BotRecv' Subsystem.", True)
 
 sys.exit(0)
-

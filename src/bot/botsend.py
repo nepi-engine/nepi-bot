@@ -41,7 +41,7 @@ from bothelp import readFloatFile, triggerScoreLookup, resetCfgValue
 from bothelp import writeFloatFile, resetCfgValue
 from bothelp import deleteFolder, deleteDataProduct
 
-v_botsend = "bot61-20191214"
+v_botsend = "bot71-20200601"
 
 ########################################################################
 # Instantiate a NEPI-Bot Configuration Class (from 'botcfg.py')
