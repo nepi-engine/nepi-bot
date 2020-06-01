@@ -1,73 +1,15 @@
 ########################################################################
 ##
-##  Module: botcfg.py
-##  --------------------
+# Module: botcfg.py
+# --------------------
 ##
-##  (c) Copyright 2019 by Numurus LLC
+# (c) Copyright 2019 by Numurus LLC
 ##
-##  This document, and all information therein, is the property of
-##  Numurus LLC.  It is confidential and must not be made public or
-##  copied in any form.  It is loaned subject to return upon demand
-##  and is not to be used directly or indirectly in any way detrimental
-##  to our interests.
-##
-##  Revision History
-##  ----------------
-##  
-##  Revision:   1.11 2019/06/03  16:15:00
-##  Comment:    Add DB housekeeping purge supression.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.10 2019/06/03  14:45:00
-##  Comment:    Add log_clear to manage log clearing.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.9 2019/05/05  10:45:00
-##  Comment:    Refactor various 'int' declarations to 'bool' status.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.8 2019/05/05  10:45:00
-##  Comment:    Add support for 'zlib' and 'msgpack' msg management.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.7 2019/05/01  13:55:00
-##  Comment:    Add Iridium SP attempt and timeout support.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.6 2019/05/01  09:50:00
-##  Comment:    Add 'comms' keyword-value pair support.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.5 2019/04/04  10:20:00
-##  Comment:    Add 'baud' and 'tout' keyword-value pairs.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.4 2019/04/02  16:00:00
-##  Comment:    Re-write; Added sys info; simplified factory default.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.3 2019/03/04  15:15:00
-##  Comment:    Added FACTORY_TYPE (communications 'type').
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.2 2019/02/21  12:15:00
-##  Comment:    Added database management of configuration.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.1 2019/02/04  09:56:00
-##  Comment:    Module Instantiation; ported from old botlib.py.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
+# This document, and all information therein, is the property of
+# Numurus LLC.  It is confidential and must not be made public or
+# copied in any form.  It is loaned subject to return upon demand
+# and is not to be used directly or indirectly in any way detrimental
+# to our interests.
 ##
 ########################################################################
 
@@ -79,11 +21,12 @@ from botdefs import Machine, Machines
 from botdefs import nepi_home, bot_cfg_file
 from bothelp import readFloatFile
 
-v_botcfg = "bot61-20190624"
+v_botcfg = "bot71-20190624"
 
 ########################################################################
-##  Class: BotCfg (Retrieve the NEPI-Bot Configuration File).
+# Class: BotCfg (Retrieve the NEPI-Bot Configuration File).
 ########################################################################
+
 
 class BotCfg(object):
 
@@ -92,6 +35,10 @@ class BotCfg(object):
         self.bot_cfg_json = None
         self.enum = None
         self.emsg = None
+        self.lb_ip = None
+        self.lb_iridium = None
+        self.lb_rs232 = None
+        self.hp_ip = None
 
     def initcfg(self):
         try:
@@ -105,11 +52,12 @@ class BotCfg(object):
             self.python_version = platform.python_version()
 
             self.cfgfile = bot_cfg_file
-            success, self.bot_cfg_json = readFloatFile(None, None, 0, self.cfgfile, False, True)
+            success, self.bot_cfg_json = readFloatFile(
+                None, None, 0, self.cfgfile, False, True)
         except Exception as e:
             self.enum = "CFG001"
             self.emsg = "ERROR: [" + str(e) + "]"
-            success = [ False, self.enum, self.emsg ]
+            success = [False, self.enum, self.emsg]
 
         # If reading the specified configuration file fails, construct
         # a FACTORY DEFAULT CONFIG FILE that provides enough information
@@ -120,21 +68,13 @@ class BotCfg(object):
         # console output).
         if not success[0]:
             if self.system == "Windows" or self.system == "Linux":
-                self.state = "ut"
-                self.debugging  = 5
-                self.logging  = 5
+                self.devclass = "float1"
+                self.logging = 3
+                self.debugging = self.logging
                 self.timing = True
                 self.locking = False
                 self.comms = True
-                self.type = "Ethernet"
-                self.host = "10.0.0.116"
-                self.port = 7770
-                self.baud = 19200
-                self.tout = 1
-                self.isp_open_attm = 10
-                self.isp_open_tout = 1
-                self.protocol = 1
-                self.packet_size = 1024
+                self.fs_pct_used_warning = 75
                 self.sys_status_file = "sys_status_file"
                 self.db_dir = "db"
                 self.db_name = "float.db"
@@ -144,9 +84,14 @@ class BotCfg(object):
                 self.data_msgpack = True
                 self.log_dir = "log"
                 self.log_clear = True
-                self.br_log_name = "brlog.txt"
                 self.bs_log_name = "bslog.txt"
                 self.bu_log_name = "bulog.txt"
+                self.conn_log = True
+                self.conn_log_name = "connlog.txt"
+                self.packet_log = True
+                self.packet_log_name = "packetlog.txt"
+                self.access_log = True
+                self.access_log_name = "accesslog.txt"
                 self.wt_changed = 0
                 self.pipo_scor_wt = 0.5
                 self.pipo_qual_wt = 0.5
@@ -154,14 +99,26 @@ class BotCfg(object):
                 self.pipo_trig_wt = 0.5
                 self.pipo_time_wt = 1.0
                 self.purge_rating = 0.05
-                self.max_msg_size = 4096
+                self.lb_ip.enabled = 1
+                self.lb_ip.type = "ethernet"
+                self.lb_ip.host = "127.0.0.1"  # "10.0.0.116"
+                self.lb_ip.port = 50000  # 7770
+                self.lb_ip.baud = 57600
+                self.lb_ip.tout = 1
+                self.lb_ip.isp_open_attm = 10
+                self.lb_ip.isp_open_tout = 1
+                self.lb_ip.protocol = 2
+                self.lb_ip.packet_size = 1024
+                self.lb_ip.max_msg_size = 1500
+                self.lb_ip.encrypted = False
             else:
-                self.state = "fl"
-                self.debugging  = -1
-                self.logging  = 11
+                self.devclass = "float1"
+                self.debugging = -1
+                self.logging = 11
                 self.timing = True
                 self.locking = False
                 self.comms = True
+                self.fs_pct_used_warning = 70
                 self.type = "Iridium"
                 self.host = "None"
                 self.port = "/dev/ttyUSB0"
@@ -180,9 +137,14 @@ class BotCfg(object):
                 self.data_msgpack = True
                 self.log_dir = "log"
                 self.log_clear = True
-                self.br_log_name = "brlog.txt"
                 self.bs_log_name = "bslog.txt"
                 self.bu_log_name = "bulog.txt"
+                self.conn_log = True
+                self.conn_log_name = "connlog.txt"
+                self.packet_log = True
+                self.packet_log_name = "packetlog.txt"
+                self.access_log = True
+                self.access_log_name = "accesslog.txt"
                 self.wt_changed = 0
                 self.pipo_scor_wt = 0.5
                 self.pipo_qual_wt = 0.5
@@ -190,21 +152,35 @@ class BotCfg(object):
                 self.pipo_trig_wt = 0.5
                 self.pipo_time_wt = 1.0
                 self.purge_rating = 0.05
-                self.max_msg_size = 1020
+                self.lb_iridium.enabled = 1
+                self.lb_iridium.type = "iridium"
+                self.lb_iridium.host = "N/A"
+                self.lb_iridium.port = "/dev/ttyUL0"
+                self.lb_iridium.tout = 3
+                self.lb_iridium.isp_open_attm = 10
+                self.lb_iridium.isp_open_tout = 1
+                self.lb_iridium.protocol = 1
+                self.lb_iridium.max_msg_size = 340
+                self.lb_iridium.packet_size = 340
+                self.lb_iridium.encrypted = False
+                #self.max_msg_size = 1020
 
             self.tracking = bool(self.debugging) or bool(self.logging)
             self.data_dir_path = nepi_home + "/" + self.data_dir
             self.db_file = nepi_home + "/" + self.db_dir + "/" + self.db_name
-            self.br_log_file = nepi_home + "/" + self.log_dir + "/" + self.br_log_name
             self.bs_log_file = nepi_home + "/" + self.log_dir + "/" + self.bs_log_name
             self.bu_log_file = nepi_home + "/" + self.log_dir + "/" + self.bu_log_name
-
+            self.conn_log_file = nepi_home + "/" + self.log_dir + "/" + self.conn_log_name
+            self.packet_log_file = nepi_home + "/" + \
+                self.log_dir + "/" + self.packet_log_name
+            self.access_log_file = nepi_home + "/" + \
+                self.log_dir + "/" + self.access_log_name
             self.factory = True
         else:
             # Get the Bot Configuration information into useful
             # global variables.
-            self.state = str(self.bot_cfg_json["state"])
-            
+            self.devclass = str(self.bot_cfg_json["devclass"])
+
             self.debugging = int(self.bot_cfg_json["debugging"])
             if (int(self.debugging) < -1):
                 self.debugging = -1
@@ -223,8 +199,9 @@ class BotCfg(object):
                 self.tracking = False
 
             self.timing = bool(self.bot_cfg_json["timing"])
-            self.locking = bool(self.bot_cfg_json["locking"]) 
-            self.comms = bool(self.bot_cfg_json["comms"]) 
+            self.locking = bool(self.bot_cfg_json["locking"])
+            self.comms = bool(self.bot_cfg_json["comms"])
+            self.comms = int(self.fs_pct_used_warning["fs_pct_used_warning"])
             self.type = str(self.bot_cfg_json["type"])
             self.host = str(self.bot_cfg_json["host"])
             self.port = str(self.bot_cfg_json["port"])
@@ -245,12 +222,13 @@ class BotCfg(object):
             self.db_file = nepi_home + "/" + self.db_dir + "/" + self.db_name
             self.log_dir = str(self.bot_cfg_json["log_dir"])
             self.log_clear = bool(self.bot_cfg_json["log_clear"])
-            self.br_log_name = str(self.bot_cfg_json["br_log_name"])
-            self.br_log_file = nepi_home + "/" + self.log_dir + "/" + self.br_log_name
             self.bs_log_name = str(self.bot_cfg_json["bs_log_name"])
             self.bs_log_file = nepi_home + "/" + self.log_dir + "/" + self.bs_log_name
             self.bu_log_name = str(self.bot_cfg_json["bu_log_name"])
             self.bu_log_file = nepi_home + "/" + self.log_dir + "/" + self.bu_log_name
+            self.conn_log = bool(self.bot_cfg_json["conn_log"])
+            self.conn_log_name = str(self.bot_cfg_json["conn_log_name"])
+            self.packet_log = bool(self.bot_cfg_json["packet_log"])
             self.wt_changed = bool(self.bot_cfg_json["wt_changed"])
             self.pipo_scor_wt = float(self.bot_cfg_json["pipo_scor_wt"])
             self.pipo_qual_wt = float(self.bot_cfg_json["pipo_qual_wt"])
@@ -258,5 +236,15 @@ class BotCfg(object):
             self.pipo_trig_wt = float(self.bot_cfg_json["pipo_trig_wt"])
             self.pipo_time_wt = float(self.bot_cfg_json["pipo_time_wt"])
             self.purge_rating = float(self.bot_cfg_json["purge_rating"])
+            self.lb_iridium.enabled = True
+            self.lb_iridium.type = "iridium"
+            self.lb_iridium.host = "N/A"
+            self.lb_iridium.port = "/dev/ttyUL0"
+            self.lb_iridium.tout = 3
+            self.lb_iridium.isp_open_attm = 10
+            self.lb_iridium.isp_open_tout = 1
+            self.lb_iridium.protocol = 1
+            self.lb_iridium.max_msg_size = 340
+            self.lb_iridium.packet_size = 340
+            self.lb_iridium.encrypted = False
             self.max_msg_size = int(self.bot_cfg_json["max_msg_size"])
-        

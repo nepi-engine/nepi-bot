@@ -11,53 +11,6 @@
 ##  and is not to be used directly or indirectly in any way detrimental
 ##  to our interests.
 ##
-##  Revision History
-##  ----------------
-##  Revision:   1.7 2019/12/06  10:00:00
-##  Comment:    Have botrecv exit with a 0 rather then and error
-##  Developer:  Jason Seawall, Seattle, WA
-##  Platform:   Ubuntu 16.05; Python 2.7.12##
-##
-##  Revision:   1.7 2019/11/12  10:00:00
-##  Comment:    Have BotRcv excit on initialization. Everything done in BotSend
-##  Developer:  Jason Seawall, Seattle, WA
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.6 2019/09/23  10:00:00
-##  Comment:    Changes to recv timing to attempt MT queue emptying.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.6 2019/05/08  14:45:00
-##  Comment:    Added Housekeeping Functionality.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.5 2019/05/08  11:00:00
-##  Comment:    Added Robust DB Connection Closures.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.4 2019/05/01  15:50:00
-##  Comment:    New bot61; rewrite; added all C&C management.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.3 2019/04/29  15:50:00
-##  Comment:    Major revsion 5/1 to handle downlink messsaging.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.2 2019/03/22  15:50:00
-##  Comment:    Integration with latest botcomm.py.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.1 2019/03/22  13:00:00
-##  Comment:    Module Instantiation; Complete Revision.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
 ########################################################################
 
 import os

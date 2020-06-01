@@ -11,34 +11,6 @@
 ##  and is not to be used directly or indirectly in any way detrimental
 ##  to our interests.
 ##
-##  Revision History
-##  ----------------
-##
-##  Revision:   1.5 2019/09/23  12:00:00
-##  Comment:    Changes/fixes to support better pack mgmt.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.4 2019/06/24  10:00:00
-##  Comment:    Add new 'int16' Data Type for Alex.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.3 2019/04/16  07:00:00
-##  Comment:    Major Revision; Total DATA Msg Format Change.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.2 2019/03/12  10:00:00
-##  Comment:    Major Revision; Total Status Msg Format Change.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.1 2019/02/25  10:50:00
-##  Comment:    Module Instantiation.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
 ########################################################################
 
 import os

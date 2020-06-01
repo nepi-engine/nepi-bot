@@ -11,59 +11,6 @@
 ##  and is not to be used directly or indirectly in any way detrimental
 ##  to our interests.
 ##
-##  Revision History
-##  ----------------
-##  
-##  Revision:   1.10 2019/06/05  09:55:00
-##  Comment:    Fix getAll* Modules to return [] on errors.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.9 2019/04/24  10:25:00
-##  Comment:    Update triggerScoreLookup(); add try/except logic.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.8 2019/04/24  08:50:00
-##  Comment:    Update writeFloatFile(); add dir check; make robust.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.7 2019/04/08  11:10:00
-##  Comment:    Mod deleteFolder() & deleteDataProduct() methods.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.6 2019/04/07  08:50:00
-##  Comment:    Updated/fixed getAllFolderNames() method.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.5 2019/03/26  09:30:00
-##  Comment:    Added support for writeFloatFile() method.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.4 2019/03/06  16:15:00
-##  Comment:    Added Error support and return to readFloatFile.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.3 2019/02/19  09:10:00
-##  Comment:    Added Config File value restting functionality.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.2 2019/02/13  15:30:00
-##  Comment:    Added Trigger Score lookup functionality.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.1 2019/02/04  09:10:00
-##  Comment:    Module Instantiation.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
 ########################################################################
 
 import os

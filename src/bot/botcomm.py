@@ -11,58 +11,6 @@
 ##  and is not to be used directly or indirectly in any way detrimental
 ##  to our interests.
 ##
-##  Revision History
-##  ----------------
-##  Revision:   1.9 2019/11/12  10:00:00
-##  Comment:    Change to exit after succeessful send
-##  Developer:  Jason Seawall, Seattle WA
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.8 2019/09/23  10:00:00
-##  Comment:    Change Iridium timing to attempt MT buffer emptying.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.8 2019/06/23  15:00:00
-##  Comment:    Reintroduce versioning of Module.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.7 2019/06/02  14:00:00
-##  Comment:    Fix; Switch SBDWT to SBDWB and SBDRT to SBDRB. Latch the True value of mo_sent/mo_received.
-##  Developer:  Kevin Ramada; University of Washington
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.6 2019/05/02  14:00:00
-##  Comment:    Fix; Reversed isactive() method returns.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.5 2019/05/01  14:00:00
-##  Comment:    Add Comms Active logic for bypassing communications.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.4 2019/05/01  11:30:00
-##  Comment:    bot61 Start; Merge Ethernet changes; clean-up.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.3 2019/04/26  12:00:00
-##  Comment:    Add check_signal_quality, updating initiate_sbd;fix acquire_response.
-##  Developer:  Kevin Ramada; University of Washington
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.2 2019/04/01  12:00:00
-##  Comment:    Release 4.1; Able to receive downlink messages.
-##  Developer:  Kevin Ramada; University of Washington
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.1 2019/02/18  12:00:00
-##  Comment:    Module Instantiation.
-##  Developer:  Kevin Ramada; University of Washington
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
 ########################################################################
 
 v_botcomm = "bot61-20191112"

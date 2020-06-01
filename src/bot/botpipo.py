@@ -11,44 +11,6 @@
 ##  and is not to be used directly or indirectly in any way detrimental
 ##  to our interests. 
 ##
-##  Revision History
-##  ----------------
-##  
-##  Revision:   1.6 2019/06/24  10:00:00
-##  Comment:    Add new 'int16' Data Type for Alex.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.5 2019/04/19  13:30:00
-##  Comment:    Fix max sizes in size normalization() method.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.5 2019/04/19  12:15:00
-##  Comment:    Fix uint8 byte size in size calculation.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.4 2019/04/15  09:45:00
-##  Comment:    Upgrade to new Node Type'code' Converison Table.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.3 2019/04/05  11:15:00
-##  Comment:    Upgrade/Fixes for 5/1 Deliverable; Err Msg Handling.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.2 2019/02/13  13:25:00
-##  Comment:    Upgrade to latest Config and Logging Model.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.1 2019/02/06  15:40:00
-##  Comment:    Module Instantiation.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
 ########################################################################
 
 import os

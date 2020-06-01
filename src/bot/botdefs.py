@@ -11,24 +11,6 @@
 ##  and is not to be used directly or indirectly in any way detrimental
 ##  to our interests.
 ##
-##  Revision History
-##  ----------------
-##  
-##  Revision:   1.3 2019/03/12  10:40:00
-##  Comment:    Add Message Types as pseudo-Class.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.2 2019/02/22  11:30:00
-##  Comment:    Revised primary file lcoations and logging flag.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.1 2019/02/04  09:15:00
-##  Comment:    Module Instantiation.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
 ########################################################################
 
 #import os
