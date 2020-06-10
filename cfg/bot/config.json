@@ -32,7 +32,7 @@
     "lb_encrypted": 0,
     "lb_iridium": {
         "enabled": 1,
-        "type": "iridium-sbd",
+        "type": "iridium",
         "port": "/dev/ttyUL0",
         "baud": 19200,
         "tout": 3,
