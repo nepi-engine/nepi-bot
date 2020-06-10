@@ -21,8 +21,8 @@ import time
 import os
 v_botcomm = "bot71-20200601"
 
-#from botcfg import BotCfg
-#from botlog import BotLog
+# from botcfg import BotCfg
+# from botlog import BotLog
 
 ########################################################################
 # The Float Communications Class
@@ -65,15 +65,15 @@ class BotComm(object):
         # ---------------------------------------------------------------
         # Open the 'Iridium' Serial Port.
         # ---------------------------------------------------------------
-        if self.typ == 'Iridium':
+        if self.typ == 'iridium':
             if self.cfg.tracking:
-                self.log.track(_lev+1, "Open the 'Iridium' Serial Port.", True)
+                self.log.track(_lev+1, "Open the 'iridium' Serial Port.", True)
 
             try:
                 self.serialport = serial.Serial()
-                self.serialport.port = self.cfg.port
-                self.serialport.baudrate = self.cfg.baud
-                self.serialport.timeout = self.cfg.tout
+                self.serialport.port = self.cfg.lb_iridium.port
+                self.serialport.baudrate = self.cfg.lb_iridium.baud
+                self.serialport.timeout = self.cfg.lb_iridium.tout
 
                 if self.cfg.tracking:
                     self.log.track(_lev+14, "port: " +
@@ -87,11 +87,11 @@ class BotComm(object):
                     if self.cfg.tracking:
                         self.log.track(_lev+1, "Open Serial Port", True)
                         self.log.track(_lev+14, "^open_attm: " +
-                                       str(self.cfg.open_attm), True)
+                                       str(self.cfg.lb_iridium.open_attm), True)
                         self.log.track(_lev+14, "^open_tout:  " +
-                                       str(self.cfg.open_tout), True)
+                                       str(self.cfg.lb_iridium.open_tout), True)
 
-                    for incr in range(1, self.cfg.open_attm + 1):
+                    for incr in range(1, self.cfg.lb_iridium.open_attm + 1):
                         try:
                             if self.cfg.tracking:
                                 self.log.track(
@@ -146,6 +146,8 @@ class BotComm(object):
                 if self.cfg.tracking:
                     self.log.track(
                         _lev+14, "SBD Ring Indication: " + str(sbdring), True)
+                    self.log.track(
+                        _lev+14, "SBD Ring Indication: " + str(sbdring), True)
 
                 return [True, None, None]
 
@@ -159,20 +161,24 @@ class BotComm(object):
         # ---------------------------------------------------------------
         # Open the 'Ethernet' IP Connection.
         # ---------------------------------------------------------------
-        elif self.typ == 'Ethernet':
+        elif self.typ == 'ethernet':
             if self.cfg.tracking:
                 self.log.track(
-                    _lev+1, "Instantiate the 'Ethernet' IP Connection.", True)
-                self.log.track(_lev+1, "type: " + str(self.cfg.type), True)
-                self.log.track(_lev+1, "host: " + str(self.cfg.host), True)
-                self.log.track(_lev+1, "port: " + str(self.cfg.port), True)
+                    _lev+1, "Instantiate the 'ethernet' IP Connection.", True)
+                self.log.track(_lev+1, "type: " +
+                               str(self.cfg.lb_ip.type), True)
+                self.log.track(_lev+1, "host: " +
+                               str(self.cfg.lb_ip.host), True)
+                self.log.track(_lev+1, "port: " +
+                               str(self.cfg.lb_ip.port), True)
 
             if self.con == None:
                 try:
                     self.con = socket.socket(
                         socket.AF_INET, socket.SOCK_STREAM)
                     self.con.settimeout(5)
-                    self.con.connect((self.cfg.host, self.cfg.port))
+                    self.con.connect(
+                        (self.cfg.lb_ip.host, self.cfg.lb_ip.port))
                     if self.cfg.tracking:
                         self.log.track(_lev+1, "IP Connection Made.", True)
                 except socket.timeout:
@@ -239,7 +245,7 @@ class BotComm(object):
         # ---------------------------------------------------------------
         # Receive on the 'Ethernet' IP Connection.
         # ---------------------------------------------------------------
-        if self.typ == 'Iridium':
+        if self.typ == 'iridium':
             try:
                 response = self.acquire_response(b'AT+SBDWT')
                 if response == True:
@@ -360,7 +366,7 @@ class BotComm(object):
         # ---------------------------------------------------------------
         # Send on the 'Iridium' Connection.
         # ---------------------------------------------------------------
-        if self.typ == 'Iridium':
+        if self.typ == 'iridium':
             try:
                 msg_length = len(_msg)
 
@@ -445,9 +451,9 @@ class BotComm(object):
         # ---------------------------------------------------------------
         # Close the 'Iridium' Serial Port.
         # ---------------------------------------------------------------
-        if self.typ == 'Iridium':
+        if self.typ == 'iridium':
             if self.cfg.tracking:
-                self.log.track(_lev+1, "Close 'Iridium' Serial Port.", True)
+                self.log.track(_lev+1, "Close 'iridium' Serial Port.", True)
 
             try:
                 if self.serialport.isOpen():
@@ -472,9 +478,9 @@ class BotComm(object):
         # ---------------------------------------------------------------
         # Close the 'Ethernet' IP Connection.
         # ---------------------------------------------------------------
-        elif self.typ == 'Ethernet':
+        elif self.typ == 'ethernet':
             if self.cfg.tracking:
-                self.log.track(_lev+1, "Close 'Ethernet' IP Connection.", True)
+                self.log.track(_lev+1, "Close 'ethernet' IP Connection.", True)
 
             if self.con != None:
                 try:
@@ -528,11 +534,11 @@ class BotComm(object):
     # -------------------------------------------------------------------
     def acquire_response(self, command, wait_time=20):
         # if self.cfg.tracking:
-        #self.log.track(_lev, "Entering 'acquire_response()' Method .", True)
-        #self.log.track(_lev+13, "_lev: " + str(_lev), True)
-        #self.log.track(_lev+13, "^typ: " + str(self.typ), True)
+        # self.log.track(_lev, "Entering 'acquire_response()' Method .", True)
+        # self.log.track(_lev+13, "_lev: " + str(_lev), True)
+        # self.log.track(_lev+13, "^typ: " + str(self.typ), True)
 
-        if self.typ == 'Iridium':
+        if self.typ == 'iridium':
             # if isinstance(command, str):
             #     command = command.encode("utf-8")
             try:
@@ -637,14 +643,14 @@ class BotComm(object):
             self.log.track(_lev+13, "_num:  " + str(num), True)
             self.log.track(_lev+13, "_wait: " + str(wait_time), True)
 
-        if self.typ == 'Iridium':
+        if self.typ == 'iridium':
             mt_msg_list = []
             mo_sent = False
             mt_received = False
             mt_queued = 0
             count = 1
-            #start_time = time.time()
-            #timeout = start_time + wait_time
+            # start_time = time.time()
+            # timeout = start_time + wait_time
             timeout = time.time() + wait_time
 
             if self.cfg.tracking:

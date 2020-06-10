@@ -25,7 +25,11 @@ v_botcfg = "bot71-20200601"
 
 ########################################################################
 # Class: BotCfg (Retrieve the NEPI-Bot Configuration File).
-########################################################################
+#######################################################################
+
+
+class obj(object):
+    pass
 
 
 class BotCfg(object):
@@ -35,12 +39,12 @@ class BotCfg(object):
         self.bot_cfg_json = None
         self.enum = None
         self.emsg = None
-        self.lb_ip = None
-        self.lb_iridium = None
-        self.lb_rs232 = None
-        self.hp_ip = None
-        self.lb_conn_order = None
-        self.hb_conn_order = None
+        self.lb_ip = obj()  # None
+        self.lb_iridium = obj()  # = None
+        self.lb_rs232 = obj()  # None
+        self.hb_ip = obj()  # None
+        self.lb_conn_order = obj()  # None
+        self.hb_conn_order = obj()  # None
 
     def initcfg(self):
         try:
@@ -191,8 +195,8 @@ class BotCfg(object):
             self.lb_data_dir_path = nepi_home + "/" + self.lb_data_dir
             self.db_file = nepi_home + "/" + self.db_dir + "/" + self.db_name
             self.bs_log_file = nepi_home + "/" + self.log_dir + "/" + self.botmain_log_name
-            # self.bu_log_name = nepi_home + "/" + \
-            #    self.log_dir + "/" + self.botmain_log_name
+            self.bu_log_name = nepi_home + "/" + \
+                self.log_dir + "/" + self.botmain_log_name
             self.conn_log_file = nepi_home + "/" + self.log_dir + "/" + self.conn_log_name
             self.packet_log_file = nepi_home + "/" + \
                 self.log_dir + "/" + self.packet_log_name
@@ -202,136 +206,203 @@ class BotCfg(object):
         else:
             # Get the Bot Configuration information into useful
             # global variables.
-            self.devclass = str(self.bot_cfg_json["devclass"])
+            self.devclass = str(self.bot_cfg_json.get("devclass", "float1"))
 
-            self.debugging = int(self.bot_cfg_json["debugging"])
-            if (int(self.debugging) < -1):
-                self.debugging = -1
-            if (int(self.debugging) > 23):
-                self.debugging = 23
+            # self.debugging = int(self.bot_cfg_json["debugging"])
+            # if (int(self.debugging) < -1):
+            #     self.debugging = -1
+            # if (int(self.debugging) > 23):
+            #     self.debugging = 23
 
-            self.logging = int(self.bot_cfg_json["logging"])
+            self.logging = int(self.bot_cfg_json.get("logging", 23))
+            #self.logging = int(self.bot_cfg_json["logging"])
             if (int(self.logging) < -1):
                 self.logging = -1
             if (int(self.logging) > 23):
                 self.logging = 23
+            self.debugging = self.logging
 
             if (int(self.logging) > -1) or (int(self.debugging) > -1):
                 self.tracking = True
             else:
                 self.tracking = False
 
-            self.timing = bool(self.bot_cfg_json["timing"])
-            self.locking = bool(self.bot_cfg_json["locking"])
-            self.comms = bool(self.bot_cfg_json["comms"])
-            self.comms = int(self.fs_pct_used_warning["fs_pct_used_warning"])
-            self.type = str(self.bot_cfg_json["type"])
-            self.host = str(self.bot_cfg_json["host"])
-            self.port = str(self.bot_cfg_json["port"])
-            self.baud = int(self.bot_cfg_json["baud"])
-            self.tout = int(self.bot_cfg_json["tout"])
-            self.open_attm = int(self.bot_cfg_json["open_attm"])
-            self.open_tout = int(self.bot_cfg_json["open_tout"])
-            self.protocol = int(self.bot_cfg_json["protocol"])
-            self.packet_size = int(self.bot_cfg_json["packet_size"])
-            self.sys_status_file = str(self.bot_cfg_json["sys_status_file"])
-            self.lb_data_dir = str(self.bot_cfg_json["lb_data_dir"])
+            # self.timing = bool(self.bot_cfg_json["timing"])
+            self.timing = True
+            self.locking = bool(self.bot_cfg_json.get("locking", 0))
+            self.comms = bool(self.bot_cfg_json.get("comms", 1))
+            self.fs_pct_used_warning = int(
+                self.bot_cfg_json.get("fs_pct_used_warning", 75))
+            self.sys_status_file = str(self.bot_cfg_json.get(
+                "sys_status_file", "sys_status.json"))
+            self.lb_data_dir = str(
+                self.bot_cfg_json.get("lb_data_dir", "lb/data"))
             self.lb_data_dir_path = nepi_home + "/" + self.lb_data_dir
-            self.data_zlib = bool(self.bot_cfg_json["data_zlib"])
-            self.data_msgpack = bool(self.bot_cfg_json["data_msgpack"])
-            self.db_dir = str(self.bot_cfg_json["db_dir"])
-            self.db_name = str(self.bot_cfg_json["db_name"])
-            self.db_deletes = bool(self.bot_cfg_json["db_deletes"])
+            self.data_zlib = bool(self.bot_cfg_json.get("data_zlib", 1))
+            self.data_msgpack = bool(self.bot_cfg_json.get("data_msgpack", 1))
+            self.db_dir = str(self.bot_cfg_json.get("db_dir", "db"))
+            self.db_name = str(self.bot_cfg_json.get("dbname", "nepibot.db"))
+            self.db_deletes = bool(self.bot_cfg_json.get("db_deletes", 1))
             self.db_file = nepi_home + "/" + self.db_dir + "/" + self.db_name
-            self.log_dir = str(self.bot_cfg_json["log_dir"])
-            self.log_clear = bool(self.bot_cfg_json["log_clear"])
-            self.botmain_log_name = str(self.bot_cfg_json["botmain_log_name"])
+            self.log_dir = str(self.bot_cfg_json.get("log_dir", "log"))
+            self.log_clear = bool(self.bot_cfg_json.get("log_clear", 1))
+            self.botmain_log_name = str(self.bot_cfg_json.get(
+                "botmain_log_name", "botmainlog.txt"))
             self.bs_log_file = nepi_home + "/" + self.log_dir + "/" + self.botmain_log_name
-            self.conn_log = bool(self.bot_cfg_json["conn_log"])
-            self.conn_log_name = str(self.bot_cfg_json["conn_log_name"])
-            self.packet_log = bool(self.bot_cfg_json["packet_log"])
-            self.wt_changed = bool(self.bot_cfg_json["wt_changed"])
+            self.conn_log = bool(self.bot_cfg_json.get("conn_log", 1))
+            self.conn_log_name = str(self.bot_cfg_json.get(
+                "lb_conn_log_name", "lbconnlog.txt"))
+            self.packet_log = bool(self.bot_cfg_json.get("packet_log", 0))
+            self.packet_log_name = str(self.bot_cfg_json.get(
+                "packet_log_name", "packetlog.txt"))
+            self.lb_encrypted = bool(self.bot_cfg_json.get("lb_encrypted", 0))
+            self.wt_changed = False
+
+            # AGV - temp workaround
+            self.pipo_scor_wt = float(
+                self.bot_cfg_json.get("pipo_scor_wt", .5))
+            self.pipo_qual_wt = float(
+                self.bot_cfg_json.get("pipo_qual_wt", .5))
+            self.pipo_size_wt = float(
+                self.bot_cfg_json.get("pipo_size_wt", .5))
+            self.pipo_time_wt = float(
+                self.bot_cfg_json.get("pipo_time_wt", 1.0))
+            self.pipo_trig_wt = float(
+                self.bot_cfg_json.get("pipo_trig_wt", .5))
+            self.purge_rating = float(
+                self.bot_cfg_json.get("purge_rating", .05))
 
             self.lb_iridium.enabled = bool(
-                self.bot_cfg_json["lb_iridium"]["enabled"])
-            self.lb_iridium.type = str(
-                self.bot_cfg_json["lb_iridium"]["type"])
-            self.lb_iridium.port = str(self.bot_cfg_json["lb_iridium"]["port"])
-            self.lb_iridium.tout = int(self.bot_cfg_json["lb_iridium"]["tout"])
+                self.bot_cfg_json.get("lb_iridium").get("enabled", 1))
+            self.lb_iridium.type = str(self.bot_cfg_json.get(
+                "lb_iridium").get("type", "iridium-sbd"))
+            self.lb_iridium.port = str(self.bot_cfg_json.get(
+                "lb_iridium").get("port", "/dev/ttyUL0"))
+            self.lb_iridium.baud = int(
+                self.bot_cfg_json.get("lb_iridium").get("baud", 19200))
+            self.lb_iridium.tout = int(
+                self.bot_cfg_json.get("lb_iridium").get("tout", 3))
             self.lb_iridium.open_attm = int(
-                self.bot_cfg_json["lb_iridium"]["open_attm"])
+                self.bot_cfg_json.get("lb_iridium").get("open_attm", 10))
             self.lb_iridium.open_tout = int(
-                self.bot_cfg_json["lb_iridium"]["open_tout"])
+                self.bot_cfg_json.get("lb_iridium").get("open_tout", 1))
+            self.lb_iridium.protocol = int(
+                self.bot_cfg_json.get("lb_iridium").get("protocol", 1))
             self.lb_iridium.max_msg_size = int(
-                self.bot_cfg_json["lb_iridium"]["max_msg_size"])
+                self.bot_cfg_json.get("lb_iridium").get("max_msg_size", 340))
             self.lb_iridium.packet_size = int(
-                self.bot_cfg_json["lb_iridium"]["packet_size"])
+                self.bot_cfg_json.get("lb_iridium").get("packet_size", 340))
             self.lb_iridium.pipo_scor_wt = float(
-                self.bot_cfg_json["lb_iridium"]["pipo_scor_wt"])
+                self.bot_cfg_json.get("lb_iridium").get("pipo_scor_wt", .5))
             self.lb_iridium.pipo_qual_wt = float(
-                self.bot_cfg_json["lb_iridium"]["pipo_qual_wt"])
+                self.bot_cfg_json.get("lb_iridium").get("pipo_qual_wt", .5))
             self.lb_iridium.pipo_size_wt = float(
-                self.bot_cfg_json["lb_iridium"]["pipo_size_wt"])
-            self.lb_iridium.pipo_trig_wt = float(
-                self.bot_cfg_json["lb_iridium"]["pipo_trig_wt"])
+                self.bot_cfg_json.get("lb_iridium").get("pipo_size_wt", .5))
             self.lb_iridium.pipo_time_wt = float(
-                self.bot_cfg_json["lb_iridium"]["pipo_time_wt"])
+                self.bot_cfg_json.get("lb_iridium").get("pipo_time_wt", 1.0))
+            self.lb_iridium.pipo_trig_wt = float(
+                self.bot_cfg_json.get("lb_iridium").get("pipo_trig_wt", .5))
             self.lb_iridium.purge_rating = float(
-                self.bot_cfg_json["lb_iridium"]["purge_rating"])
+                self.bot_cfg_json.get("lb_iridium").get("purge_rating", .05))
 
             self.lb_ip.enabled = bool(
-                self.bot_cfg_json["lb_ip"]["enabled"])
-            self.lb_ip.type = str(
-                self.bot_cfg_json["lb_ip"]["type"])
-            self.lb_ip.port = str(self.bot_cfg_json["lb_ip"]["port"])
-            self.lb_ip.tout = int(self.bot_cfg_json["lb_ip"]["tout"])
+                self.bot_cfg_json.get("lb_ip").get("enabled", 1))
+            self.lb_ip.type = str(self.bot_cfg_json.get(
+                "lb_ip").get("type", "ethernet"))
+            self.lb_ip.host = str(self.bot_cfg_json.get(
+                "lb_ip").get("host", "127.0.0.1"))
+            self.lb_ip.port = str(self.bot_cfg_json.get(
+                "lb_ip").get("port", "50000"))
+            self.lb_ip.tout = int(
+                self.bot_cfg_json.get("lb_ip").get("tout", 3))
             self.lb_ip.open_attm = int(
-                self.bot_cfg_json["lb_ip"]["open_attm"])
+                self.bot_cfg_json.get("lb_ip").get("open_attm", 2))
             self.lb_ip.open_tout = int(
-                self.bot_cfg_json["lb_ip"]["open_tout"])
+                self.bot_cfg_json.get("lb_ip").get("open_tout", 1))
+            self.lb_ip.protocol = int(
+                self.bot_cfg_json.get("lb_ip").get("protocol", 2))
             self.lb_ip.max_msg_size = int(
-                self.bot_cfg_json["lb_ip"]["max_msg_size"])
+                self.bot_cfg_json.get("lb_ip").get("max_msg_size", 1500))
             self.lb_ip.packet_size = int(
-                self.bot_cfg_json["lb_ip"]["packet_size"])
+                self.bot_cfg_json.get("lb_ip").get("packet_size", 1500))
             self.lb_ip.pipo_scor_wt = float(
-                self.bot_cfg_json["lb_ip"]["pipo_scor_wt"])
+                self.bot_cfg_json.get("lb_ip").get("pipo_scor_wt", .5))
             self.lb_ip.pipo_qual_wt = float(
-                self.bot_cfg_json["lb_ip"]["pipo_qual_wt"])
+                self.bot_cfg_json.get("lb_ip").get("pipo_qual_wt", .5))
             self.lb_ip.pipo_size_wt = float(
-                self.bot_cfg_json["lb_ip"]["pipo_size_wt"])
-            self.lb_ip.pipo_trig_wt = float(
-                self.bot_cfg_json["lb_ip"]["pipo_trig_wt"])
+                self.bot_cfg_json.get("lb_ip").get("pipo_size_wt", .5))
             self.lb_ip.pipo_time_wt = float(
-                self.bot_cfg_json["lb_ip"]["pipo_time_wt"])
+                self.bot_cfg_json.get("lb_ip").get("pipo_time_wt", 1.0))
+            self.lb_ip.pipo_trig_wt = float(
+                self.bot_cfg_json.get("lb_ip").get("pipo_trig_wt", .5))
             self.lb_ip.purge_rating = float(
-                self.bot_cfg_json["lb_ip"]["purge_rating"])
+                self.bot_cfg_json.get("lb_ip").get("purge_rating", .05))
 
             self.lb_rs232.enabled = bool(
-                self.bot_cfg_json["lb_rs232"]["enabled"])
-            self.lb_rs232.type = str(
-                self.bot_cfg_json["lb_rs232"]["type"])
-            self.lb_rs232.port = str(self.bot_cfg_json["lb_rs232"]["port"])
-            self.lb_rs232.tout = int(self.bot_cfg_json["lb_rs232"]["tout"])
+                self.bot_cfg_json.get("lb_rs232").get("enabled", 0))
+            self.lb_rs232.type = str(self.bot_cfg_json.get(
+                "lb_rs232").get("type", "rs232"))
+            self.lb_rs232.port = str(self.bot_cfg_json.get(
+                "lb_rs232").get("port", "/dev/tty51"))
+            self.lb_rs232.baud = int(
+                self.bot_cfg_json.get("lb_rs232").get("baud", 19200))
+            self.lb_rs232.tout = int(
+                self.bot_cfg_json.get("lb_rs232").get("tout", 3))
             self.lb_rs232.open_attm = int(
-                self.bot_cfg_json["lb_rs232"]["open_attm"])
+                self.bot_cfg_json.get("lb_rs232").get("open_attm", 10))
             self.lb_rs232.open_tout = int(
-                self.bot_cfg_json["lb_rs232"]["open_tout"])
+                self.bot_cfg_json.get("lb_rs232").get("open_tout", 1))
+            self.lb_rs232.protocol = int(
+                self.bot_cfg_json.get("lb_rs232").get("protocol", 1))
             self.lb_rs232.max_msg_size = int(
-                self.bot_cfg_json["lb_rs232"]["max_msg_size"])
+                self.bot_cfg_json.get("lb_rs232").get("max_msg_size", 340))
             self.lb_rs232.packet_size = int(
-                self.bot_cfg_json["lb_rs232"]["packet_size"])
+                self.bot_cfg_json.get("lb_rs232").get("packet_size", 1500))
             self.lb_rs232.pipo_scor_wt = float(
-                self.bot_cfg_json["lb_rs232"]["pipo_scor_wt"])
+                self.bot_cfg_json.get("lb_rs232").get("pipo_scor_wt", .5))
             self.lb_rs232.pipo_qual_wt = float(
-                self.bot_cfg_json["lb_rs232"]["pipo_qual_wt"])
+                self.bot_cfg_json.get("lb_rs232").get("pipo_qual_wt", .5))
             self.lb_rs232.pipo_size_wt = float(
-                self.bot_cfg_json["lb_rs232"]["pipo_size_wt"])
-            self.lb_rs232.pipo_trig_wt = float(
-                self.bot_cfg_json["lb_rs232"]["pipo_trig_wt"])
+                self.bot_cfg_json.get("lb_rs232").get("pipo_size_wt", .5))
             self.lb_rs232.pipo_time_wt = float(
-                self.bot_cfg_json["lb_rs232"]["pipo_time_wt"])
+                self.bot_cfg_json.get("lb_rs232").get("pipo_time_wt", 1.0))
+            self.lb_rs232.pipo_trig_wt = float(
+                self.bot_cfg_json.get("lb_rs232").get("pipo_trig_wt", .5))
             self.lb_rs232.purge_rating = float(
-                self.bot_cfg_json["lb_rs232"]["purge_rating"])
+                self.bot_cfg_json.get("lb_rs232").get("purge_rating", .05))
 
-            self.lb_conn_order = self.bot_cfg_json["lb_conn_order"]
-            self.hb_conn_order = self.bot_cfg_json["hb_conn_order"]
+            self.hb_ip.enabled = bool(
+                self.bot_cfg_json.get("hb_ip").get("enabled", 1))
+            self.hb_ip.type = str(self.bot_cfg_json.get(
+                "hb_ip").get("type", "ethernet"))
+            self.hb_ip.host = str(self.bot_cfg_json.get(
+                "hb_ip").get("host", "127.0.0.1"))
+            self.hb_ip.port = str(self.bot_cfg_json.get(
+                "hb_ip").get("port", "55000"))
+            self.hb_ip.tout = int(
+                self.bot_cfg_json.get("hb_ip").get("tout", 3))
+            self.hb_ip.open_attm = int(
+                self.bot_cfg_json.get("hb_ip").get("open_attm", 2))
+            self.hb_ip.open_tout = int(
+                self.bot_cfg_json.get("hb_ip").get("open_tout", 1))
+            self.hb_ip.protocol = int(
+                self.bot_cfg_json.get("hb_ip").get("protocol", 2))
+            self.hb_ip.max_msg_size = int(
+                self.bot_cfg_json.get("hb_ip").get("max_msg_size", 1500))
+            self.hb_ip.packet_size = int(
+                self.bot_cfg_json.get("hb_ip").get("packet_size", 1500))
+            self.hb_ip.pipo_scor_wt = float(
+                self.bot_cfg_json.get("hb_ip").get("pipo_scor_wt", .5))
+            self.hb_ip.pipo_qual_wt = float(
+                self.bot_cfg_json.get("hb_ip").get("pipo_qual_wt", .5))
+            self.hb_ip.pipo_size_wt = float(
+                self.bot_cfg_json.get("hb_ip").get("pipo_size_wt", .5))
+            self.hb_ip.pipo_time_wt = float(
+                self.bot_cfg_json.get("hb_ip").get("pipo_time_wt", 1.0))
+            self.hb_ip.pipo_trig_wt = float(
+                self.bot_cfg_json.get("hb_ip").get("pipo_trig_wt", .5))
+            self.hb_ip.purge_rating = float(
+                self.bot_cfg_json.get("hb_ip").get("purge_rating", .05))
+
+            self.lb_conn_order = self.bot_cfg_json.get("lb_conn_order")
+            self.hb_conn_order = self.bot_cfg_json.get("hb_conn_order")

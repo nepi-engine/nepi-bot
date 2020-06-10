@@ -13,6 +13,7 @@
 ##
 ########################################################################
 
+import pdb
 import os
 import sys
 import time
@@ -292,12 +293,12 @@ for dir in allfolders:
         if cfg.tracking:
             log.track(2, "Continue.", True)
         continue
-        #log.track(2, "Update Status File with 'meta_state' of 1.", True)
+        # log.track(2, "Update Status File with 'meta_state' of 1.", True)
 
-        #sql = "UPDATE status SET meta_state=1 WHERE rowid=" + str(status_rowid)
-        #success = db.update(3, sql)
+        # sql = "UPDATE status SET meta_state=1 WHERE rowid=" + str(status_rowid)
+        # success = db.update(3, sql)
         # if cfg.tracking:
-        #log.track(2, "Continue.", True)
+        # log.track(2, "Continue.", True)
         # continue
 
     if cfg.tracking:
@@ -358,7 +359,7 @@ for dir in allfolders:
         if cfg.tracking:
             log.track(2, "INSERT Meta Data Record into DB.", True)
 
-        #success = db.pushmeta(3, meta_json, info[3], status_rowid, trigger, info[0], info[1], info[2], info[4], info[5], meta_file_path, stdfile, chgfile)
+        # success = db.pushmeta(3, meta_json, info[3], status_rowid, trigger, info[0], info[1], info[2], info[4], info[5], meta_file_path, stdfile, chgfile)
         success = db.pushmeta(3, meta_json, info,
                               status_rowid, trigger, meta_file_path)
 
@@ -698,8 +699,19 @@ if cfg.tracking:
 
 cnc_msgs = list()
 if sm.len > 0:
-    bc = BotComm(cfg, log, cfg.type, 1)
-    success = bc.getconn(0)
+    # AGV
+    for link in cfg.lb_conn_order:
+        if link == "lb_iridium":
+            xtype = cfg.lb_iridium.type
+        if link == "lb_ip":
+            xtype = cfg.lb_ip.type
+        if link == "lb_rs232":
+            xtype == cfg.lb_rs232.type
+        bc = BotComm(cfg, log, xtype, 1)
+        success = bc.getconn(0)
+        if success[0]:
+            break
+    # AGV
     if success[0]:
         send_success, cnc_msgs = bc.send(1, sm.buf, 5)
         if send_success[0]:
@@ -727,8 +739,8 @@ sdk_action = False
 if cnc_msgs is None:
     cnc_msgs = list()
 for msgnum in range(0, len(cnc_msgs)):
-    #msg_b64 = cnc_msgs[msgnum]
-    #msg = msg_b64.decode('base64')
+    # msg_b64 = cnc_msgs[msgnum]
+    # msg = msg_b64.decode('base64')
     msg = cnc_msgs[msgnum]
     msg_pos = 0
     msg_len = len(msg)
@@ -951,9 +963,9 @@ for msgnum in range(0, len(cnc_msgs)):
                 log.track(3, "ffile: [" + str(ffile) + "]", True)
             if seg_type > 0:
                 # This can be used if the JSON requires 'expansion.'
-                #fpars = json.loads(data_unp)
+                # fpars = json.loads(data_unp)
                 # if cfg.tracking:
-                #log.track(15, "fpars: [" + str(fpars) + "]", True)
+                # log.track(15, "fpars: [" + str(fpars) + "]", True)
                 fdump = json.dumps(data_unp, indent=4, sort_keys=False)
                 if cfg.tracking:
                     log.track(15, "fdump: [" + str(fdump) + "]", True)
@@ -984,7 +996,7 @@ if cfg.tracking:
 if sdk_action:
     if cfg.tracking:
         log.track(1, "Messages Processed; Proceed.", True)
-    if (cfg.state == "fl"):
+    if (cfg.devclass == "float1"):
         sdkproc = "/opt/numurus/ros/nepi-utilities/process-updates.sh"
         sdkwhat = "Live Float Mode"
     else:
@@ -1001,7 +1013,7 @@ if sdk_action:
         log.track(1, "Looking for sdkproc at: {}".format(str(sdkproc)), True)
         if os.path.isfile(str(sdkproc)):
             # Popen([str(sdkproc)])
-            #Popen(['nohup', str(sdkproc)])
+            # Popen(['nohup', str(sdkproc)])
             proc = Popen(['nohup', "/bin/sh", str(sdkproc)],
                          stdout=devnull, stderr=devnull)
             rc = proc.wait()
