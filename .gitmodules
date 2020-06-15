@@ -1,0 +1,3 @@
+[submodule "nepi-protobuf"]
+	path = nepi-protobuf
+	url = git@bitbucket.org:numurus/nepi-protobuf.git
