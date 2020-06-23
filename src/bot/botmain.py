@@ -14,6 +14,7 @@
 ########################################################################
 
 import pdb
+import argparse
 import os
 import sys
 import time
@@ -45,6 +46,11 @@ from bothelp import deleteFolder, deleteDataProduct
 v_botsend = "bot71-20200601"
 
 ########################################################################
+# Parse any command line options
+########################################################################
+testiplink = True
+
+########################################################################
 # Instantiate a NEPI-Bot Configuration Class (from 'botcfg.py')
 ########################################################################
 
@@ -52,10 +58,10 @@ cfg = BotCfg()
 cfg.initcfg()
 
 ########################################################################
-# Instantiate Bot-Send Debug/Log Object (from 'botlog.py')
+# Instantiate Bot-Main Debug/Log Object (from 'botlog.py')
 ########################################################################
 
-log = BotLog(cfg, "BOT-SEND", v_botsend)
+log = BotLog(cfg, "BOT-Main", v_botsend)
 log.initlog(0)
 
 ########################################################################
@@ -697,6 +703,12 @@ if cfg.tracking:
 if cfg.tracking:
     log.track(0, "Send the Message Buffer.", True)
 
+# TODO REMOVE BEFORE PRODUCTION
+if testiplink:
+    sm.buf = "THIS A ENCRYPTED IP LINK TEST TO CRITIGEN TEST SERVER"
+    sm.len = len(sm.buf)
+
+bcsuccess = 0
 cnc_msgs = list()
 if sm.len > 0:
     # AGV
@@ -713,6 +725,7 @@ if sm.len > 0:
             break
     # AGV
     if success[0]:
+        log.track(0, "Sending: " + sm.buf, True)
         send_success, cnc_msgs = bc.send(1, sm.buf, 5)
         if send_success[0]:
             log.track(0, "send returned Success", True)
@@ -725,11 +738,21 @@ if sm.len > 0:
         cnc_msgs = None
         log.track(0, "getconn returned Not Success", True)
         bcsuccess = 0  # Added as gap fix for no scuttle
-    success = bc.close(1)
 else:
     if cfg.tracking:
         log.track(0, "NO Uplink Message to Send.", True)
 
+    # Receive messages from server
+recv_success, cnc_msgs = bc.receive(1, 1)
+if recv_success[0]:
+    log.track(0, "receive returned Success", True)
+    log.track(0, "Received: " + cnc_msgs[0], True)
+    bcsuccess = 1
+else:
+    recv_success = [False, None, None]
+    success = bc.close(1)
+
+success = bc.close(1)
 
 ########################################################################
 # Make sure any downlinked commands get processed.
@@ -1126,17 +1149,17 @@ else:
 success = db.close(0)
 
 ########################################################################
-# Close the Bot-Send Subsystem.
+# Close the Bot-Main Subsystem.
 ########################################################################
 
 if cfg.tracking:
     log.track(0, "", True)
-    log.track(0, "Bot-Send Subsystem Closing.", True)
+    log.track(0, "Bot-Main Subsystem Closing.", True)
     log.track(0, "", True)
 
 if not bcsuccess:  # Added as gap fix for no scuttle
-    log.track(0, "Bot-Send Sending Not Success.", True)
+    log.track(0, "Bot-Main Sending Not Success.", True)
     sys.exit(1)  # Added as gap fix for no scuttle
 else:
-    log.track(0, "Bot-Send Sending Success.", True)
+    log.track(0, "Bot-Main Sending Success.", True)
     sys.exit(0)

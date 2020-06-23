@@ -13,13 +13,22 @@
 ##
 ########################################################################
 
+import pdb
 from binascii import unhexlify
 import struct
 import socket
 import serial
 import time
 import os
+import subprocess
+
 v_botcomm = "bot71-20200601"
+
+# processes that may need to be cleaned up before BOT exits
+procs = []
+# local port number for SSH client and UDP traffic
+LOCALPORT = "8000"
+LOCALHOST = "127.0.0.1"
 
 # from botcfg import BotCfg
 # from botlog import BotLog
@@ -27,6 +36,10 @@ v_botcomm = "bot71-20200601"
 ########################################################################
 # The Float Communications Class
 ########################################################################
+
+
+class obj(object):
+    pass
 
 
 class BotComm(object):
@@ -46,11 +59,14 @@ class BotComm(object):
             self.log.track(_lev+13, "^log: " + str(self.log), True)
             self.log.track(_lev+13, "^typ: " + str(self.typ), True)
             self.log.track(_lev+13, "_lev: " + str(_lev), True)
-
     # -------------------------------------------------------------------
     # getconn() Class Library (Establish the Communications Connection).
     # -------------------------------------------------------------------
+
     def getconn(self, _lev):
+
+        global procs
+
         if self.cfg.tracking:
             self.log.track(_lev, "Establish Communcations Connection.", True)
             self.log.track(_lev+13, "^typ: " + str(self.typ), True)
@@ -172,34 +188,78 @@ class BotComm(object):
                 self.log.track(_lev+1, "port: " +
                                str(self.cfg.lb_ip.port), True)
 
+            # if ssh or socat background processes are already running, terminate them and create a new tunnel
+            if procs:
+                self.log.track(
+                    _lev+1, "IP Active SSH and SOCAT processes detected.", True)
+                for item in procs:
+                    rc = item.poll()
+                    if rc == None:
+                        item.terminate()
+                        item.wait()
+                self.log.track(
+                    _lev+1, "IP Active SSH and SOCAT processes terminated.", True)
+                procs = []
+
+            # establish SSH connection to remote server and route local UDP traffic to SSH tunnel
+            self.log.track(
+                _lev+1, "IP Attempting to establish SSH tunnel and redirect UDP port.", True)
+
+            # TODO change remote host and user and testkey
+            args_sshcmd = ["ssh", "-T", "-p", self.cfg.lb_ip.port, "-o", "StrictHostKeyChecking=no", "-i",
+                           "./testkeyCritigen", "-N", "-L", str(LOCALPORT + ":localhost:" + LOCALPORT), "testuser@52.38.4.219"]
+            args_socatcmd = ["socat", str(
+                "UDP4-LISTEN:" + LOCALPORT + ",fork,reuseaddr"), "TCP4:" + LOCALHOST + ":" + LOCALPORT]
+            proc_ssh = subprocess.Popen(args_sshcmd)
+            proc_socat = subprocess.Popen(args_socatcmd)
+            procs.append(proc_ssh)
+            procs.append(proc_socat)
+
             if self.con == None:
-                try:
-                    self.con = socket.socket(
-                        socket.AF_INET, socket.SOCK_STREAM)
-                    self.con.settimeout(5)
-                    self.con.connect(
-                        (self.cfg.lb_ip.host, self.cfg.lb_ip.port))
-                    if self.cfg.tracking:
-                        self.log.track(_lev+1, "IP Connection Made.", True)
-                except socket.timeout:
-                    enum = "BC111"
-                    emsg = "getconn(): Host/Port Connect TIMEOUT."
+                for res in socket.getaddrinfo(LOCALHOST, LOCALPORT, socket.AF_UNSPEC, socket.SOCK_DGRAM):
+                    af, socktype, proto, canonname, sa = res
+                    try:
+                        self.con = socket.socket(af, socktype, proto)
+                        self.con.settimeout(1)  # (self.cfg.lb_ip.timeout)
+                    except socket.error as msg:
+                        enum = "BC111"
+                        emsg = "IP getconn(): Host/Port Connect Problem."
+                        if self.cfg.tracking:
+                            self.log.track(_lev+2, str(enum) +
+                                           ": " + str(emsg), True)
+                        self.con = None
+                        continue
+                    try:
+                        self.con.connect(sa)
+                    except socket.error as msg:
+                        enum = "BC111A"
+                        emsg = "IP getconn(): Host/Port Connect Problem."
+                        if self.cfg.tracking:
+                            self.log.track(_lev+2, str(enum) +
+                                           ": " + str(emsg), True)
+                        self.con = None
+                        continue
+                    break
+
+                if self.con is None:
+                    enum = "BC111B"
+                    emsg = "IP getconn(): Host/Port Connect Unsuccessful."
                     if self.cfg.tracking:
                         self.log.track(_lev+2, str(enum) +
                                        ": " + str(emsg), True)
                     return [False, str(enum), str(emsg)]
-                except Exception as e:
-                    enum = "BC112"
-                    emsg = "getconn(): [" + str(e) + "]"
+                else:
+                    enum = "BC111C"
+                    emsg = "IP getconn(): Host/Port Connect Successful."
                     if self.cfg.tracking:
                         self.log.track(_lev+2, str(enum) +
                                        ": " + str(emsg), True)
-                    return [False, str(enum), str(emsg)]
+                    # TODO reexamine - need 2 sec delay before sending/receiving messages on open socket
+                    time.sleep(2)
             else:
                 if self.cfg.tracking:
                     self.log.track(
                         _lev+1, "IP Connection ALREADY Exists.", True)
-
             return [True, None, None]
 
         # ---------------------------------------------------------------
@@ -296,6 +356,26 @@ class BotComm(object):
                 if self.cfg.tracking:
                     self.log.errtrack(str(enum), str(emsg))
                 return [False, str(enum), str(emsg)], None
+
+        # ---------------------------------------------------------------
+        # Receive on the 'Ethernet' IP Connection.
+        # ---------------------------------------------------------------
+        if self.typ == 'ethernet':
+            try:
+                rec = self.con.recv(4096)
+            except socket.timeout as e:  # no data available
+                rec = ""
+            except Exception as e:  # something unexpected happened
+                enum = "BC140"
+                emsg = str(e)
+                if self.cfg.tracking:
+                    self.log.errtrack(str(enum), str(emsg))
+                return [False, str(enum), str(emsg)], None
+            finally:
+                retlist = []
+                retlist.append(object)
+                retlist[0] = rec
+                return [True, None, None], retlist
 
     # -------------------------------------------------------------------
     # Get a MT Message from the MT buffer
@@ -433,10 +513,30 @@ class BotComm(object):
                     self.log.errtrack(str(enum), str(emsg))
                 return [False, str(enum), str(emsg)], None
 
+        # ---------------------------------------------------------------
+        # Send on the 'ethernet' Connection.
+        # ---------------------------------------------------------------
+
+        if self.typ == 'ethernet':
+            try:
+                rc = self.con.sendall(_msg)
+                if rc == None:
+                    return [True, None, None], None
+                else:
+                    enum = "BC161"
+                    emsg = "IP Data Not Sent."
+                    return [False, str(enum), str(emsg)], None
+            except Exception as e:
+                enum = "BC162"
+                emsg = "IP Data Not Sent."
+                return [False, str(enum), str(emsg)], None
+
     # -------------------------------------------------------------------
     # close() Class Method (Close the Connection).
     # -------------------------------------------------------------------
+
     def close(self, _lev):
+        global procs
         if self.cfg.tracking:
             self.log.track(_lev, "Close the Communications Connection.", True)
             self.log.track(_lev+1, "_lev: " + str(_lev), True)
@@ -484,7 +584,7 @@ class BotComm(object):
 
             if self.con != None:
                 try:
-                    self.con.shutdown(socket.SHUT_RDWR)
+                    # self.con.shutdown(socket.SHUT_RDWR)
                     self.con.close()
                     self.con = None
 
@@ -498,6 +598,14 @@ class BotComm(object):
                         self.log.track(_lev+1, str(enum) +
                                        ": " + str(emsg), True)
                     return [False, str(enum), str(emsg)]
+
+                print "LENGTH OF PROCS = " + str(len(procs))
+                # shutdown ssh and socat processes gracefully
+                for proc in procs:
+                    proc.terminate()
+                    proc.poll()
+                    proc.wait()
+                procs = []
             else:
                 if self.cfg.tracking:
                     self.log.track(
