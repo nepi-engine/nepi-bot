@@ -52,7 +52,7 @@
         "enabled": 1,
         "type": "ethernet",
         "host": "127.0.0.1",
-        "port": "50000",
+        "port": "2222",
         "tout": 3,
         "open_attm": 2,
         "open_tout": 1,
@@ -104,8 +104,8 @@
         "purge_rating": 0.05
     },
     "lb_conn_order": [
-        "lb_iridium",
         "lb_ip",
+        "lb_iridium",
         "lb_rs232"
     ],
     "hb_conn_order": [

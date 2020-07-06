@@ -13,6 +13,7 @@
 ##
 ########################################################################
 
+import binascii
 import pdb
 import argparse
 import os
@@ -694,7 +695,9 @@ if meta_rows:
 if cfg.tracking:
     log.track(1, "Final Message Complete.", True)
     log.track(2, "Buf Len: " + str(len(str(sm.buf))), True)
-    log.track(2, "Buf Msg: " + str(sm.buf).encode("hex"), True)
+    # TODO Check hex encoding
+    # log.track(2, "Buf Msg: " + str(sm.buf).encode("hex"), True)
+    #log.track(2, "Buf Msg: " + str(binascii.hexlify(str.encode(sm.buf))), True)
 
 ########################################################################
 # Open Communications Port and Send the Message Buffer.

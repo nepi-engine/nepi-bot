@@ -599,7 +599,7 @@ class BotComm(object):
                                        ": " + str(emsg), True)
                     return [False, str(enum), str(emsg)]
 
-                print "LENGTH OF PROCS = " + str(len(procs))
+                print("LENGTH OF PROCS = ", str(len(procs)))
                 # shutdown ssh and socat processes gracefully
                 for proc in procs:
                     proc.terminate()
