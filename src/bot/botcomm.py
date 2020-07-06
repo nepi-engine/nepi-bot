@@ -207,7 +207,7 @@ class BotComm(object):
 
             # TODO change remote host and user and testkey
             args_sshcmd = ["ssh", "-T", "-p", self.cfg.lb_ip.port, "-o", "StrictHostKeyChecking=no", "-i",
-                           "./testkeyCritigen", "-N", "-L", str(LOCALPORT + ":localhost:" + LOCALPORT), "testuser@52.38.4.219"]
+                           "./testkeyCritigen", "-N", "-L", str(LOCALPORT + ":localhost:" + LOCALPORT), "NB10000001@52.38.4.219"]
             args_socatcmd = ["socat", str(
                 "UDP4-LISTEN:" + LOCALPORT + ",fork,reuseaddr"), "TCP4:" + LOCALHOST + ":" + LOCALPORT]
             proc_ssh = subprocess.Popen(args_sshcmd)
