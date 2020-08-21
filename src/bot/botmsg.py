@@ -1,6 +1,6 @@
 ########################################################################
 ##
-# Module: botmsg2.py
+# Module: botmsg.py
 # --------------------
 ##
 # (c) Copyright 2019 by Numurus LLC
@@ -21,14 +21,19 @@ from datetime import date
 import calendar
 from struct import *
 import ctypes
+import botdb
 
-from numpy.core import double, int32, uint32, int64, uint64 as np
+# from numpy.core import double, int32, uint32, int64, uint64 as np
+
+import numpy.core as np
 
 import botdefs
 import nepi_messaging_all_pb2
 from google.protobuf import json_format
+from enum import Enum
 
 # from botmain import dev_id_bytes, dev_id_str
+# from botmain import db, msgs_outgoing
 from timestamp_pb2 import Timestamp
 from enum import Enum
 from json import JSONEncoder
@@ -47,7 +52,7 @@ class BotMsg(object):
     # Initialize the BotMsg Class Library Object.
     # ------------------------------------------------------------------
 
-    def __init__(self, _cfg, _log, _lev):
+    def __init__(self, _cfg, _log, db, _lev):
         self.cfg = _cfg
         self.log = _log
         self.lev = _lev
@@ -69,10 +74,44 @@ class BotMsg(object):
             # print('default(', repr(obj), ')')
             return obj.__dict__
 
+    # convert python value to smallest best match SystemValue NEPImsg protobuf type
+    # for the wire.
+    # return False if successful. Otherwise log error and return True.
+    def convert_to_system_value(self, _sysval, _identifier, _value):
+        try:
+            if isinstance(_identifier, int) and np.can_cast(
+                _identifier, "uint32", "safe"
+            ):
+                _sysval.num_identifier = np.uint32(_identifier)
+            else:
+                _sysval.str_identifier = str(_identifier)
+
+            if isinstance(_value, str):
+                _sysval.string_value = str(_value)
+            elif isinstance(_value, bool):
+                _sysval.bool_val = _value
+            elif isinstance(_value, int) and np.can_cast(_value, "uint64", "safe"):
+                _sysval.uint64_val = np.uint64(_value)
+            elif isinstance(_value, int) and np.can_cast(_value, "int64", "safe"):
+                _sysval.uint64_val = np.int64(_value)
+            elif isinstance(_value, float) and np.can_cast(_value, "float32", "safe"):
+                _sysval.float_val = np.float32(_value)
+            elif isinstance(_value, float) and np.can_cast(_value, "float64", "safe"):
+                _sysval.double_val = np.float64(_value)
+            else:
+                _sysval.raw_val = bytes(_value)
+        except Exception as e:
+            enum = "MSG102"
+            emsg = f"convert_to_system_value(): Problem converting SystemValue for protobuf [{e}]."
+            if self.cfg.tracking:
+                self.log.track(0, str(enum) + ": " + str(emsg), True)
+            return True
+        return False
+
     # -------------------------------------------------------------------
     # The 'encode_status_msg()' Class Library Method. Protobuf implementation
     # -------------------------------------------------------------------
-    def encode_status_msg(self, _lev, _rec, dev_id_bytes):
+    def encode_status_msg(self, _lev, _rec, dev_id_bytes, db, _msgs_outgoing):
 
         if self.cfg.tracking:
             self.log.track(_lev, "Entering 'encode_status_msg()' Class Method.", True)
@@ -82,7 +121,7 @@ class BotMsg(object):
         try:
             ## Set NEPI Message
             nepi_msg = nepi_messaging_all_pb2.NEPIMsg()
-            nepi_msg.comm_index = 5
+            nepi_msg.comm_index = db.get_botcomm_index()
             nepi_msg.nuid = dev_id_bytes
 
             # Set system status
@@ -95,21 +134,23 @@ class BotMsg(object):
 
             # Set Sys status components provided by device
             system_status_device = system_status.device_status
-            dt = datetime.datetime.fromtimestamp(_rec[6], None)
+            dt = datetime.datetime.fromtimestamp(_rec[5], None)
             system_status_device.timestamp.FromDatetime(dt)
-            system_status_device.navsat_fix_time_offset = np.int32(_rec[10])
-            system_status_device.defined_latitude = float(_rec[11])
-            system_status_device.defined_longitude = float(_rec[12])
-            system_status_device.defined_heading = np.uint32(_rec[13])
-            system_status_device.heading_true_north = False
-            system_status_device.roll = np.int32(_rec[30])
-            system_status_device.pitch = np.int32(_rec[31])
-            system_status_device.temperature = np.int32(_rec[16])
+            system_status_device.navsat_fix_time_offset = np.int32(_rec[6])
+            system_status_device.defined_latitude = float(_rec[7])
+            system_status_device.defined_longitude = float(_rec[8])
+            system_status_device.defined_heading = np.uint32(_rec[9])
+            system_status_device.heading_true_north = int(_rec[10])
+            system_status_device.roll = np.int32(_rec[11])
+            system_status_device.pitch = np.int32(_rec[12])
+            system_status_device.temperature = np.int32(_rec[13])
             system_status_device.power_state = np.uint32(_rec[14])
-            system_status_device.device_status = bytes(_rec[32])
+            system_status_device.device_status = bytes(_rec[15])
         except Exception as e:
             enum = "MSG102"
-            emsg = "pack_status_msg(): Problem building status record for Server"
+            emsg = (
+                f"pack_status_msg(): Problem building status record for Server [{e}]."
+            )
             if self.cfg.tracking:
                 self.log.track(_lev, str(enum) + ": " + str(emsg), True)
             return [False, str(enum), str(emsg)]
@@ -123,12 +164,13 @@ class BotMsg(object):
         )
         self.len = len(self.buf)
 
-        self.buf.append(self.buf1)
-        self.buf_str.append(self.buf_str1)
+        # self.buf.append(self.buf1)
+        # self.buf_str.append(self.buf_str1)
+        _msgs_outgoing.append(self.buf1)
 
         if self.cfg.tracking:
             self.log.track(_lev + 1, "Status Record PACKED.", True)
-            self.log.track(_lev + 2, "Msg Str: " + self.buf_str, True)
+            #self.log.track(_lev + 2, "Msg Str: " + self.buf_str, True)
             # self.log.track(
             #     _lev + 2, "Msg Enc: " + str(self.buf, encoding="utf-8"), True
             # )
@@ -139,7 +181,7 @@ class BotMsg(object):
     # -------------------------------------------------------------------
     # The 'encode_data_msg()' Class Library Method. Protobuf implementation
     # -------------------------------------------------------------------
-    def encode_data_msg(self, _lev, _rec, dev_id_bytes):
+    def encode_data_msg(self, _lev, _rec, dev_id_bytes, db, _msgs_outgoing):
 
         if self.cfg.tracking:
             self.log.track(_lev, "Entering 'encode_data_msg()' Class Method.", True)
@@ -149,7 +191,7 @@ class BotMsg(object):
         try:
             ## Set NEPI Message
             nepi_msg = nepi_messaging_all_pb2.NEPIMsg()
-            nepi_msg.comm_index = 5
+            nepi_msg.comm_index = db.get_botcomm_index()
             nepi_msg.nuid = dev_id_bytes
 
             # Set data message
@@ -174,7 +216,7 @@ class BotMsg(object):
             data_message_device_data.device_status = bytes(_rec[32])
         except Exception as e:
             enum = "MSG102"
-            emsg = "encode_data_msg(): Problem building data record for Server"
+            emsg = f"encode_data_msg(): Problem building data record for Server [{e}]."
             if self.cfg.tracking:
                 self.log.track(_lev, str(enum) + ": " + str(emsg), True)
             return [False, str(enum), str(emsg)]
@@ -188,15 +230,17 @@ class BotMsg(object):
         )
         self.len = len(self.buf)
 
-        self.buf.append(self.buf1)
-        self.buf_str.append(self.buf_str1)
+        # self.buf.append(self.buf1)
+        # self.buf_str.append(self.buf_str1)
+
+        _msgs_outgoing.append(self.buf1)
 
         if self.cfg.tracking:
             self.log.track(_lev + 1, "DATA Record ENCODED.", True)
-            self.log.track(_lev + 2, "Msg Str: " + self.buf_str, True)
-            self.log.track(
-                _lev + 2, "Msg Enc: " + str(self.buf, encoding="utf-8"), True
-            )
+            # self.log.track(_lev + 2, "Msg Str: " + self.buf_str, True)
+            # self.log.track(
+            #     _lev + 2, "Msg Enc: " + str(self.buf, encoding="utf-8"), True
+            # )
             self.log.track(_lev + 2, "Msg Siz: " + str(self.len), True)
 
         return [True, None, None]
@@ -204,47 +248,52 @@ class BotMsg(object):
     # -------------------------------------------------------------------
     # The 'encode_gen_msg()' Class Library Method. Protobuf implementation
     # -------------------------------------------------------------------
-    def encode_gen_msg(self, _lev, _rec, _identifier, _value, _dev_id_bytes):
+    def encode_gen_msg(
+        self, _lev, _rec, _identifier, _value, _orig, _dev_id_bytes, db, _msgs_outgoing
+    ):
 
         # Set nepi msg
         try:
             nepi_msg = nepi_messaging_all_pb2.NEPIMsg()
             nepi_msg.nuid = _dev_id_bytes
-            nepi_msg.comm_index = 7
+            nepi_msg.comm_index = db.get_botcomm_index()
 
             # Set cfg message
             gen_message = nepi_msg.gen_msg
 
             # Set routing
             gen_message_routing = gen_message.routing
-            gen_message_routing.comm_index = 7
-            gen_message_routing.subsystem = 1
+            gen_message_routing.subsystem = _orig
 
             # Set System Value
             gen_message_payload = gen_message.msg_payload
-
-            if isinstance(_identifier, int):
-                gen_message_payload.int64_identifier = int(_identifier)
-            else:
-                gen_message_payload.str_identifier = str(_identifier)
-
-            if isinstance(_value, double):
-                gen_message_payload.double_val = _value
-            elif isinstance(_value, float):
-                gen_message_payload.float_val = _value
-            elif isinstance(_value, np.int64):
-                gen_message_payload.int_64_val = _value
-            elif isinstance(_value, np.uint64):
-                gen_message_payload.uint64_val = _value
-            elif isinstance(_value, bool):
-                gen_message_payload.bool_val = _value
-            elif isinstance(_value, str):
-                gen_message_payload.string_val = _value
-            else:
-                gen_message_payload.raw_val = bytes(_value)
+            retcode = self.convert_to_system_value(
+                gen_message_payload, _identifier, _value
+            )
+            # if isinstance(_identifier, int):
+            #     gen_message_payload.int64_identifier = int(_identifier)
+            # else:
+            #     gen_message_payload.str_identifier = str(_identifier)
+            #
+            # if isinstance(_value, double):
+            #     gen_message_payload.double_val = _value
+            # elif isinstance(_value, float):
+            #     gen_message_payload.float_val = _value
+            # elif isinstance(_value, np.int64):
+            #     gen_message_payload.int_64_val = _value
+            # elif isinstance(_value, np.uint64):
+            #     gen_message_payload.uint64_val = _value
+            # elif isinstance(_value, bool):
+            #     gen_message_payload.bool_val = _value
+            # elif isinstance(_value, str):
+            #     gen_message_payload.string_val = _value
+            # else:
+            #     gen_message_payload.raw_val = bytes(_value)
         except Exception as e:
             enum = "MSG103"
-            emsg = "encode_gen_msg(): Problem building general record for Server"
+            emsg = (
+                f"encode_gen_msg(): Problem building general record for Server [{e}]."
+            )
             if self.cfg.tracking:
                 self.log.track(_lev, str(enum) + ": " + str(emsg), True)
             return [False, str(enum), str(emsg)]
@@ -258,14 +307,16 @@ class BotMsg(object):
         )
 
         self.len = len(self.buf)
-        self.buf.append(self.buf1)
-        self.buf_str.append(self.buf_str1)
+        # self.buf.append(self.buf1)
+        # self.buf_str.append(self.buf_str1)
+
+        _msgs_outgoing.append(self.buf1)
 
         if self.cfg.tracking:
             self.log.track(_lev + 1, "GENERAL Record ENCODED.", True)
-            self.log.track(_lev + 2, "Msg Str: " + self.buf_str, True)
+            self.log.track(_lev + 2, "Msg Str: " + self.buf_str1, True)
             self.log.track(
-                _lev + 2, "Msg Enc: " + str(self.buf, encoding="utf-8"), True
+                _lev + 2, "Msg Enc: " + str(self.buf1, encoding="utf-8"), True
             )
             self.log.track(_lev + 2, "Msg Siz: " + str(self.len), True)
 
@@ -274,7 +325,7 @@ class BotMsg(object):
     # -------------------------------------------------------------------
     # The 'decode_server_msg()' Class Library Method. Protobuf implementation
     # -------------------------------------------------------------------
-    def decode_server_msg(self, _lev, _nepi_msg, _dev_id_bytes):
+    def decode_server_msg(self, _lev, _nepi_msg, _dev_id_bytes, _msgs_incoming):
 
         try:
             nepi_msg = nepi_messaging_all_pb2.NEPIMsg()
@@ -302,7 +353,7 @@ class BotMsg(object):
         # check nuid in message to ensure we are the correct recipient
         if svr_nuid != _dev_id_bytes:
             enum = "MSG111"
-            emsg = "decode_server_msg(): Message incorrectly sent to this NEPI-Bot."
+            emsg = f"decode_server_msg(): Message incorrectly sent to this NEPI-Bot."
             if self.cfg.tracking:
                 self.log.track(_lev, emsg)
                 self.log.track(
@@ -314,52 +365,103 @@ class BotMsg(object):
 
             return [False, str(enum), str(emsg)]
 
-        # subsys = getattr(nepi_msg, nepi_msg.WhichOneof("subsystem")).value
-
         msg_type = nepi_msg.WhichOneOf("msg")
+
+        # general message type
+
         if msg_type == "gen_msg":
+
             msg_gen_msg = nepi_msg.gen_msg
             msg_routing = msg_gen_msg.routing.subsystem
             msg_payload = msg_gen_msg.msg_payload
-            if msg_payload.HasField("str_identifier"):
+
+            # retrieve identifier
+
+            idtype = msg_payload.WhichOneof("identifier")
+            if idtype == "str_identifier":
                 midentifier = msg_payload.str_identifier
             else:
                 midentifier = msg_payload.num_identifier
 
-            if msg_payload.HasField("double_val"):
+            # retrieve value
+
+            valtype = msg_payload.WhichOneof("value")
+            if valtype == "double_val":
                 mvalue = msg_payload.double_val
-            elif msg_payload.HasField("float_val"):
+            elif valtype == "float_val":
                 mvalue = msg_payload.float_val
-            elif msg_payload.HasField("int64_val"):
+            elif valtype == "int64_val":
                 mvalue = msg_payload.int64_val
-            elif msg_payload.HasField("uint64"):
+            elif valtype == "uint64":
                 mvalue = msg_payload.uint64
-            elif msg_payload.HasField("bool_val"):
+            elif valtype == "bool_val":
+                mvalue = msg_payload.bool_val
+            elif valtype == "string_val":
                 mvalue = msg_payload.string_val
             else:
                 mvalue = msg_payload.raw_val
+            # if msg_payload.HasField("double_val"):
+            #     mvalue = msg_payload.double_val
+            # elif msg_payload.HasField("float_val"):
+            #     mvalue = msg_payload.float_val
+            # elif msg_payload.HasField("int64_val"):
+            #     mvalue = msg_payload.int64_val
+            # elif msg_payload.HasField("uint64"):
+            #     mvalue = msg_payload.uint64
+            # elif msg_payload.HasField("bool_val"):
+            #     mvalue = msg_payload.string_val
+            # else:
+            #     mvalue = msg_payload.raw_val
+
+            # add to incoming message list
+            _msgs_incoming.append([msg_routing, midentifier, mvalue])
+
+        # config message type
+
         elif msg_type == "cfg_msg":
+
             msg_cfg_msg = nepi_msg.cfg_msg
-            msg_routing = msg_cfg_msg.routine.subsystem
+            msg_routing = msg_cfg_msg.routing.subsystem
             msg_cfg_vals = msg_cfg_msg.cfg_val
-            if msg_cfg_vals.HasField("str_identifier"):
+            idtype = msg_cfg_vals.WhichOneof("identifier")
+            if idtype == "str_identifier":
                 midentifier = msg_cfg_vals.str_identifier
             else:
                 midentifier = msg_cfg_vals.num_identifier
 
-            if msg_cfg_vals.HasField("double_val"):
+            # retrieve value
+            valtype = msg_cfg_vals.WhichOneof("value")
+            if valtype == "double_val":
                 mvalue = msg_cfg_vals.double_val
-            elif msg_cfg_vals.HasField("float_val"):
+            elif valtype == "float_val":
                 mvalue = msg_cfg_vals.float_val
-            elif msg_cfg_vals.HasField("int64_val"):
+            elif valtype == "int64_val":
                 mvalue = msg_cfg_vals.int64_val
-            elif msg_cfg_vals.HasField("uint64"):
+            elif valtype == "uint64":
                 mvalue = msg_cfg_vals.uint64
-            elif msg_cfg_vals.HasField("bool_val"):
+            elif valtype == "bool_val":
+                mvalue = msg_cfg_vals.bool_val
+            elif valtype == "string_val":
                 mvalue = msg_cfg_vals.string_val
             else:
                 mvalue = msg_cfg_vals.raw_val
+            # valtype = msg_cfg_vals.WhichOneof('value')
+            # if valtype == 'double_val':
+            #     mvalue = msg_cfg_vals.double_val
+            # elif valtype == 'float_val':
+            #     mvalue = msg_cfg_vals.float_val
+            # elif valtype == 'int64_val':
+            #     mvalue = msg_cfg_vals.int64_val
+            # elif valtype == 'uint64':
+            #     mvalue = msg_cfg_vals.uint64
+            # elif valtype == 'bool_val':
+            #     mvalue = msg_cfg_vals.bool_val
+            # elif valtype == 'string_val':
+            #     mvalue = msg_cfg_vals.string_val
+            # else:
+            #     mvalue = msg_cfg_vals.raw_val
+            _msgs_incoming.append([msg_routing, midentifier, mvalue])
         else:
             pass
 
-        return [True, None, None], [midentifier, mvalue]
+        return [True, None, None], _msgs_incoming

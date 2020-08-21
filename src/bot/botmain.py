@@ -34,10 +34,13 @@ from subprocess import Popen
 from google.protobuf import json_format
 
 import botdefs
+from botlog import BotLog
 from botdefs import nepi_home, bot_devnuid_file
 from array import array
 from botcfg import BotCfg
-from botlog import BotLog
+import botlog
+
+# from botlog import BotLog
 from botdb import BotDB
 from botmsg import BotMsg
 from botpipo import BotPIPO
@@ -46,6 +49,7 @@ from bothelp import getAllFolderNames, getAllFileNames, getDevId
 from bothelp import readFloatFile, triggerScoreLookup, resetCfgValue
 from bothelp import writeFloatFile, resetCfgValue
 from bothelp import deleteFolder, deleteDataProduct, create_nepi_dirs
+
 import datetime
 import nepi_messaging_all_pb2
 from timestamp_pb2 import Timestamp
@@ -111,18 +115,19 @@ if not success[0]:
 # Instantiate a NEPI-Bot Message Class (from 'botmsg.py').
 ########################################################################
 
-sm = BotMsg(cfg, log, 1)
+sm = BotMsg(cfg, log, db, 1)
 
 ########################################################################
 # Re-Evaluate PIPO Ratings for Archived Data Products if Required.
 ########################################################################
 log.track(1, "Launching botmain.py version " + v_botmain, True)
 
+
 if cfg.tracking:
     log.track(0, "Recalculate Archived PIPO Ratings.", True)
     log.track(1, "Select 'Active' Data Records from Database.", True)
 
-sql = "SELECT rowid, numerator, trigger, quality, score, timestamp, norm FROM data WHERE state = '0'"
+sql = "SELECT rowid, numerator, trigger, quality, event_score, timestamp, type_score FROM data WHERE rec_state = '0'"
 success, rows = db.getResults(2, sql, False)
 
 if success[0]:
@@ -233,8 +238,6 @@ for dir in allfolders:
         log.track(1, "Consume File from DP Directory.", True)
 
     success, status_json = readFloatFile(cfg, log, 2, status_file_path, False, True)
-
-    print(status_json)
 
     if success[0]:
         # Insert Status Record and capture the DB 'rowid' (which will be
@@ -471,7 +474,7 @@ else:
         log.track(1, "Find 'Latest' Active Status Record for Bot Message.", True)
 
     sql = (
-        "SELECT rowid, * FROM status WHERE state = '0' ORDER BY timestamp DESC LIMIT 1"
+        "SELECT rowid, * FROM status WHERE rec_state = '0' ORDER BY timestamp DESC LIMIT 1"
     )
     success, new_stat_results = db.getResults(2, sql, False)
 
@@ -483,24 +486,24 @@ else:
         else:
             new_stat_rowid = new_stat_results[0][0]
             new_stat_state = new_stat_results[0][1]
-            new_stat_stamp = float(new_stat_results[0][6])
+            new_stat_stamp = float(new_stat_results[0][5])
 
             if cfg.tracking:
                 log.track(2, "Found 'Latest' Active SR in Database.", True)
                 log.track(3, "rowid=[" + str(new_stat_rowid) + "]", True)
-                log.track(3, "state=[" + str(new_stat_state) + "]", True)
+                log.track(3, "rec_state=[" + str(new_stat_state) + "]", True)
                 log.track(3, "stamp=[" + str(new_stat_stamp) + "]", True)
                 log.track(2, "Add This 'Latest' Status Record to Uplink Message.", True)
 
             # success = sm.packstat(3, new_stat_results[0])
-            success = sm.encode_status_msg(3, new_stat_results[0], dev_id_bytes)
+            success = sm.encode_status_msg(3, new_stat_results[0], dev_id_bytes, db, msgs_outgoing)
             if success[0]:
                 if cfg.tracking:
                     log.track(1, "Latest Active SR Successfully Packed.", True)
-                    log.track(1, "Update Status Record 'state' to 'packed.'", True)
+                    log.track(1, "Update Status Record 'rec_state' to 'packed.'", True)
 
                 sql = (
-                    "UPDATE status SET state = '1' WHERE rowid = '"
+                    "UPDATE status SET rec_state = '1' WHERE rowid = '"
                     + str(new_stat_rowid)
                     + "'"
                 )
@@ -535,7 +538,7 @@ if cfg.tracking:
 
 have_active_dp = False
 
-sql = "SELECT rowid, * FROM data WHERE state = '0' ORDER BY pipo DESC LIMIT 32"
+sql = "SELECT rowid, * FROM data WHERE rec_state = '0' ORDER BY pipo DESC LIMIT 32"
 success, meta_rows = db.getResults(1, sql, False)
 
 if success[0]:
@@ -573,7 +576,7 @@ else:
 if meta_rows:
     for row in meta_rows:
         metaID = str(row[0])
-        statusFK = row[3]
+        statusFK = row[2]
         stat_state = 0
         stat_timestamp = 0
         if cfg.tracking:
@@ -596,7 +599,7 @@ if meta_rows:
                 continue
             else:
                 stat_state = assoc_statrec[0][1]
-                stat_timestamp = assoc_statrec[0][6]
+                stat_timestamp = assoc_statrec[0][5]
 
                 if stat_state == 1:
                     if cfg.tracking:
@@ -614,13 +617,13 @@ if meta_rows:
                         log.track(4, "State: " + str(stat_state), True)
                         log.track(4, "Stamp: " + str(stat_timestamp), True)
                         log.track(2, "PACK it into THIS Uplink Message.", True)
-                    success = sm.encode_status_msg(3, assoc_statrec[0],)
+                    success = sm.encode_status_msg(3, assoc_statrec[0], dev_id_bytes, db, msgs_outgoing)
                     if success[0]:
                         if cfg.tracking:
                             log.track(3, "PACKED Assoc SR into This Message.", True)
 
                         sql = (
-                            "UPDATE status SET state = '1' WHERE rowid = '"
+                            "UPDATE status SET state = '1' WHERE sys_status_ref_id = '"
                             + str(assoc_statrec[0][0])
                             + "'"
                         )
@@ -703,7 +706,7 @@ if meta_rows:
         if cfg.tracking:
             log.track(2, "Pack This Data Product into Uplink Message.", True)
 
-        success = sm.encode_data_msg(3, row, dev_id_bytes)  # stat_timestamp, next_index
+        success = sm.encode_data_msg(3, row, dev_id_bytes, db, msgs_outgoing)  # stat_timestamp, next_index
         if success[0]:
             if cfg.tracking:
                 log.track(3, "PACKED Data Product Record into Message.", True)
@@ -783,7 +786,8 @@ bc = BotComm(cfg, log, "ethernet", 1)
 success = bc.getconn(0)
 # AGV
 
-if sm.len > 0:
+
+if len(msgs_outgoing) > 0:
     # AGV
     # xtype = get_enabled_link(cfg)
     # bc = BotComm(cfg, log, xtype, 1)
@@ -791,17 +795,19 @@ if sm.len > 0:
     # AGV
 
     if success[0]:
-        log.track(0, "Sending: " + str(sm.buf), True)
-        send_success, cnc_msgs = bc.send(1, sm.buf, 5)
-        if send_success[0]:
-            log.track(0, "send returned Success", True)
-            bcsuccess = 1  # Added as gap fix for no scuttle
-        else:
-            log.track(0, "send returned Not Success", True)
-            bcsuccess = 0  # Added as gap fix for no scuttle
+        log.track(0, "Sending: ", True)
+        for item in msgs_outgoing:
+            send_success, cnc_msg = bc.send(1, item, 5)
+            if send_success[0]:
+                log.track(0, "send returned Success", True)
+                bcsuccess = 1  # Added as gap fix for no scuttle
+            else:
+                log.track(0, "send returned Not Success", True)
+                bcsuccess = 0  # Added as gap fix for no scuttle
+
     else:
         send_success = [False, None, None]
-        cnc_msgs = None
+        msgs_outgoing = None
         log.track(0, "getconn returned Not Success", True)
         bcsuccess = 0  # Added as gap fix for no scuttle
 else:
@@ -809,29 +815,29 @@ else:
         log.track(0, "NO Uplink Message to Send.", True)
 
     # Receive messages from server
-recv_success, cnc_msgs = bc.receive(1, 1)
+recv_success, msgs_incoming = bc.receive(1, 1)
 if recv_success[0]:
     log.track(0, "receive returned Success", True)
-    log.track(0, "Received: " + str(cnc_msgs[0]), True)
+    #log.track(0, "Received: " + str(cnc_msgs[0]), True)
     bcsuccess = 1
 else:
     recv_success = [False, None, None]
     success = bc.close(1)
 
-success = bc.close(1)
+#success = bc.close(1)
 
 ########################################################################
 # Make sure any downlinked commands get processed.
 ########################################################################
 sdk_action = False
 # Botcomm indicates no cnc_msgs with either None or an empty list.
-if cnc_msgs is None:
-    cnc_msgs = list()
-for msgnum in range(0, len(cnc_msgs)):
+if msgs_incoming is None:
+    msgs_incoming = list()
+for msgnum in range(0, len(msgs_incoming)):
     # msg_b64 = cnc_msgs[msgnum]
     # msg = msg_b64.decode('base64')
     if cfg.devclass == "generic":
-        msg = cnc_msgs[msgnum]
+        msg = msgs_incoming[msgnum]
         msg_pos = 0
         msg_len = len(msg)
         # msg_hex = str(msg).encode('hex')
@@ -842,10 +848,10 @@ for msgnum in range(0, len(cnc_msgs)):
             # log.track(
             #    14, "msg_hex: [" + str(msg_hex) + "] <-- s/b double.", True)
     else:
-        msg = cnc_msgs[msgnum]
+        msg = msgs_incoming[msgnum]
         msg_pos = 0
         msg_len = len(msg)
-        msg_hex = str(msg).encode("hex")
+       #msg_hex = str(msg).encode("hex")
         if cfg.tracking:
             log.track(1, "Evaluating C&C Message #" + str(msgnum), True)
             log.track(2, "msg_pos: [" + str(msg_pos) + "]", True)
@@ -1170,7 +1176,7 @@ if sm.len > 0:
         if cfg.tracking:
             log.track(1, "Update Bit-Packed Status Record(s) to 'sent' Status.", True)
 
-        sql = "UPDATE status SET state = '2' WHERE state = '1'"
+        sql = "UPDATE status SET rec_state = '2' WHERE rec_state = '1'"
         success = db.update(2, sql)
         if not success[0]:
             if cfg.tracking:
@@ -1182,7 +1188,7 @@ if sm.len > 0:
         if cfg.tracking:
             log.track(1, "Update Bit-Packed Meta Record(s) to 'sent' Status.", True)
 
-        sql = "UPDATE meta SET state = '2' WHERE state = '1'"
+        sql = "UPDATE data SET rec_state = '2' WHERE rec_state = '1'"
         success = db.update(2, sql)
         if not success[0]:
             if cfg.tracking:

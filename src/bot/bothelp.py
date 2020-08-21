@@ -89,9 +89,21 @@ def create_nepi_dirs(_cfg, _log, _lev):
 ########################################################################
 
 
-def split_payload_filename(_filename):
-    mlist = regex.split(r"^([a-zA-Z_]+)([0-9]+)\.([a-zA-Z0-9]+)$", _filename)
-    return mlist[1:4]
+def check_metadata_filename(_filename: str): #, _type: str, _instance: str):
+    """
+    :param _filename: metadata filename without path
+    :type _filename: str
+    :param _type: type field in metadata file
+    :type _type: str
+    :param _instance: instance field in metadata file
+    :type _instance: str
+    :return: Status, FilenameComponents
+    :rtype: bool, tuple
+    """
+    m = regex.match(r"^([a-zA-Z]{3})([0-9]+)\.([a-zA-Z]+)$", _filename)
+    if m is None:
+        return False, ()
+    return True, m.groups()
 
 
 ########################################################################

@@ -56,10 +56,6 @@ class BotDB(object):
             self.log.track(_lev + 13, "^cfg: " + str(self.cfg), True)
             self.log.track(_lev + 13, "_lev: " + str(_lev), True)
 
-    # def split_payload_filename(_filename):
-    #     mlist = regex.split(r"^([a-zA-Z_]+)([0-9]+)\\.([a-zA-Z0-9]+)$", _filename)
-    #     return mlist[1:4]
-
     def getconn(self, _lev):
         # Establish a connection. SQLite either creates or opens a file
         # (in this case, the 'dbfile' passed to the SQLite class method
@@ -107,9 +103,9 @@ class BotDB(object):
             if self.cfg.tracking:
                 self.log.track(1 + 1, "SQL Executed.", True)
             results = cursor.fetchone()
-            bot_comm_index = int(results[1])
-        bot_comm_index = bot_comm_index + 1
-        return bot_comm_index
+            self.bot_comm_index = int(results[0])
+        self.bot_comm_index = self.bot_comm_index + 1
+        return self.bot_comm_index
 
     def save_botcomm_index(self):
         if self.cfg.tracking:
@@ -211,7 +207,7 @@ class BotDB(object):
             self.log.track(_lev + 1, "Log Level:    " + str(_lev), True)
             self.log.track(_lev + 13, "Data JSON:    " + str(_datajson), True)
             self.log.track(_lev + 1, "State:        " + str(_info[3]), True)
-            self.log.track(_lev + 1, "Status ID:    " + str(_status), True)
+            self.log.track(_lev + 1, "Status ID:    " + str(_status_rowid), True)
             self.log.track(_lev + 1, "Trigger:      " + str(_trigger), True)
             self.log.track(_lev + 1, "Numerator:    " + str(_info[0]), True)
             self.log.track(_lev + 1, "Std Size:     " + str(_info[1]), True)
@@ -252,11 +248,11 @@ class BotDB(object):
 
         try:
             filepath = regex.match(r".*/", _metafile)
-            filename = filepath.group() + _datajson.get("payload")
+            filename = filepath.group() + _datajson.get("data_file")
             file = open(filename, mode="rb")
             filecontent = file.read()
             file.close()
-            payload_data = bothelp.split_payload_filename(_datajson.get("payload"))
+            payload_data = bothelp.check_metadata_filename(_datajson.get("data_file"))
             data_tuple = (
                 _status_rowid,
                 float(_datajson.get("timestamp", 0.0)),
@@ -269,7 +265,7 @@ class BotDB(object):
                 int(_datajson.get("roll_offset", 0)),
                 int(_datajson.get("pitch_offset", 0)),
                 str(_datajson.get("payload")),
-                str(payload_data[2]),
+                str((payload_data[1])[2]),
                 bytes(filecontent),
                 float(_info[0]),
                 int(0),
