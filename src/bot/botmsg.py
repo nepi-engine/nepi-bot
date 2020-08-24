@@ -12,32 +12,17 @@
 # to our interests.
 ##
 ########################################################################
-import json
-import os
-import math
-import time
 import datetime
-from datetime import date
-import calendar
-from struct import *
-import ctypes
-import botdb
-
-# from numpy.core import double, int32, uint32, int64, uint64 as np
+import json
+from enum import Enum
 
 import numpy.core as np
-
-import botdefs
-import nepi_messaging_all_pb2
 from google.protobuf import json_format
-from enum import Enum
 
-# from botmain import dev_id_bytes, dev_id_str
-# from botmain import db, msgs_outgoing
-from timestamp_pb2 import Timestamp
-from enum import Enum
-from json import JSONEncoder
-from collections import namedtuple
+import nepi_messaging_all_pb2
+from botdefs import msgs_outgoing, msgs_incoming
+
+# from numpy.core import double, int32, uint32, int64, uint64 as np
 
 v_botmsg = "bot71-20200601"
 
@@ -111,7 +96,7 @@ class BotMsg(object):
     # -------------------------------------------------------------------
     # The 'encode_status_msg()' Class Library Method. Protobuf implementation
     # -------------------------------------------------------------------
-    def encode_status_msg(self, _lev, _rec, dev_id_bytes, db, _msgs_outgoing):
+    def encode_status_msg(self, _lev, _rec, dev_id_bytes, db):
 
         if self.cfg.tracking:
             self.log.track(_lev, "Entering 'encode_status_msg()' Class Method.", True)
@@ -166,11 +151,11 @@ class BotMsg(object):
 
         # self.buf.append(self.buf1)
         # self.buf_str.append(self.buf_str1)
-        _msgs_outgoing.append(self.buf1)
+        msgs_outgoing.append(self.buf1)
 
         if self.cfg.tracking:
             self.log.track(_lev + 1, "Status Record PACKED.", True)
-            #self.log.track(_lev + 2, "Msg Str: " + self.buf_str, True)
+            # self.log.track(_lev + 2, "Msg Str: " + self.buf_str, True)
             # self.log.track(
             #     _lev + 2, "Msg Enc: " + str(self.buf, encoding="utf-8"), True
             # )
@@ -181,7 +166,7 @@ class BotMsg(object):
     # -------------------------------------------------------------------
     # The 'encode_data_msg()' Class Library Method. Protobuf implementation
     # -------------------------------------------------------------------
-    def encode_data_msg(self, _lev, _rec, dev_id_bytes, db, _msgs_outgoing):
+    def encode_data_msg(self, _lev, _rec, dev_id_bytes, db):
 
         if self.cfg.tracking:
             self.log.track(_lev, "Entering 'encode_data_msg()' Class Method.", True)
@@ -204,16 +189,15 @@ class BotMsg(object):
 
             # Set nepi device data
             data_message_device_data = data_message.device_data
-            data_message_device_data.navsat_fix_time_offset = int(_rec[10])
-            data_message_device_data.defined_latitude = float(_rec[11])
-            data_message_device_data.defined_longitude = float(_rec[12])
-            data_message_device_data.defined_heading = int(_rec[13])
-            data_message_device_data.heading_true_north = False
-            data_message_device_data.roll = int(_rec[30])
-            data_message_device_data.pitch = int(_rec[31])
-            data_message_device_data.temperature = int(_rec[16])
-            data_message_device_data.power_state = int(_rec[14])
-            data_message_device_data.device_status = bytes(_rec[32])
+            data_message_device_data.type = str(_rec[5])
+            data_message_device_data.instance = int(_rec[6])
+            data_message_device_data.date_time_offset = int(_rec[7])
+            data_message_device_data.latitude_offset = int(_rec[8])
+            data_message_device_data.longitude_offset = int(_rec[9])
+            data_message_device_data.heading_offset = int(_rec[10])
+            data_message_device_data.roll_offset = int(_rec[11])
+            data_message_device_data.pitch_offset = int(_rec[12])
+            data_message_device_data.payload = bytes(_rec[15])
         except Exception as e:
             enum = "MSG102"
             emsg = f"encode_data_msg(): Problem building data record for Server [{e}]."
@@ -233,7 +217,7 @@ class BotMsg(object):
         # self.buf.append(self.buf1)
         # self.buf_str.append(self.buf_str1)
 
-        _msgs_outgoing.append(self.buf1)
+        msgs_outgoing.append(self.buf1)
 
         if self.cfg.tracking:
             self.log.track(_lev + 1, "DATA Record ENCODED.", True)
@@ -248,9 +232,7 @@ class BotMsg(object):
     # -------------------------------------------------------------------
     # The 'encode_gen_msg()' Class Library Method. Protobuf implementation
     # -------------------------------------------------------------------
-    def encode_gen_msg(
-        self, _lev, _rec, _identifier, _value, _orig, _dev_id_bytes, db, _msgs_outgoing
-    ):
+    def encode_gen_msg(self, _lev, _rec, _identifier, _value, _orig, _dev_id_bytes, db):
 
         # Set nepi msg
         try:
@@ -310,7 +292,7 @@ class BotMsg(object):
         # self.buf.append(self.buf1)
         # self.buf_str.append(self.buf_str1)
 
-        _msgs_outgoing.append(self.buf1)
+        msgs_outgoing.append(self.buf1)
 
         if self.cfg.tracking:
             self.log.track(_lev + 1, "GENERAL Record ENCODED.", True)
