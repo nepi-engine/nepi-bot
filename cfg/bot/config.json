@@ -51,7 +51,7 @@
     "lb_ip": {
         "enabled": 1,
         "type": "ethernet",
-        "host": "127.0.0.1",
+        "host": "nepi.io",
         "port": "2222",
         "tout": 3,
         "open_attm": 2,
@@ -88,20 +88,16 @@
     "hb_ip": {
         "enabled": 0,
         "type": "ethernet",
-        "host": "N/A",
-        "port": "55000",
+        "host": "nepi.io",
+        "port": "2222",
         "tout": 3,
         "open_attm": 2,
         "open_tout": 1,
         "protocol": 2,
         "max_msg_size": 1500,
         "packet_size": 1500,
-        "pipo_scor_wt": 0.5,
-        "pipo_qual_wt": 0.5,
-        "pipo_size_wt": 0.5,
-        "pipo_time_wt": 1.0,
-        "pipo_trig_wt": 0.5,
-        "purge_rating": 0.05
+        "dir_outgoing": "hb/clone/do",
+        "dir_incoming": "hb/clone/dt"
     },
     "lb_conn_order": [
         "lb_ip",

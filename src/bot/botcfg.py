@@ -332,9 +332,7 @@ class BotCfg(object):
             self.lb_ip.type = str(
                 self.bot_cfg_json.get("lb_ip").get("type", "ethernet")
             )
-            self.lb_ip.host = str(
-                self.bot_cfg_json.get("lb_ip").get("host", "127.0.0.1")
-            )
+            self.lb_ip.host = str(self.bot_cfg_json.get("lb_ip").get("host", "nepi.io"))
             self.lb_ip.port = str(self.bot_cfg_json.get("lb_ip").get("port", "50000"))
             self.lb_ip.tout = int(self.bot_cfg_json.get("lb_ip").get("tout", 3))
             self.lb_ip.open_attm = int(
@@ -420,10 +418,8 @@ class BotCfg(object):
             self.hb_ip.type = str(
                 self.bot_cfg_json.get("hb_ip").get("type", "ethernet")
             )
-            self.hb_ip.host = str(
-                self.bot_cfg_json.get("hb_ip").get("host", "127.0.0.1")
-            )
-            self.hb_ip.port = str(self.bot_cfg_json.get("hb_ip").get("port", "55000"))
+            self.hb_ip.host = str(self.bot_cfg_json.get("hb_ip").get("host", "nepi.io"))
+            self.hb_ip.port = str(self.bot_cfg_json.get("hb_ip").get("port", "2222"))
             self.hb_ip.tout = int(self.bot_cfg_json.get("hb_ip").get("tout", 3))
             self.hb_ip.open_attm = int(
                 self.bot_cfg_json.get("hb_ip").get("open_attm", 2)
@@ -437,6 +433,12 @@ class BotCfg(object):
             )
             self.hb_ip.packet_size = int(
                 self.bot_cfg_json.get("hb_ip").get("packet_size", 1500)
+            )
+            self.hb_ip.dir_outgoing = str(
+                self.bot_cfg_json.get("dir_outgoing", "hb/clone/do")
+            )
+            self.hb_ip.dir_incoming = str(
+                self.bot_cfg_json.get("dir_incoming", "hb/clone/dt")
             )
             self.hb_ip.pipo_scor_wt = float(
                 self.bot_cfg_json.get("hb_ip").get("pipo_scor_wt", 0.5)
