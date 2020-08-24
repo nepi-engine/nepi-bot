@@ -22,6 +22,9 @@ import time
 import os
 import subprocess
 
+from botdefs import bot_devsshkeys_file
+from botmain import remote_id_str
+
 v_botcomm = "bot71-20200601"
 
 # processes that may need to be cleaned up before BOT exits
@@ -234,12 +237,11 @@ class BotComm(object):
                 "-o",
                 "StrictHostKeyChecking=no",
                 "-i",
-                "./testkeyCritigen",
+                bot_devsshkeys_file,
                 "-N",
                 "-L",
                 str(LOCALPORT + ":localhost:" + LOCALPORT),
-                # "NB0000000001@54.244.213.146",
-                "N0000000001@nepi.io",
+                str(remote_id_str + "@" + self.cfg.lb_ip.host),
             ]
             args_socatcmd = [
                 "socat",
@@ -251,7 +253,7 @@ class BotComm(object):
             procs.append(proc_ssh)
             procs.append(proc_socat)
 
-            if self.con == None:
+            if self.con is None:
                 for res in socket.getaddrinfo(
                     LOCALHOST, LOCALPORT, socket.AF_UNSPEC, socket.SOCK_DGRAM
                 ):
@@ -322,6 +324,7 @@ class BotComm(object):
     # Receive a Message.
     # -------------------------------------------------------------------
     def receive(self, _lev, num):
+        retlist = list()
         if self.cfg.tracking:
             self.log.track(_lev, "Receive Messages on Established Connection.", True)
             self.log.track(_lev + 13, "_lev: " + str(_lev), True)
@@ -391,20 +394,25 @@ class BotComm(object):
         # Receive on the 'Ethernet' IP Connection.
         # ---------------------------------------------------------------
         if self.typ == "ethernet":
-            try:
-                rec = self.con.recv(4096)
-            except socket.timeout as e:  # no data available
-                rec = ""
-            except Exception as e:  # something unexpected happened
-                enum = "BC140"
-                emsg = str(e)
-                if self.cfg.tracking:
-                    self.log.errtrack(str(enum), str(emsg))
-                return [False, str(enum), str(emsg)], None
-            finally:
-                retlist = []
-                retlist.append(rec)  # = rec
-                return [True, None, None], retlist
+            # read from socket until there is no more data
+            while True:
+                try:
+                    rec = self.con.recv(4096)
+                    retlist.append(rec)
+                except socket.timeout as e:  # no data available
+                    enum = "BC140"
+                    emsg = str(e)
+                    if self.cfg.tracking:
+                        self.log.errtrack(str(enum), str(emsg))
+                    break
+                except Exception as e:  # something unexpected happened
+                    enum = "BC140"
+                    emsg = str(e)
+                    if self.cfg.tracking:
+                        self.log.errtrack(str(enum), str(emsg))
+                    return [False, str(enum), str(emsg)], None
+
+            return [True, None, None], retlist
 
     # -------------------------------------------------------------------
     # Get a MT Message from the MT buffer
