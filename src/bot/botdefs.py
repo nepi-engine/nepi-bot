@@ -80,3 +80,8 @@ logging = False
 timing = False
 tracking = False
 locking = False
+
+# Define global variables that are used by different modules
+
+msgs_incoming = list()
+msgs_outgoing = list()

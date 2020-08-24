@@ -22,7 +22,7 @@ import time
 import os
 import subprocess
 
-from botdefs import bot_devsshkeys_file
+from botdefs import bot_devsshkeys_file, msgs_incoming, msgs_outgoing
 from botmain import remote_id_str
 
 v_botcomm = "bot71-20200601"
@@ -32,6 +32,7 @@ procs = []
 # local port number for SSH client and UDP traffic
 LOCALPORT = "8000"
 LOCALHOST = "127.0.0.1"
+retcode = None
 
 # from botcfg import BotCfg
 # from botlog import BotLog
@@ -324,7 +325,6 @@ class BotComm(object):
     # Receive a Message.
     # -------------------------------------------------------------------
     def receive(self, _lev, num):
-        retlist = list()
         if self.cfg.tracking:
             self.log.track(_lev, "Receive Messages on Established Connection.", True)
             self.log.track(_lev + 13, "_lev: " + str(_lev), True)
@@ -398,7 +398,7 @@ class BotComm(object):
             while True:
                 try:
                     rec = self.con.recv(4096)
-                    retlist.append(rec)
+                    msgs_incoming.append(rec)
                 except socket.timeout as e:  # no data available
                     enum = "BC140"
                     emsg = str(e)
@@ -412,7 +412,7 @@ class BotComm(object):
                         self.log.errtrack(str(enum), str(emsg))
                     return [False, str(enum), str(emsg)], None
 
-            return [True, None, None], retlist
+            return [True, None, None]
 
     # -------------------------------------------------------------------
     # Get a MT Message from the MT buffer
@@ -469,6 +469,7 @@ class BotComm(object):
     # Send a Message.
     # -------------------------------------------------------------------
     def send(self, _lev, _msg, _num):
+        global retcode
         if self.cfg.tracking:
             self.log.track(_lev, "Send Message on Established Connection.", True)
             self.log.track(_lev + 13, "_lev: " + str(_lev), True)
@@ -556,8 +557,10 @@ class BotComm(object):
 
         if self.typ == "ethernet":
             try:
-                rc = self.con.sendall(_msg)
-                if rc is None:
+                self.con.settimeout(5)
+                while len(msgs_outgoing):
+                    retcode = self.con.sendall(msgs_outgoing.pop(0))
+                if retcode is None:
                     return [True, None, None], None
                 else:
                     enum = "BC161"
@@ -620,7 +623,6 @@ class BotComm(object):
 
             if self.con is not None:
                 try:
-                    # self.con.shutdown(socket.SHUT_RDWR)
                     self.con.close()
                     self.con = None
 

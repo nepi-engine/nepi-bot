@@ -519,9 +519,7 @@ else:
                 log.track(2, "Add This 'Latest' Status Record to Uplink Message.", True)
 
             # success = sm.packstat(3, new_stat_results[0])
-            success = sm.encode_status_msg(
-                3, new_stat_results[0], dev_id_bytes, db, msgs_outgoing
-            )
+            success = sm.encode_status_msg(3, new_stat_results[0], dev_id_bytes, db)
             if success[0]:
                 if cfg.tracking:
                     log.track(1, "Latest Active SR Successfully Packed.", True)
@@ -643,7 +641,7 @@ if meta_rows:
                         log.track(4, "Stamp: " + str(stat_timestamp), True)
                         log.track(2, "PACK it into THIS Uplink Message.", True)
                     success = sm.encode_status_msg(
-                        3, assoc_statrec[0], dev_id_bytes, db, msgs_outgoing
+                        3, assoc_statrec[0], dev_id_bytes, db
                     )
                     if success[0]:
                         if cfg.tracking:
@@ -734,7 +732,7 @@ if meta_rows:
             log.track(2, "Pack This Data Product into Uplink Message.", True)
 
         success = sm.encode_data_msg(
-            3, row, dev_id_bytes, db, msgs_outgoing
+            3, row, dev_id_bytes, db
         )  # stat_timestamp, next_index
         if success[0]:
             if cfg.tracking:
@@ -844,7 +842,7 @@ else:
         log.track(0, "NO Uplink Message to Send.", True)
 
     # Receive messages from server
-recv_success, msgs_incoming = bc.receive(1, 1)
+recv_success = bc.receive(1, 1)
 if recv_success[0]:
     log.track(0, "receive returned Success", True)
     # log.track(0, "Received: " + str(cnc_msgs[0]), True)
