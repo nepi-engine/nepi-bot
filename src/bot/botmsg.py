@@ -184,14 +184,14 @@ class BotMsg(object):
 
             # Set nepi-bot metadata
             data_message_nepi_bot = data_message.nepi_bot_metadata
-            data_message_nepi_bot.sys_status_id = 1
-            data_message_nepi_bot.nepi_bot_status_flags = 2
+            data_message_nepi_bot.sys_status_id = int(_rec[2])
+            #data_message_nepi_bot.nepi_bot_status_flags = 2
 
             # Set nepi device data
             data_message_device_data = data_message.device_data
             data_message_device_data.type = str(_rec[5])
             data_message_device_data.instance = int(_rec[6])
-            data_message_device_data.date_time_offset = int(_rec[7])
+            data_message_device_data.data_time_offset = int(_rec[7])
             data_message_device_data.latitude_offset = int(_rec[8])
             data_message_device_data.longitude_offset = int(_rec[9])
             data_message_device_data.heading_offset = int(_rec[10])

@@ -22,7 +22,8 @@ from google.protobuf import json_format
 
 import nepi_messaging_all_pb2
 from botcfg import BotCfg
-from botcomm import BotComm
+
+
 from botdb import BotDB
 from botdefs import nepi_home, bot_devnuid_file, msgs_outgoing, msgs_incoming
 from bothelp import (
@@ -37,6 +38,8 @@ from bothelp import (
     create_nepi_dirs,
 )
 from botlog import BotLog
+import botcomm
+from botcomm import BotComm
 from botmsg import BotMsg
 from botpipo import BotPIPO
 
@@ -107,8 +110,8 @@ log.initlog(0)
 # Make Device ID available for all messaging.
 ########################################################################
 
-dev_id_str, dev_id_bytes = getDevId(cfg, log, 0, bot_devnuid_file)
-remote_id_str = "N" + dev_id_str
+dev_id_str, dev_id_bytes, remote_id_str = getDevId(cfg, log, 0, bot_devnuid_file)
+
 
 ########################################################################
 # Create necessary directories for messaging if they do not exist.
@@ -679,51 +682,51 @@ if meta_rows:
         # ---------------------------------------------------------------
         # Get the Next 'index' value from 'node' Table in DB.
         # ---------------------------------------------------------------
-        ntype = str(row[7])
-        ninst = str(row[8])
-        if cfg.tracking:
-            log.track(2, "Get the Next 'index' value from 'node' Table in DB", True)
-
-        sql = (
-            "SELECT rowid, * FROM node WHERE node_type = '"
-            + str(ntype)
-            + "' AND node_instance = '"
-            + str(ninst)
-            + "' LIMIT 1"
-        )
-        success, node_results = db.getResults(3, sql, False)
-
-        if not success[0] or not node_results:
-            if cfg.tracking:
-                log.track(
-                    3,
-                    "Inaccessible Node Type/Instance: " + str(ntype) + "/" + str(ninst),
-                    True,
-                )
-                log.track(3, "Ignore This DP; Continue.", True)
-            continue
-
-        if not node_results:
-            if cfg.tracking:
-                log.track(
-                    3,
-                    "Node Type/Instance NOT Found: " + str(ntype) + "/" + str(ninst),
-                    True,
-                )
-                log.track(3, "Ignore This DP; Continue.", True)
-            continue
-
-        node_index = int(node_results[0][4])
-        node_stage = int(node_results[0][5])
-        next_index = node_stage + 1
-
-        if cfg.tracking:
-            log.track(
-                3, "Got Node Type/Instance: " + str(ntype) + "/" + str(ninst), True
-            )
-            log.track(4, "Index: " + str(node_index), True)
-            log.track(4, "Stage: " + str(node_index), True)
-            log.track(4, "Next:  " + str(next_index), True)
+        # ntype = str(row[7])
+        # ninst = str(row[8])
+        # if cfg.tracking:
+        #     log.track(2, "Get the Next 'index' value from 'node' Table in DB", True)
+        #
+        # sql = (
+        #     "SELECT rowid, * FROM node WHERE node_type = '"
+        #     + str(ntype)
+        #     + "' AND node_instance = '"
+        #     + str(ninst)
+        #     + "' LIMIT 1"
+        # )
+        # success, node_results = db.getResults(3, sql, False)
+        #
+        # if not success[0] or not node_results:
+        #     if cfg.tracking:
+        #         log.track(
+        #             3,
+        #             "Inaccessible Node Type/Instance: " + str(ntype) + "/" + str(ninst),
+        #             True,
+        #         )
+        #         log.track(3, "Ignore This DP; Continue.", True)
+        #     continue
+        #
+        # if not node_results:
+        #     if cfg.tracking:
+        #         log.track(
+        #             3,
+        #             "Node Type/Instance NOT Found: " + str(ntype) + "/" + str(ninst),
+        #             True,
+        #         )
+        #         log.track(3, "Ignore This DP; Continue.", True)
+        #     continue
+        #
+        # node_index = int(node_results[0][4])
+        # node_stage = int(node_results[0][5])
+        # next_index = node_stage + 1
+        #
+        # if cfg.tracking:
+        #     log.track(
+        #         3, "Got Node Type/Instance: " + str(ntype) + "/" + str(ninst), True
+        #     )
+        #     log.track(4, "Index: " + str(node_index), True)
+        #     log.track(4, "Stage: " + str(node_index), True)
+        #     log.track(4, "Next:  " + str(next_index), True)
 
         # ---------------------------------------------------------------
         # Got Associated Status Record, so PACK this Data Product.
@@ -739,7 +742,7 @@ if meta_rows:
                 log.track(3, "PACKED Data Product Record into Message.", True)
                 log.track(3, "Update Meta Record 'state' to 'packed.'", True)
 
-                sql = "UPDATE meta SET state = '1' WHERE rowid = '" + str(row[0]) + "'"
+                sql = "UPDATE data SET state = '1' WHERE rowid = '" + str(row[0]) + "'"
                 success = db.update(4, sql)
                 if not success[0]:
                     if cfg.tracking:
@@ -757,24 +760,24 @@ if meta_rows:
         # Data Product Packed; Update 'node' Table in DB.
         # ---------------------------------------------------------------
 
-        if cfg.tracking:
-            log.track(1, "Update 'node' Table with latest Index.'", True)
-
-            sql = (
-                "UPDATE node SET node_stage = '"
-                + str(next_index)
-                + "' WHERE rowid = '"
-                + str(node_results[0][0])
-                + "'"
-            )
-            success = db.update(2, sql)
-            if not success[0]:
-                if cfg.tracking:
-                    log.track(2, "Well ... This is Awkward.", True)
-                    log.track(2, "Probably Come Back to Bite Us in the Ass.'", True)
-                    log.track(
-                        2, "Will wind up reverting back to 'std' DP Delivery.", True
-                    )
+        # if cfg.tracking:
+        #     log.track(1, "Update 'node' Table with latest Index.'", True)
+        #
+        #     sql = (
+        #         "UPDATE node SET node_stage = '"
+        #         + str(next_index)
+        #         + "' WHERE rowid = '"
+        #         + str(node_results[0][0])
+        #         + "'"
+        #     )
+        #     success = db.update(2, sql)
+        #     if not success[0]:
+        #         if cfg.tracking:
+        #             log.track(2, "Well ... This is Awkward.", True)
+        #             log.track(2, "Probably Come Back to Bite Us in the Ass.'", True)
+        #             log.track(
+        #                 2, "Will wind up reverting back to 'std' DP Delivery.", True
+        #             )
 
 if cfg.tracking:
     log.track(1, "Final Message Complete.", True)
@@ -809,7 +812,7 @@ def get_enabled_link(_cfg):
 
 # AGV
 # xtype = get_enabled_link(cfg)
-bc = BotComm(cfg, log, "ethernet", 1)
+bc = botcomm.BotComm(cfg, log, "ethernet", 1)
 success = bc.getconn(0)
 # AGV
 

@@ -13,8 +13,6 @@
 ##
 ########################################################################
 
-import pdb
-from binascii import unhexlify
 import struct
 import socket
 import serial
@@ -22,8 +20,10 @@ import time
 import os
 import subprocess
 
-from botdefs import bot_devsshkeys_file, msgs_incoming, msgs_outgoing
-from botmain import remote_id_str
+from botdefs import bot_devsshkeys_file, msgs_incoming, msgs_outgoing, bot_devnuid_file
+
+from bothelp import getDevId
+
 
 v_botcomm = "bot71-20200601"
 
@@ -33,6 +33,7 @@ procs = []
 LOCALPORT = "8000"
 LOCALHOST = "127.0.0.1"
 retcode = None
+
 
 # from botcfg import BotCfg
 # from botlog import BotLog
@@ -57,6 +58,7 @@ class BotComm(object):
         self.typ = _typ
         self.con = None
         self.serialport = None
+        self.dev_id_str, self.dev_id_bytes, self.remote_id_str = getDevId(self.cfg, self.log, 0, bot_devnuid_file)
         if self.cfg.tracking:
             self.log.track(_lev, "Created BotComm Class Object.", True)
             self.log.track(_lev + 13, "^cfg: " + str(self.cfg), True)
@@ -242,7 +244,7 @@ class BotComm(object):
                 "-N",
                 "-L",
                 str(LOCALPORT + ":localhost:" + LOCALPORT),
-                str(remote_id_str + "@" + self.cfg.lb_ip.host),
+                str(self.remote_id_str + "@" + self.cfg.lb_ip.host),
             ]
             args_socatcmd = [
                 "socat",
@@ -449,8 +451,11 @@ class BotComm(object):
             else:
                 response = response[2:-2]
                 if self.cfg.tracking:
+
                     self.log.track(
-                        _lev + 1, "Message: " + str(response).encode("hex"), True
+                        _lev + 1,
+                        "Message: ",
+                        True,  # + str(response.).encode("hex"), True
                     )
             return response
 
@@ -495,7 +500,7 @@ class BotComm(object):
 
                 new_msg = _msg + struct.pack(">H", checksum)
 
-                response = self.acquire_response(b"AT+SBDWB=" + str(msg_length))
+                response = self.acquire_response(b"AT+SBDWB=" + bytes(msg_length))
                 if response == True:
                     if self.cfg.tracking:
                         self.log.track(_lev, "SBD Modem Ready To Receive Message", True)
@@ -557,7 +562,7 @@ class BotComm(object):
 
         if self.typ == "ethernet":
             try:
-                self.con.settimeout(5)
+                #self.con.settimeout(5)G
                 while len(msgs_outgoing):
                     retcode = self.con.sendall(msgs_outgoing.pop(0))
                 if retcode is None:
