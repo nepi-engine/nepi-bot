@@ -63,6 +63,11 @@ def getDevId(_cfg, _log, _lev, _filename):
 def create_nepi_dirs(_cfg, _log, _lev):
     nepi_home = "../.."
     bot_dirs = [
+        "devinfo",
+        "cfg",
+        "cfg/bot",
+        "db",
+        "log",
         "lb/data",
         "lb/cfg",
         "lb/dt-msg",
@@ -89,7 +94,7 @@ def create_nepi_dirs(_cfg, _log, _lev):
 ########################################################################
 
 
-def check_metadata_filename(_filename: str): #, _type: str, _instance: str):
+def check_metadata_filename(_filename: str):  # TODO: Make into class
     """
     :param _filename: metadata filename without path
     :type _filename: str

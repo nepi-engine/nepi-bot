@@ -13,57 +13,81 @@
 ##
 ########################################################################
 
-import binascii
-import pdb
 import argparse
 import os
 import sys
-import time
-import uuid
-import json
-import math
-import ast
-import struct
-import zlib
-import msgpack
-import shutil
-import socket
-import sqlite3
 from subprocess import Popen
 
 from google.protobuf import json_format
 
-import botdefs
-from botlog import BotLog
-from botdefs import nepi_home, bot_devnuid_file
-from array import array
+import nepi_messaging_all_pb2
 from botcfg import BotCfg
-import botlog
-
-# from botlog import BotLog
+from botcomm import BotComm
 from botdb import BotDB
+from botdefs import nepi_home, bot_devnuid_file, msgs_outgoing, msgs_incoming
+from bothelp import (
+    getAllFolderNames,
+    getAllFileNames,
+    getDevId,
+    readFloatFile,
+    triggerScoreLookup,
+    resetCfgValue,
+    deleteFolder,
+    deleteDataProduct,
+    create_nepi_dirs,
+)
+from botlog import BotLog
 from botmsg import BotMsg
 from botpipo import BotPIPO
-from botcomm import BotComm
-from bothelp import getAllFolderNames, getAllFileNames, getDevId
-from bothelp import readFloatFile, triggerScoreLookup, resetCfgValue
-from bothelp import writeFloatFile, resetCfgValue
-from bothelp import deleteFolder, deleteDataProduct, create_nepi_dirs
-
-import datetime
-import nepi_messaging_all_pb2
-from timestamp_pb2 import Timestamp
 
 v_botmain = "bot71-20200601"
 
+
 ########################################################################
-# Parse any command line options
+# Get any nepibot specific env variables
 ########################################################################
+
+RUN_HB_LINK = os.environ.get("RUN_HB_LINK", False)
+RUN_LB_LINK = os.environ.get("RUN_LB_LINK", False)
+HB_PROC_TIMEOUT = os.environ.get("HB_PROC_TIMEOUT", 0)
+LB_PROC_TIMEOUT = os.environ.get("LB_PROC_TIMEOUT", 0)
+
+########################################################################
+# Get any command line options
+########################################################################
+
+nbparser = argparse.ArgumentParser(description="NEPI-BOT Process Control Main Module.")
+nbparser.add_argument("--tm", action="store_true", help="special development test mode")
+nbparser.add_argument("--lb", action="store_true", help="enable LB link")
+nbparser.add_argument("--hb", action="store_true", help="enable HB link")
+nbparser.add_argument(
+    "--ndp", action="store_true", help="do not process data on enabled link(s)"
+)
+nbparser.add_argument(
+    "--lbto", type=int, nargs=1, default=0, help="timeout for LB processes in seconds"
+)
+nbparser.add_argument(
+    "--hbto", type=int, nargs=1, default=0, help="timeout for HB processes in seconds"
+)
+nepi_args = nbparser.parse_args()
+
+# set global vars for use in the program based on environment variables or cmd line args.
+# environment variables take precedence over the command line
+
+if nepi_args.lb == False and bool(RUN_LB_LINK) == True:
+    nepi_args.lb = True
+elif nepi_args.hb == False and bool(RUN_HB_LINK) == True:
+    nepi_args.hb = True
+elif nepi_args.lbto == 0 and LB_PROC_TIMEOUT != 0:
+    nepi_args.lbto = LB_PROC_TIMEOUT
+elif nepi_args.hbto == 0 and HB_PROC_TIMEOUT:
+    nepi_args.hbto = HB_PROC_TIMEOUT
+
+
 testiplink = False
 servermsg = object()
 servermsgtype = int()
-msgs_incoming = list()  # stack incoming messages for analysis and routing
-msgs_outgoing = list()  # stack outgoing messages for transmittal to server
+
 
 ########################################################################
 # Instantiate a NEPI-Bot Configuration Class (from 'botcfg.py')
@@ -84,6 +108,7 @@ log.initlog(0)
 ########################################################################
 
 dev_id_str, dev_id_bytes = getDevId(cfg, log, 0, bot_devnuid_file)
+remote_id_str = "N" + dev_id_str
 
 ########################################################################
 # Create necessary directories for messaging if they do not exist.
@@ -473,9 +498,7 @@ else:
     if cfg.tracking:
         log.track(1, "Find 'Latest' Active Status Record for Bot Message.", True)
 
-    sql = (
-        "SELECT rowid, * FROM status WHERE rec_state = '0' ORDER BY timestamp DESC LIMIT 1"
-    )
+    sql = "SELECT rowid, * FROM status WHERE rec_state = '0' ORDER BY timestamp DESC LIMIT 1"
     success, new_stat_results = db.getResults(2, sql, False)
 
     if success[0]:
@@ -496,7 +519,9 @@ else:
                 log.track(2, "Add This 'Latest' Status Record to Uplink Message.", True)
 
             # success = sm.packstat(3, new_stat_results[0])
-            success = sm.encode_status_msg(3, new_stat_results[0], dev_id_bytes, db, msgs_outgoing)
+            success = sm.encode_status_msg(
+                3, new_stat_results[0], dev_id_bytes, db, msgs_outgoing
+            )
             if success[0]:
                 if cfg.tracking:
                     log.track(1, "Latest Active SR Successfully Packed.", True)
@@ -617,7 +642,9 @@ if meta_rows:
                         log.track(4, "State: " + str(stat_state), True)
                         log.track(4, "Stamp: " + str(stat_timestamp), True)
                         log.track(2, "PACK it into THIS Uplink Message.", True)
-                    success = sm.encode_status_msg(3, assoc_statrec[0], dev_id_bytes, db, msgs_outgoing)
+                    success = sm.encode_status_msg(
+                        3, assoc_statrec[0], dev_id_bytes, db, msgs_outgoing
+                    )
                     if success[0]:
                         if cfg.tracking:
                             log.track(3, "PACKED Assoc SR into This Message.", True)
@@ -706,7 +733,9 @@ if meta_rows:
         if cfg.tracking:
             log.track(2, "Pack This Data Product into Uplink Message.", True)
 
-        success = sm.encode_data_msg(3, row, dev_id_bytes, db, msgs_outgoing)  # stat_timestamp, next_index
+        success = sm.encode_data_msg(
+            3, row, dev_id_bytes, db, msgs_outgoing
+        )  # stat_timestamp, next_index
         if success[0]:
             if cfg.tracking:
                 log.track(3, "PACKED Data Product Record into Message.", True)
@@ -818,13 +847,13 @@ else:
 recv_success, msgs_incoming = bc.receive(1, 1)
 if recv_success[0]:
     log.track(0, "receive returned Success", True)
-    #log.track(0, "Received: " + str(cnc_msgs[0]), True)
+    # log.track(0, "Received: " + str(cnc_msgs[0]), True)
     bcsuccess = 1
 else:
     recv_success = [False, None, None]
     success = bc.close(1)
 
-#success = bc.close(1)
+# success = bc.close(1)
 
 ########################################################################
 # Make sure any downlinked commands get processed.
@@ -851,7 +880,7 @@ for msgnum in range(0, len(msgs_incoming)):
         msg = msgs_incoming[msgnum]
         msg_pos = 0
         msg_len = len(msg)
-       #msg_hex = str(msg).encode("hex")
+        # msg_hex = str(msg).encode("hex")
         if cfg.tracking:
             log.track(1, "Evaluating C&C Message #" + str(msgnum), True)
             log.track(2, "msg_pos: [" + str(msg_pos) + "]", True)
