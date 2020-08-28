@@ -39,8 +39,10 @@ from bothelp import (
 )
 from botlog import BotLog
 import botcomm
-from botcomm import BotComm
+
+# from botcomm import BotComm
 from botmsg import BotMsg
+import bothbproc
 from botpipo import BotPIPO
 
 v_botmain = "bot71-20200601"
@@ -77,11 +79,11 @@ nepi_args = nbparser.parse_args()
 # set global vars for use in the program based on environment variables or cmd line args.
 # environment variables take precedence over the command line
 
-if nepi_args.lb == False and bool(RUN_LB_LINK) == True:
+if nepi_args.lb is False and bool(RUN_LB_LINK) is True:
     nepi_args.lb = True
-elif nepi_args.hb == False and bool(RUN_HB_LINK) == True:
+elif nepi_args.hb is False and bool(RUN_HB_LINK) is True:
     nepi_args.hb = True
-elif nepi_args.lbto == 0 and LB_PROC_TIMEOUT != 0:
+elif nepi_args.lbto == 0 and LB_PROC_TIMEOUT:
     nepi_args.lbto = LB_PROC_TIMEOUT
 elif nepi_args.hbto == 0 and HB_PROC_TIMEOUT:
     nepi_args.hbto = HB_PROC_TIMEOUT
@@ -144,6 +146,15 @@ if not success[0]:
 ########################################################################
 
 sm = BotMsg(cfg, log, db, 1)
+
+########################################################################
+# Instantiate a HB transfer process if requested
+########################################################################
+
+if nepi_args.hb is True:
+    hbproc = bothbproc.HbProc(cfg, log, 0, dev_id_str, nepi_args)
+    success = hbproc.check_hb_dirs()
+    success = hbproc.transfer_files()
 
 ########################################################################
 # Re-Evaluate PIPO Ratings for Archived Data Products if Required.
@@ -680,55 +691,6 @@ if meta_rows:
             continue
 
         # ---------------------------------------------------------------
-        # Get the Next 'index' value from 'node' Table in DB.
-        # ---------------------------------------------------------------
-        # ntype = str(row[7])
-        # ninst = str(row[8])
-        # if cfg.tracking:
-        #     log.track(2, "Get the Next 'index' value from 'node' Table in DB", True)
-        #
-        # sql = (
-        #     "SELECT rowid, * FROM node WHERE node_type = '"
-        #     + str(ntype)
-        #     + "' AND node_instance = '"
-        #     + str(ninst)
-        #     + "' LIMIT 1"
-        # )
-        # success, node_results = db.getResults(3, sql, False)
-        #
-        # if not success[0] or not node_results:
-        #     if cfg.tracking:
-        #         log.track(
-        #             3,
-        #             "Inaccessible Node Type/Instance: " + str(ntype) + "/" + str(ninst),
-        #             True,
-        #         )
-        #         log.track(3, "Ignore This DP; Continue.", True)
-        #     continue
-        #
-        # if not node_results:
-        #     if cfg.tracking:
-        #         log.track(
-        #             3,
-        #             "Node Type/Instance NOT Found: " + str(ntype) + "/" + str(ninst),
-        #             True,
-        #         )
-        #         log.track(3, "Ignore This DP; Continue.", True)
-        #     continue
-        #
-        # node_index = int(node_results[0][4])
-        # node_stage = int(node_results[0][5])
-        # next_index = node_stage + 1
-        #
-        # if cfg.tracking:
-        #     log.track(
-        #         3, "Got Node Type/Instance: " + str(ntype) + "/" + str(ninst), True
-        #     )
-        #     log.track(4, "Index: " + str(node_index), True)
-        #     log.track(4, "Stage: " + str(node_index), True)
-        #     log.track(4, "Next:  " + str(next_index), True)
-
-        # ---------------------------------------------------------------
         # Got Associated Status Record, so PACK this Data Product.
         # ---------------------------------------------------------------
         if cfg.tracking:
@@ -756,28 +718,7 @@ if meta_rows:
                 log.track(3, "Can't PACK Data Product Record.", True)
                 continue
 
-        # ---------------------------------------------------------------
-        # Data Product Packed; Update 'node' Table in DB.
-        # ---------------------------------------------------------------
 
-        # if cfg.tracking:
-        #     log.track(1, "Update 'node' Table with latest Index.'", True)
-        #
-        #     sql = (
-        #         "UPDATE node SET node_stage = '"
-        #         + str(next_index)
-        #         + "' WHERE rowid = '"
-        #         + str(node_results[0][0])
-        #         + "'"
-        #     )
-        #     success = db.update(2, sql)
-        #     if not success[0]:
-        #         if cfg.tracking:
-        #             log.track(2, "Well ... This is Awkward.", True)
-        #             log.track(2, "Probably Come Back to Bite Us in the Ass.'", True)
-        #             log.track(
-        #                 2, "Will wind up reverting back to 'std' DP Delivery.", True
-        #             )
 
 if cfg.tracking:
     log.track(1, "Final Message Complete.", True)
