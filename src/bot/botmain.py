@@ -14,8 +14,11 @@
 ########################################################################
 
 import argparse
+import json
 import os
 import sys
+import pathlib
+
 from subprocess import Popen
 
 from google.protobuf import json_format
@@ -727,21 +730,37 @@ if cfg.tracking:
     # log.track(2, "Buf Msg: " + str(sm.buf).encode("hex"), True)
     # log.track(2, "Buf Msg: " + str(binascii.hexlify(str.encode(sm.buf))), True)
 
+
+########################################################################
+# Get any DO general messages and encode for server
+########################################################################
+
+gen_msg_dir = str(nepi_home + "/lb/do-msg")
+
+for filename in pathlib.Path(gen_msg_dir).glob('*.json'):
+    try:
+        if cfg.tracking:
+            log.track(0, f"Found device general message to send to server [{filename}]", True)
+        with open(filename) as json_file:
+            data = json.load(json_file)
+        if cfg.tracking:
+            log.track(0, f"File contains: {data}", True)
+        ident = data.get("identifier", None)
+        value = data.get("value", None)
+        if ident is None or value is None:
+            log.track(0, f"missing 'identifier' or 'value' fields. Continuing with next message...", True)
+            pathlib.Path(filename).unlink(missing_ok=True)
+            continue
+        success = sm.encode_gen_msg(0, ident, value, 1, dev_id_bytes, db)
+    except Exception as e:
+        if cfg.tracking:
+            log.track(0, f"Defective NepiBot Configuration file [{filename}]. Continuing with next message...", True)
+            pathlib.Path(filename).unlink(missing_ok=True)
+            
+
 ########################################################################
 # Open Communications Port and Send the Message Buffer.
 ########################################################################
-
-if cfg.tracking:
-    log.track(0, "Send the Message Buffer.", True)
-
-# TODO REMOVE BEFORE PRODUCTION
-# if testiplink:
-#     sm.buf = "THIS A ENCRYPTED IP LINK TEST TO CRITIGEN TEST SERVER"
-#     sm.len = len(sm.buf)
-
-# bcsuccess = 0
-# cnc_msgs = list()
-
 
 def get_enabled_link(_cfg):
     for link in _cfg.lb_conn_order:
@@ -751,20 +770,11 @@ def get_enabled_link(_cfg):
     return None
 
 
-# AGV
-# xtype = get_enabled_link(cfg)
 bc = botcomm.BotComm(cfg, log, "ethernet", 1)
 success = bc.getconn(0)
-# AGV
 
 
 if len(msgs_outgoing) > 0:
-    # AGV
-    # xtype = get_enabled_link(cfg)
-    # bc = BotComm(cfg, log, xtype, 1)
-    # success = bc.getconn(0)
-    # AGV
-
     if success[0]:
         log.track(0, "Sending: ", True)
         for item in msgs_outgoing:
@@ -795,7 +805,7 @@ else:
     recv_success = [False, None, None]
     success = bc.close(1)
 
-# success = bc.close(1)
+success = bc.close(1)
 
 ########################################################################
 # Make sure any downlinked commands get processed.
@@ -840,255 +850,7 @@ for msgnum in range(0, len(msgs_incoming)):
             servermsg, preserving_proto_field_name=False, indent=2
         )
         print(new_msg_json)
-    # else:
-    #     while msg_pos < msg_len:
-    #         # Even though msg 'header' is exactly 3 bytes, peel off 4 so
-    #         # 'struct' can deal with it as a 32-bit integer. Ignore the
-    #         # far-right eight bits (that's atually the 1st byte of data).
-    #         if cfg.tracking:
-    #             log.track(2, "Evaluating Segment Header.", True)
-    #         try:
-    #             seg_head = struct.unpack(">I", msg[msg_pos : msg_pos + 4])[0]
-    #             # 'protocol'    (bits 0-1)
-    #             seg_prot = (seg_head & 0xC0000000) >> 30
-    #             # 'config type' (bits 2-4)
-    #             seg_type = (seg_head & 0x38000000) >> 27
-    #             # 'msg length'  (bits 5-15)
-    #             seg_size = (seg_head & 0x07FF0000) >> 16
-    #             # 'cfg index'   (bits 16-21)
-    #             seg_indx = (seg_head & 0x0000FC00) >> 10
-    #             # 'msg flags'   (bits 22-23)
-    #             seg_flag = (seg_head & 0x00000300) >> 8
-    #         except Exception as e:
-    #             if cfg.tracking:
-    #                 log.track(3, "Lost Control Evaluating This Message.", True)
-    #                 log.track(3, "ERROR: [" + str(e) + "]", True)
-    #                 log.track(3, "Continue w/next MESSAGE.", True)
-    #             break
-    #         if cfg.tracking:
-    #             log.track(15, "Starting:  [" + str(int(msg_pos)) + "]", True)
-    #             log.track(15, "seg_prot:  [" + str(int(seg_prot)) + "]", True)
-    #             log.track(15, "seg_type:  [" + str(int(seg_type)) + "]", True)
-    #             log.track(15, "seg_size:  [" + str(int(seg_size)) + "]", True)
-    #             log.track(15, "seg_indx:  [" + str(int(seg_indx)) + "]", True)
-    #             log.track(15, "seg_flag:  [" + str(int(seg_flag)) + "]", True)
-    #         # ---------------------------------------------------------------
-    #         # Position at Data and Decompress/Unpack.
-    #         # ---------------------------------------------------------------
-    #         msg_pos += 3  # Skip forward over the 3-byte segment 'header.'
-    #         if cfg.tracking:
-    #             log.track(2, "Bump Forward to Process Message Data.", True)
-    #             log.track(15, "msg_pos:  [" + str(msg_pos) + "]", True)
-    #             log.track(2, "Perform 'struct' Unpacking.", True)
-    #         try:
-    #             data_fmt = ">" + str(seg_size) + "s"
-    #             if cfg.tracking:
-    #                 log.track(15, "data_fmt: [" + str(data_fmt) + "]", True)
-    #             data_raw = msg[msg_pos : msg_pos + seg_size]
-    #             if cfg.tracking:
-    #                 log.track(15, "data_raw: [" + str(data_raw) + "]", True)
-    #             data_len = len(data_raw)
-    #             if cfg.tracking:
-    #                 log.track(15, "data_len: [" + str(data_len) + "]", True)
-    #             data_hex = data_raw.encode("hex")
-    #             if cfg.tracking:
-    #                 log.track(15, "data_hex: [" + str(data_hex) + "]", True)
-    #             if seg_type == 0 and (int(seg_flag) != 1):  # If Cmd, grab byte 1 of
-    #                 # data in its hex value.
-    #                 data_unp = data_hex
-    #             else:
-    #                 data_unp = struct.unpack(data_fmt, data_raw)[0]
-    #                 if cfg.tracking:
-    #                     log.track(15, "data_unp: [" + str(data_unp) + "]", True)
-    #                 if cfg.data_zlib:  # Are we using 'zlib' compression?
-    #                     if cfg.tracking:
-    #                         log.track(2, "Perform 'zlib' Decompression.", True)
-    #                     decompress = zlib.decompressobj(-zlib.MAX_WBITS)
-    #                     data_dcmp = decompress.decompress(data_raw)
-    #                     data_dcmp += decompress.flush()
-    #                     if cfg.tracking:
-    #                         log.track(15, "data_dcmp: [" + str(data_dcmp) + "]", True)
-    #                     data_dsiz = len(data_dcmp)
-    #                     if cfg.tracking:
-    #                         log.track(15, "data_dsiz: [" + str(data_dsiz) + "]", True)
-    #                     data_unp = data_dcmp
-    #                 if cfg.data_msgpack:  # Are we using 'msgpack' unpacking?
-    #                     if cfg.tracking:
-    #                         log.track(2, "Perform 'msgpack' Unpacking.", True)
-    #                     data_mpak = msgpack.unpackb(data_dcmp)
-    #                     if cfg.tracking:
-    #                         log.track(16, "data_mpak: [" + str(data_mpak) + "]", True)
-    #                     data_mlen = len(str(data_mpak))
-    #                     if cfg.tracking:
-    #                         log.track(16, "data_mlen: [" + str(data_mlen) + "]", True)
-    #                     data_unp = data_mpak
-    #             if cfg.tracking:
-    #                 log.track(15, "data_unp: [" + str(data_unp) + "]", True)
-    #         except Exception as e:
-    #             if cfg.tracking:
-    #                 log.track(3, "Problem(s) Processing Data Segment.", True)
-    #                 log.track(3, "ERROR: [" + str(e) + "]", True)
-    #                 log.track(3, "Continue w/next MESSAGE.", True)
-    #             break
-    #     # ---------------------------------------------------------------
-    #     # Process the Bot Config, Command, or SDK Config Messages.
-    #     # ---------------------------------------------------------------
-    #
-    #     if cfg.devclass == "generic":
-    #         # TODO add index
-    #
-    #         if servermsg.hasattr(msg, "CfgMsg"):
-    #             servermsgtype = 1
-    #
-    #         elif servermsg.hasattr(msg, "GeneralMsg"):
-    #             pass
-    #     else:
-    #         if int(seg_flag) == 1:  # --------------------------- BOT CONFIG
-    #             if cfg.tracking:
-    #                 log.track(2, "Process BOT CONFIG.", True)
-    #             for key in data_unp:
-    #                 val = data_unp[key]
-    #                 if cfg.tracking:
-    #                     log.track(3, "Process keyword: [" + str(key) + "]", True)
-    #                     log.track(4, "val: [" + str(val) + "]", True)
-    #                 if str(key) == "scor":
-    #                     nkey = "pipo_scor_wt"
-    #                 elif str(key) == "qual":
-    #                     nkey = "pipo_qual_wt"
-    #                 elif str(key) == "size":
-    #                     nkey = "pipo_size_wt"
-    #                 elif str(key) == "trig":
-    #                     nkey = "pipo_trig_wt"
-    #                 elif str(key) == "time":
-    #                     nkey = "pipo_time_wt"
-    #                 elif str(key) == "msg_size":
-    #                     nkey = "max_msg_size"
-    #                 elif str(key) == "type":
-    #                     nkey = "type"
-    #                 elif str(key) == "host":
-    #                     nkey = "host"
-    #                 elif str(key) == "port":
-    #                     nkey = "port"
-    #                 elif str(key) == "baud":
-    #                     nkey = "baud"
-    #                 elif str(key) == "p_size":
-    #                     nkey = "packet_size"
-    #                 else:
-    #                     if cfg.tracking:
-    #                         log.track(
-    #                             3,
-    #                             "Unknown 'keyword' received: [" + str(key) + "]",
-    #                             True,
-    #                         )
-    #                         log.track(3, "Continue w/next KEYWORD.", True)
-    #                     msg_pos += seg_size
-    #                     continue
-    #                 if cfg.tracking:
-    #                     log.track(4, "CFG: [" + str(nkey) + "]", True)
-    #                 log.track(3, "Update the Bot Config File.", True)
-    #                 resetCfgValue(cfg, log, 4, str(nkey), val)
-    #             if cfg.tracking:
-    #                 log.track(3, "DONE with Bot Config Updates.", True)
-    #                 log.track(3, "Continue w/next SEGMENT.", True)
-    #             msg_pos += seg_size
-    #             continue
-    #         elif seg_type == 0:  # --------------------------- COMMAND
-    #             if cfg.tracking:
-    #                 log.track(2, "Process COMMAND.", True)
-    #                 log.track(3, "Identify Directory and Base Name.", True)
-    #             fpath = "/commands/"
-    #             cmd = int(data_unp)
-    #             if cmd == 1:
-    #                 fname = "scuttle"  # Scuttle
-    #             elif cmd == 2:
-    #                 fname = "ping"  # Ping
-    #             else:
-    #                 if cfg.tracking:
-    #                     log.track(
-    #                         3,
-    #                         "WARNING: Got 'Unknown' Command: [" + str(cmd) + "]",
-    #                         True,
-    #                     )
-    #                     log.track(
-    #                         3, "No Implementation; Continue w/next SEGMENT.", True
-    #                     )
-    #                 msg_pos += seg_size
-    #                 continue
-    #         else:  # ------------------------------------------- CONFIGURATION
-    #             if cfg.tracking:
-    #                 log.track(2, "Process CONFIGURATION.", True)
-    #                 log.track(3, "Identify Directory and Base File Name.", True)
-    #             if seg_type == 1:  # SENSOR
-    #                 fpath = "/cfg/sensors/"
-    #                 fname = "sensor_cfg"
-    #             elif seg_type == 2:  # NODE
-    #                 fpath = "/cfg/proc_nodes/"
-    #                 fname = "proc_node_cfg"
-    #             elif seg_type == 3:  # GEOFENCE
-    #                 fpath = "/cfg/geofence/"
-    #                 fname = "geofence_cfg"
-    #             elif seg_type == 4:  # RULE
-    #                 fpath = "/cfg/rules/"
-    #                 fname = "smarttrig_rule"
-    #             elif seg_type == 5:  # TRIGGER
-    #                 fpath = "/cfg/trig/"
-    #                 fname = "smarttrig_cfg"
-    #             elif seg_type == 6:  # ACTION
-    #                 fpath = "/cfg/action/"
-    #                 fname = "action_seq"
-    #             elif seg_type == 7:  # SCHEDULE
-    #                 fpath = "/cfg/sched/"
-    #                 fname = "task"
-    #             else:
-    #                 if cfg.tracking:
-    #                     log.track(2, "WARNING: Got 'Unknown' C&C Segment TYPE.", True)
-    #                     log.track(
-    #                         2, "No Implementation; Continue w/next SEGMENT.", True
-    #                     )
-    #                 msg_pos += seg_size
-    #                 continue
-    #         if cfg.tracking:
-    #             log.track(4, "bpath: [" + str(fpath) + "]", True)
-    #             log.track(4, "bname: [" + str(fname) + "]", True)
-    #             log.track(3, "Construct File Path, Name, and File.", True)
-    #         try:
-    #             fpath = str(nepi_home) + str(fpath)
-    #             if cfg.tracking:
-    #                 log.track(3, "fpath: [" + str(fpath) + "]", True)
-    #             if seg_type > 0:
-    #                 fname = str(fname) + "_" + str(seg_indx).zfill(5) + ".json"
-    #             if cfg.tracking:
-    #                 log.track(3, "fname: [" + str(fname) + "]", True)
-    #             ffile = str(fpath) + str(fname)
-    #             if cfg.tracking:
-    #                 log.track(3, "ffile: [" + str(ffile) + "]", True)
-    #             if seg_type > 0:
-    #                 # This can be used if the JSON requires 'expansion.'
-    #                 # fpars = json.loads(data_unp)
-    #                 # if cfg.tracking:
-    #                 # log.track(15, "fpars: [" + str(fpars) + "]", True)
-    #                 fdump = json.dumps(data_unp, indent=4, sort_keys=False)
-    #                 if cfg.tracking:
-    #                     log.track(15, "fdump: [" + str(fdump) + "]", True)
-    #             else:
-    #                 fpars = ""
-    #                 fdump = ""
-    #         except Exception as e:
-    #             if cfg.tracking:
-    #                 log.track(3, "Problem(s) Constructing C&C File.", True)
-    #                 log.track(3, "ERROR: [" + str(e) + "]", True)
-    #                 log.track(3, "Continue w/next SEGMENT.", True)
-    #             msg_pos += seg_size
-    #             continue
-    #         if cfg.tracking:
-    #             log.track(2, "Create Config File for the SDK.", True)
-    #         success = writeFloatFile(cfg, log, 3, True, ffile, str(fdump))
-    #         if success[0]:
-    #             sdk_action = True  # Got at least 1 C&C message for the SDK.
-    #         if cfg.tracking:
-    #             log.track(2, "Continue w/next SEGMENT.", True)
-    #         msg_pos += seg_size
-    #         continue
+
 ########################################################################
 # SDK C&C Downlink Message Notification.
 ########################################################################
@@ -1113,8 +875,6 @@ if sdk_action:
             log.track(1, "Execute Popen w/nohup.", True)
         log.track(1, "Looking for sdkproc at: {}".format(str(sdkproc)), True)
         if os.path.isfile(str(sdkproc)):
-            # Popen([str(sdkproc)])
-            # Popen(['nohup', str(sdkproc)])
             proc = Popen(
                 ["nohup", "/bin/sh", str(sdkproc)], stdout=devnull, stderr=devnull
             )
@@ -1225,6 +985,8 @@ else:
     if cfg.tracking:
         log.track(1, "NO Message = NO Housekeeping to be Done.", True)
 
+# save botcomm_index to db and close db
+success = db.save_botcomm_index()
 success = db.close(0)
 
 ########################################################################

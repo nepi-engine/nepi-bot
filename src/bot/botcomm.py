@@ -58,7 +58,9 @@ class BotComm(object):
         self.typ = _typ
         self.con = None
         self.serialport = None
-        self.dev_id_str, self.dev_id_bytes, self.remote_id_str = getDevId(self.cfg, self.log, 0, bot_devnuid_file)
+        self.dev_id_str, self.dev_id_bytes, self.remote_id_str = getDevId(
+            self.cfg, self.log, 0, bot_devnuid_file
+        )
         if self.cfg.tracking:
             self.log.track(_lev, "Created BotComm Class Object.", True)
             self.log.track(_lev + 13, "^cfg: " + str(self.cfg), True)
@@ -562,7 +564,7 @@ class BotComm(object):
 
         if self.typ == "ethernet":
             try:
-                #self.con.settimeout(5)G
+                # self.con.settimeout(5)G
                 while len(msgs_outgoing):
                     retcode = self.con.sendall(msgs_outgoing.pop(0))
                 if retcode is None:

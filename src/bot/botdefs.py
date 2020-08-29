@@ -55,6 +55,7 @@ bot_cfg_file = nepi_home + "/cfg/bot/config.json"  # Bot Cfg File
 bot_db_file = nepi_home + "/db/float.db"  # Bot DB File
 bot_devnuid_file = nepi_home + "/devinfo/devnuid.txt"
 bot_devsshkeys_file = nepi_home + "/devinfo/devsshkeys.txt"
+bot_hb_dir = nepi_home + "/hb/clone"
 
 # This is another Python2 way of doing Enums.  We don't seem to have the
 # retro implementation from Python3, so use either a forced "class" or

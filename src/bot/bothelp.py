@@ -75,11 +75,12 @@ def create_nepi_dirs(_cfg, _log, _lev):
         "lb/do-msg",
         "hb/clone/dt",
         "hb/clone/do",
+        "hb/clone/logs",
     ]
 
     bot_dirs_exp = list()
     for i in bot_dirs:
-        bot_dirs_exp += f"{nepi_home}/{i}"
+        bot_dirs_exp.append(f"{nepi_home}/{i}")
     try:
         for i in bot_dirs_exp:
             os.makedirs(i, 0o777, exist_ok=True)
@@ -108,7 +109,7 @@ def check_metadata_filename(_filename: str):  # TODO: Make into class
     """
     m = regex.match(r"^([a-zA-Z]{3})([0-9]+)\.([a-zA-Z]+)$", _filename)
     if m is None:
-        return False, ()
+        return False, ('', '', '')
     return True, m.groups()
 
 

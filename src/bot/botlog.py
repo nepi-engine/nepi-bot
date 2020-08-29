@@ -17,14 +17,17 @@ import os
 import sys
 import time
 import errno
-#from botcfg import v_botcfg
-#from botcomm import v_botcomm
-#from botdb import v_botdb
+
+# from botcfg import v_botcfg
+# from botcomm import v_botcomm
+# from botdb import v_botdb
 from botdefs import Machines, nepi_home, bot_cfg_file, bot_db_file, v_botdefs
-#from bothelp import v_bothelp
-#from botmsg import v_botmsg
-#from botpipo import v_botpipo
+
+# from bothelp import v_bothelp
+# from botmsg import v_botmsg
+# from botpipo import v_botpipo
 import botcomm
+
 v_botlog = "bot71-20200601"
 
 ########################################################################
@@ -123,17 +126,17 @@ class BotLog(object):
         else:
             self.cfg.tracking = False
 
-        # if self.cfg.tracking:
-        #     self.track(_lev, "Using Bot Software Versions:", True)
-        #     self.track(_lev + 1, "botcfg:  " + str(v_botcfg), True)
-        #     # self.track(_lev + 1, "botcomm: " + str(v_botcomm), True)
-        #     self.track(_lev + 1, "botdb:   " + str(v_botdb), True)
-        #     self.track(_lev + 1, "botdefs: " + str(v_botdefs), True)
-        #     self.track(_lev + 1, "bothelp: " + str(v_bothelp), True)
-        #     self.track(_lev + 1, "botlog:  " + str(v_botlog), True)
-        #     self.track(_lev + 1, "botmsg:  " + str(v_botmsg), True)
-        #     self.track(_lev + 1, "botpipo: " + str(v_botpipo), True)
-        #     self.track(_lev + 1, self.app + ": " + str(self.version), True)
+            # if self.cfg.tracking:
+            #     self.track(_lev, "Using Bot Software Versions:", True)
+            #     self.track(_lev + 1, "botcfg:  " + str(v_botcfg), True)
+            #     # self.track(_lev + 1, "botcomm: " + str(v_botcomm), True)
+            #     self.track(_lev + 1, "botdb:   " + str(v_botdb), True)
+            #     self.track(_lev + 1, "botdefs: " + str(v_botdefs), True)
+            #     self.track(_lev + 1, "bothelp: " + str(v_bothelp), True)
+            #     self.track(_lev + 1, "botlog:  " + str(v_botlog), True)
+            #     self.track(_lev + 1, "botmsg:  " + str(v_botmsg), True)
+            #     self.track(_lev + 1, "botpipo: " + str(v_botpipo), True)
+            #     self.track(_lev + 1, self.app + ": " + str(self.version), True)
 
             if self.cfg.factory:
                 self.track(

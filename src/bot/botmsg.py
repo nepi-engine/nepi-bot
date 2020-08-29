@@ -71,7 +71,9 @@ class BotMsg(object):
             else:
                 _sysval.str_identifier = str(_identifier)
 
-            if isinstance(_value, str):
+            if isinstance(_value, list):
+                _sysval.raw_val=bytes(_value)
+            elif isinstance(_value, str):
                 _sysval.string_value = str(_value)
             elif isinstance(_value, bool):
                 _sysval.bool_val = _value
@@ -232,13 +234,13 @@ class BotMsg(object):
     # -------------------------------------------------------------------
     # The 'encode_gen_msg()' Class Library Method. Protobuf implementation
     # -------------------------------------------------------------------
-    def encode_gen_msg(self, _lev, _rec, _identifier, _value, _orig, _dev_id_bytes, db):
+    def encode_gen_msg(self, _lev, _identifier, _value, _orig, _dev_id_bytes, _db):
 
         # Set nepi msg
         try:
             nepi_msg = nepi_messaging_all_pb2.NEPIMsg()
             nepi_msg.nuid = _dev_id_bytes
-            nepi_msg.comm_index = db.get_botcomm_index()
+            nepi_msg.comm_index = _db.get_botcomm_index()
 
             # Set cfg message
             gen_message = nepi_msg.gen_msg
@@ -252,25 +254,7 @@ class BotMsg(object):
             retcode = self.convert_to_system_value(
                 gen_message_payload, _identifier, _value
             )
-            # if isinstance(_identifier, int):
-            #     gen_message_payload.int64_identifier = int(_identifier)
-            # else:
-            #     gen_message_payload.str_identifier = str(_identifier)
-            #
-            # if isinstance(_value, double):
-            #     gen_message_payload.double_val = _value
-            # elif isinstance(_value, float):
-            #     gen_message_payload.float_val = _value
-            # elif isinstance(_value, np.int64):
-            #     gen_message_payload.int_64_val = _value
-            # elif isinstance(_value, np.uint64):
-            #     gen_message_payload.uint64_val = _value
-            # elif isinstance(_value, bool):
-            #     gen_message_payload.bool_val = _value
-            # elif isinstance(_value, str):
-            #     gen_message_payload.string_val = _value
-            # else:
-            #     gen_message_payload.raw_val = bytes(_value)
+
         except Exception as e:
             enum = "MSG103"
             emsg = (
@@ -289,17 +273,12 @@ class BotMsg(object):
         )
 
         self.len = len(self.buf)
-        # self.buf.append(self.buf1)
-        # self.buf_str.append(self.buf_str1)
 
         msgs_outgoing.append(self.buf1)
 
         if self.cfg.tracking:
             self.log.track(_lev + 1, "GENERAL Record ENCODED.", True)
             self.log.track(_lev + 2, "Msg Str: " + self.buf_str1, True)
-            self.log.track(
-                _lev + 2, "Msg Enc: " + str(self.buf1, encoding="utf-8"), True
-            )
             self.log.track(_lev + 2, "Msg Siz: " + str(self.len), True)
 
         return [True, None, None]

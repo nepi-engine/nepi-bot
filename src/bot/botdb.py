@@ -247,12 +247,19 @@ class BotDB(object):
         # as arguments.
 
         try:
-            filepath = regex.match(r".*/", _metafile)
-            filename = filepath.group() + _datajson.get("data_file")
-            file = open(filename, mode="rb")
-            filecontent = file.read()
-            file.close()
-            payload_data = bothelp.check_metadata_filename(_datajson.get("data_file"))
+            try:
+                #_datajson.get("datafile", '')
+                filepath = regex.match(r".*/", _metafile)
+                filename = filepath.group() + _datajson.get("data_file")
+                file = open(filename, mode="rb")
+                filecontent = file.read()
+                file.close()
+                payload_data = bothelp.check_metadata_filename(_datajson.get("data_file"))
+                payload_data1 = payload_data[1][2]
+            except Exception:
+                payload_data1 = ''
+                filecontent = b''
+
             data_tuple = (
                 _status_rowid,
                 float(_datajson.get("timestamp", 0.0)),
@@ -264,8 +271,8 @@ class BotDB(object):
                 int(_datajson.get("heading_offset", 0)),
                 int(_datajson.get("roll_offset", 0)),
                 int(_datajson.get("pitch_offset", 0)),
-                str(_datajson.get("payload")),
-                str((payload_data[1])[2]),
+                str(_datajson.get("data_file", '')),
+                str(payload_data1),
                 bytes(filecontent),
                 float(_info[0]),
                 int(0),
@@ -276,7 +283,7 @@ class BotDB(object):
                 float(_datajson.get("event_score", 1.0)),
                 str(""),
                 str(""),
-                int(0)
+                int(0),
             )
 
             sql_statement = """\
@@ -724,7 +731,7 @@ class BotDB(object):
                     latitude REAL,
                     longitude REAL,
                     heading INTEGER,
-                    heading_ref INTEGER,
+                    heading_true_north INTEGER,
                     roll_angle INTEGER,
                     pitch_angle INTEGER,
                     temperature INTEGER,
