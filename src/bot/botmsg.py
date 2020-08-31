@@ -72,7 +72,7 @@ class BotMsg(object):
                 _sysval.str_identifier = str(_identifier)
 
             if isinstance(_value, list):
-                _sysval.raw_val=bytes(_value)
+                _sysval.raw_val = bytes(_value)
             elif isinstance(_value, str):
                 _sysval.string_value = str(_value)
             elif isinstance(_value, bool):
@@ -187,7 +187,7 @@ class BotMsg(object):
             # Set nepi-bot metadata
             data_message_nepi_bot = data_message.nepi_bot_metadata
             data_message_nepi_bot.sys_status_id = int(_rec[2])
-            #data_message_nepi_bot.nepi_bot_status_flags = 2
+            # data_message_nepi_bot.nepi_bot_status_flags = 2
 
             # Set nepi device data
             data_message_device_data = data_message.device_data
@@ -361,18 +361,6 @@ class BotMsg(object):
                 mvalue = msg_payload.string_val
             else:
                 mvalue = msg_payload.raw_val
-            # if msg_payload.HasField("double_val"):
-            #     mvalue = msg_payload.double_val
-            # elif msg_payload.HasField("float_val"):
-            #     mvalue = msg_payload.float_val
-            # elif msg_payload.HasField("int64_val"):
-            #     mvalue = msg_payload.int64_val
-            # elif msg_payload.HasField("uint64"):
-            #     mvalue = msg_payload.uint64
-            # elif msg_payload.HasField("bool_val"):
-            #     mvalue = msg_payload.string_val
-            # else:
-            #     mvalue = msg_payload.raw_val
 
             # add to incoming message list
             _msgs_incoming.append([msg_routing, midentifier, mvalue])
@@ -406,21 +394,7 @@ class BotMsg(object):
                 mvalue = msg_cfg_vals.string_val
             else:
                 mvalue = msg_cfg_vals.raw_val
-            # valtype = msg_cfg_vals.WhichOneof('value')
-            # if valtype == 'double_val':
-            #     mvalue = msg_cfg_vals.double_val
-            # elif valtype == 'float_val':
-            #     mvalue = msg_cfg_vals.float_val
-            # elif valtype == 'int64_val':
-            #     mvalue = msg_cfg_vals.int64_val
-            # elif valtype == 'uint64':
-            #     mvalue = msg_cfg_vals.uint64
-            # elif valtype == 'bool_val':
-            #     mvalue = msg_cfg_vals.bool_val
-            # elif valtype == 'string_val':
-            #     mvalue = msg_cfg_vals.string_val
-            # else:
-            #     mvalue = msg_cfg_vals.raw_val
+
             _msgs_incoming.append([msg_routing, midentifier, mvalue])
         else:
             pass

@@ -722,7 +722,6 @@ if meta_rows:
                 continue
 
 
-
 if cfg.tracking:
     log.track(1, "Final Message Complete.", True)
     log.track(2, "Buf Len: " + str(len(str(sm.buf))), True)
@@ -737,10 +736,12 @@ if cfg.tracking:
 
 gen_msg_dir = str(nepi_home + "/lb/do-msg")
 
-for filename in pathlib.Path(gen_msg_dir).glob('*.json'):
+for filename in pathlib.Path(gen_msg_dir).glob("*.json"):
     try:
         if cfg.tracking:
-            log.track(0, f"Found device general message to send to server [{filename}]", True)
+            log.track(
+                0, f"Found device general message to send to server [{filename}]", True
+            )
         with open(filename) as json_file:
             data = json.load(json_file)
         if cfg.tracking:
@@ -748,19 +749,28 @@ for filename in pathlib.Path(gen_msg_dir).glob('*.json'):
         ident = data.get("identifier", None)
         value = data.get("value", None)
         if ident is None or value is None:
-            log.track(0, f"missing 'identifier' or 'value' fields. Continuing with next message...", True)
+            log.track(
+                0,
+                f"missing 'identifier' or 'value' fields. Continuing with next message...",
+                True,
+            )
             pathlib.Path(filename).unlink(missing_ok=True)
             continue
         success = sm.encode_gen_msg(0, ident, value, 1, dev_id_bytes, db)
     except Exception as e:
         if cfg.tracking:
-            log.track(0, f"Defective NepiBot Configuration file [{filename}]. Continuing with next message...", True)
+            log.track(
+                0,
+                f"Defective NepiBot Configuration file [{filename}]. Continuing with next message...",
+                True,
+            )
             pathlib.Path(filename).unlink(missing_ok=True)
-            
+
 
 ########################################################################
 # Open Communications Port and Send the Message Buffer.
 ########################################################################
+
 
 def get_enabled_link(_cfg):
     for link in _cfg.lb_conn_order:
@@ -815,8 +825,6 @@ sdk_action = False
 if msgs_incoming is None:
     msgs_incoming = list()
 for msgnum in range(0, len(msgs_incoming)):
-    # msg_b64 = cnc_msgs[msgnum]
-    # msg = msg_b64.decode('base64')
     if cfg.devclass == "generic":
         msg = msgs_incoming[msgnum]
         msg_pos = 0
@@ -826,13 +834,11 @@ for msgnum in range(0, len(msgs_incoming)):
             log.track(1, "Evaluating C&C Message #" + str(msgnum), True)
             log.track(2, "msg_pos: [" + str(msg_pos) + "]", True)
             log.track(2, "msg_len: [" + str(msg_len) + "]", True)
-            # log.track(
-            #    14, "msg_hex: [" + str(msg_hex) + "] <-- s/b double.", True)
     else:
         msg = msgs_incoming[msgnum]
         msg_pos = 0
         msg_len = len(msg)
-        # msg_hex = str(msg).encode("hex")
+
         if cfg.tracking:
             log.track(1, "Evaluating C&C Message #" + str(msgnum), True)
             log.track(2, "msg_pos: [" + str(msg_pos) + "]", True)

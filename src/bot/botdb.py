@@ -248,17 +248,19 @@ class BotDB(object):
 
         try:
             try:
-                #_datajson.get("datafile", '')
+                # _datajson.get("datafile", '')
                 filepath = regex.match(r".*/", _metafile)
                 filename = filepath.group() + _datajson.get("data_file")
                 file = open(filename, mode="rb")
                 filecontent = file.read()
                 file.close()
-                payload_data = bothelp.check_metadata_filename(_datajson.get("data_file"))
+                payload_data = bothelp.check_metadata_filename(
+                    _datajson.get("data_file")
+                )
                 payload_data1 = payload_data[1][2]
             except Exception:
-                payload_data1 = ''
-                filecontent = b''
+                payload_data1 = ""
+                filecontent = b""
 
             data_tuple = (
                 _status_rowid,
@@ -271,7 +273,7 @@ class BotDB(object):
                 int(_datajson.get("heading_offset", 0)),
                 int(_datajson.get("roll_offset", 0)),
                 int(_datajson.get("pitch_offset", 0)),
-                str(_datajson.get("data_file", '')),
+                str(_datajson.get("data_file", "")),
                 str(payload_data1),
                 bytes(filecontent),
                 float(_info[0]),

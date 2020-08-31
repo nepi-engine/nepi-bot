@@ -109,7 +109,7 @@ def check_metadata_filename(_filename: str):  # TODO: Make into class
     """
     m = regex.match(r"^([a-zA-Z]{3})([0-9]+)\.([a-zA-Z]+)$", _filename)
     if m is None:
-        return False, ('', '', '')
+        return False, ("", "", "")
     return True, m.groups()
 
 
