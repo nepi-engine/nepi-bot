@@ -105,6 +105,8 @@ class BotDB(object):
             results = cursor.fetchone()
             self.bot_comm_index = int(results[0])
         self.bot_comm_index = self.bot_comm_index + 1
+        if self.cfg.tracking:
+            self.log.track(1, f"Current bot_comm_index set to {self.bot_comm_index}.")
         return self.bot_comm_index
 
     def save_botcomm_index(self):
@@ -117,8 +119,13 @@ class BotDB(object):
         )
         cursor = self.dbc.cursor()
         cursor.execute(str(_sql))
+        self.dbc.commit()
         if self.cfg.tracking:
-            self.log.track(1 + 1, "SQL Executed.", True)
+            self.log.track(
+                1 + 1,
+                f"SQL Executed. Saved latest bot_comm_index as {self.bot_comm_index} in DB.",
+                True,
+            )
 
     def pushstat(self, _lev, _statjson):
         # INSERT a 'status' record into the Float DB.  This Module is
