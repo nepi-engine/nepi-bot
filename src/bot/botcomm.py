@@ -658,6 +658,8 @@ class BotComm(object):
 
             if self.con is not None:
                 try:
+                    # stop reading/writing on socket before closing connection.
+                    self.con.shutdown(socket.SHUT_RDWR)
                     self.con.close()
                     self.con = None
 
