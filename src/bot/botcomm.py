@@ -22,7 +22,13 @@ import time
 import os
 import subprocess
 
-from botdefs import bot_devsshkeys_file, msgs_incoming, msgs_outgoing, bot_devnuid_file
+from botdefs import (
+    bot_devsshkeys_file,
+    msgs_incoming,
+    msgs_outgoing,
+    bot_devnuid_file,
+    send_delay_secs,
+)
 
 from bothelp import getDevId
 
@@ -35,6 +41,7 @@ procs = []
 LOCALPORT = "8000"
 LOCALHOST = "127.0.0.1"
 retcode = None
+send_delay_secs = 1.0  # amount of time to wait between sending messages to the server
 
 
 # from botcfg import BotCfg
@@ -585,9 +592,9 @@ class BotComm(object):
 
         if self.typ == "ethernet":
             try:
-                # self.con.settimeout(5)G
                 while len(msgs_outgoing):
                     retcode = self.con.sendall(msgs_outgoing.pop(0))
+                    time.sleep(send_delay_secs)
                 if retcode is None:
                     return [True, None, None], None
                 else:
