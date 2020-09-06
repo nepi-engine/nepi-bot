@@ -15,6 +15,8 @@
 
 import struct
 import socket
+from pathlib import Path
+
 import serial
 import time
 import os
@@ -225,6 +227,21 @@ class BotComm(object):
                     _lev + 1, "IP Active SSH and SOCAT processes terminated.", True
                 )
                 procs = []
+            # the ssh key file should be mode 600
+            try:
+                p = Path(bot_devsshkeys_file)
+                p.chmod(0o600)
+                self.log.track(
+                    _lev + 1,
+                    f"Successfully changed permissions on {bot_devsshkeys_file}.",
+                    True,
+                )
+            except Exception as e:
+                self.log.track(
+                    _lev + 1,
+                    f"Unable to change permissions on {bot_devsshkeys_file} [{e}].",
+                    True,
+                )
 
             # establish SSH connection to remote server and route local UDP traffic to SSH tunnel
             self.log.track(
@@ -241,6 +258,10 @@ class BotComm(object):
                 self.cfg.lb_ip.port,
                 "-o",
                 "StrictHostKeyChecking=no",
+                "-o",
+                "GlobalKnownHostsFile=/dev/null",
+                "-o",
+                "UserKnownHostsFile=/dev/null",
                 "-i",
                 bot_devsshkeys_file,
                 "-N",
