@@ -59,6 +59,7 @@ RUN_HB_LINK = os.environ.get("RUN_HB_LINK", False)
 RUN_LB_LINK = os.environ.get("RUN_LB_LINK", False)
 HB_PROC_TIMEOUT = os.environ.get("HB_PROC_TIMEOUT", 0)
 LB_PROC_TIMEOUT = os.environ.get("LB_PROC_TIMEOUT", 0)
+BOT_TRACE = os.environ.get("BOT_TRACE", False)  # development only flag
 
 ########################################################################
 # Get any command line options
@@ -66,6 +67,9 @@ LB_PROC_TIMEOUT = os.environ.get("LB_PROC_TIMEOUT", 0)
 
 nbparser = argparse.ArgumentParser(description="NEPI-BOT Process Control Main Module.")
 nbparser.add_argument("--tm", action="store_true", help="special development test mode")
+nbparser.add_argument(
+    "--tr", action="store_true", help="send trace to server - dev only"
+)
 nbparser.add_argument("--lb", action="store_true", help="enable LB link")
 nbparser.add_argument("--hb", action="store_true", help="enable HB link")
 nbparser.add_argument(
@@ -90,6 +94,8 @@ elif nepi_args.lbto == 0 and LB_PROC_TIMEOUT:
     nepi_args.lbto = LB_PROC_TIMEOUT
 elif nepi_args.hbto == 0 and HB_PROC_TIMEOUT:
     nepi_args.hbto = HB_PROC_TIMEOUT
+elif nepi_args.tr == 0 and BOT_TRACE:
+    nepi_args.tr = True
 
 
 testiplink = False
@@ -665,7 +671,7 @@ if meta_rows:
                             log.track(3, "PACKED Assoc SR into This Message.", True)
 
                         sql = (
-                            "UPDATE status SET state = '1' WHERE sys_status_ref_id = '"
+                            "UPDATE status SET rec_state = '1' WHERE sys_status_ref_id = '"
                             + str(assoc_statrec[0][0])
                             + "'"
                         )
@@ -707,7 +713,11 @@ if meta_rows:
                 log.track(3, "PACKED Data Product Record into Message.", True)
                 log.track(3, "Update Meta Record 'state' to 'packed.'", True)
 
-                sql = "UPDATE data SET state = '1' WHERE rowid = '" + str(row[0]) + "'"
+                sql = (
+                    "UPDATE data SET rec_state = '1' WHERE rowid = '"
+                    + str(row[0])
+                    + "'"
+                )
                 success = db.update(4, sql)
                 if not success[0]:
                     if cfg.tracking:
@@ -764,11 +774,10 @@ for filename in pathlib.Path(gen_msg_dir).glob("*.json"):
                 f"Defective NepiBot Configuration file [{filename}]. Continuing with next message...",
                 True,
             )
-            pathlib.Path(filename).unlink(missing_ok=True)
-
+    pathlib.Path(filename).unlink(missing_ok=True)
 
 ########################################################################
-# Open Communications Port and Send the Message Buffer.
+# Open Communications Port and Send the Messages.
 ########################################################################
 
 
@@ -782,6 +791,102 @@ def get_enabled_link(_cfg):
 
 bc = botcomm.BotComm(cfg, log, "ethernet", 1)
 success = bc.getconn(0)
+
+# Receive messages from server
+recv_success = bc.receive(1, 1)
+if recv_success[0]:
+    log.track(0, "receive returned Success", True)
+    bcsuccess = 1
+else:
+    recv_success = [False, None, None]
+
+# process incoming messages
+if len(msgs_incoming) == 0:
+    log.track(
+        0, f"No messages received from Server. Moving on to outgoing messages... ", True
+    )
+
+while len(msgs_incoming) > 0:
+    log.track(
+        0,
+        f"Received {len(msgs_incoming)} messages from Server. Proceeding to process...",
+        True,
+    )
+
+    #   decode each message individually
+    (
+        success,
+        msg_routing,
+        svr_comm_index,
+        msg_type,
+        msg_stack,
+        orig_msg_fmt,
+        dev_msg_fmt,
+    ) = sm.decode_server_msg(0, msgs_incoming.pop(0), dev_id_bytes)
+
+    # determine what to do with each message
+
+    # message for nepi bot
+
+    if msg_routing == 0:
+        try:
+            if msg_type == "cfg_msg":
+                for i in msg_stack.keys():
+                    resetCfgValue(cfg, log, 2, str(i), msg_stack[i])
+            elif msg_type == "gen_msg":
+                for i in msg_stack.items():
+                    if i == "ping":
+                        sm.encode_gen_msg(0, "ping", "alive", 0, dev_id_bytes)
+                    elif i == "get_current_config":
+                        sm.encode_gen_msg(
+                            0, "get_current_config", "NI", 0, dev_id_bytes
+                        )
+                    elif i == "reset_config":
+                        sm.encode_gen_msg(
+                            0, "reset_config", "config reset", 0, dev_id_bytes
+                        )
+                    elif i == "get_bot_version":
+                        sm.encode_gen_msg(
+                            0, "get_bot_version", v_botmain, 0, dev_id_bytes
+                        )
+                    else:
+                        sm.encode_gen_msg(0, i, "command unknown", 0, dev_id_bytes)
+        except Exception as e:
+            if cfg.tracking:
+                log.track(
+                    0, f"Problem processing gen/cfg message for nepibot '{e}'", True
+                )
+                log.track(0, f"Original Message: {' '.join(orig_msg_fmt)}", True)
+            pass
+
+    # message for device
+
+    elif msg_routing == 1:
+        try:
+            if msg_type == "cfg_msg":
+                fname = (
+                    nepi_home + cfg.lb_cfg_dir + f"/cfg_msg_{svr_comm_index:010d}.json"
+                )
+                with open(fname, "w") as f:
+                    f.write(dev_msg_fmt)
+            elif msg_type == "gen_msg":
+                fname = nepi_home + f"/lb/dt-msg/gen_msg_{svr_comm_index:010d}.json"
+                with open(fname, "w") as f:
+                    f.write(dev_msg_fmt)
+            else:
+                log.track(
+                    0, f"Message type '{msg_type}' unknown. Message skipped.", True
+                )
+        except Exception as e:
+            if cfg.tracking:
+                log.track(
+                    0, f"Problem processing gen/cfg message for device '{e}'", True
+                )
+                log.track(0, f"Original Message: {' '.join(orig_msg_fmt)}", True)
+    else:
+        if cfg.tracking:
+            log.track(0, f"Unknown message routing '{msg_routing}'", True)
+            log.track(0, "Continuing to next message...", True)
 
 
 if len(msgs_outgoing) > 0:
@@ -805,15 +910,104 @@ else:
     if cfg.tracking:
         log.track(0, "NO Uplink Message to Send.", True)
 
-    # Receive messages from server
+# Receive messages from server ... again
 recv_success = bc.receive(1, 1)
 if recv_success[0]:
     log.track(0, "receive returned Success", True)
-    # log.track(0, "Received: " + str(cnc_msgs[0]), True)
     bcsuccess = 1
 else:
     recv_success = [False, None, None]
-    success = bc.close(1)
+
+# process incoming messages
+if len(msgs_incoming) == 0:
+    log.track(
+        0, f"No messages received from Server on second attempt. Going to cleanup... ", True
+    )
+
+while len(msgs_incoming) > 0:
+    log.track(
+        0,
+        f"Received {len(msgs_incoming)} messages from Server. Proceeding to process...",
+        True,
+    )
+
+    #   decode each message individually
+    (
+        success,
+        msg_routing,
+        svr_comm_index,
+        msg_type,
+        msg_stack,
+        orig_msg_fmt,
+        dev_msg_fmt,
+    ) = sm.decode_server_msg(0, msgs_incoming.pop(0), dev_id_bytes)
+
+    if not success[0]:
+        continue
+
+    # determine what to do with each message
+
+    # message for nepi bot
+
+    if msg_routing == 0:
+        try:
+            if msg_type == "cfg_msg":
+                for i in msg_stack.keys():
+                    resetCfgValue(cfg, log, 2, str(i), msg_stack[i])
+            elif msg_type == "gen_msg":
+                for i in msg_stack.items():
+                    if i == "ping":
+                        sm.encode_gen_msg(0, "ping", "alive", 0, dev_id_bytes)
+                    elif i == "get_current_config":
+                        sm.encode_gen_msg(
+                            0, "get_current_config", "NI", 0, dev_id_bytes
+                        )
+                    elif i == "reset_config":
+                        sm.encode_gen_msg(
+                            0, "reset_config", "config reset", 0, dev_id_bytes
+                        )
+                    elif i == "get_bot_version":
+                        sm.encode_gen_msg(
+                            0, "get_bot_version", v_botmain, 0, dev_id_bytes
+                        )
+                    else:
+                        sm.encode_gen_msg(0, i, "command unknown", 0, dev_id_bytes)
+        except Exception as e:
+            if cfg.tracking:
+                log.track(
+                    0, f"Problem processing gen/cfg message for nepibot '{e}'", True
+                )
+                log.track(0, f"Original Message: {' '.join(orig_msg_fmt)}", True)
+            pass
+
+    # message for device
+
+    elif msg_routing == 1:
+        try:
+            if msg_type == "cfg_msg":
+                fname = (
+                        nepi_home + cfg.lb_cfg_dir + f"/cfg_msg_{svr_comm_index:010d}.json"
+                )
+                with open(fname, "w") as f:
+                    f.write(dev_msg_fmt)
+            elif msg_type == "gen_msg":
+                fname = nepi_home + f"/lb/dt-msg/gen_msg_{svr_comm_index:010d}.json"
+                with open(fname, "w") as f:
+                    f.write(dev_msg_fmt)
+            else:
+                log.track(
+                    0, f"Message type '{msg_type}' unknown. Message skipped.", True
+                )
+        except Exception as e:
+            if cfg.tracking:
+                log.track(
+                    0, f"Problem processing gen/cfg message for device '{e}'", True
+                )
+                log.track(0, f"Original Message: {' '.join(orig_msg_fmt)}", True)
+    else:
+        if cfg.tracking:
+            log.track(0, f"Unknown message routing '{msg_routing}'", True)
+            log.track(0, "Continuing to next message...", True)
 
 success = bc.close(1)
 
@@ -822,88 +1016,89 @@ success = bc.close(1)
 ########################################################################
 sdk_action = False
 # Botcomm indicates no cnc_msgs with either None or an empty list.
-if msgs_incoming is None:
-    msgs_incoming = list()
-for msgnum in range(0, len(msgs_incoming)):
-    if cfg.devclass == "generic":
-        msg = msgs_incoming[msgnum]
-        msg_pos = 0
-        msg_len = len(msg)
-        # msg_hex = str(msg).encode('hex')
-        if cfg.tracking:
-            log.track(1, "Evaluating C&C Message #" + str(msgnum), True)
-            log.track(2, "msg_pos: [" + str(msg_pos) + "]", True)
-            log.track(2, "msg_len: [" + str(msg_len) + "]", True)
-    else:
-        msg = msgs_incoming[msgnum]
-        msg_pos = 0
-        msg_len = len(msg)
-
-        if cfg.tracking:
-            log.track(1, "Evaluating C&C Message #" + str(msgnum), True)
-            log.track(2, "msg_pos: [" + str(msg_pos) + "]", True)
-            log.track(2, "msg_len: [" + str(msg_len) + "]", True)
-            # log.track(14, "msg_hex: [" + str(msg_hex) + "] <-- s/b double.", True)
-    # -------------------------------------------------------------------
-    # Loop Through the C&C Segments Until Message is Exhausted.
-    # ------------------------------------------------------------------_
-    # TODO Handle more than one message in packet
-
-    if cfg.devclass == "generic":
-        servermsg = nepi_messaging_all_pb2.NEPIMsg()
-        # servermsg_len = servermsg.ParseFromString(msg)
-        new_msg_json = json_format.MessageToJson(
-            servermsg, preserving_proto_field_name=False, indent=2
-        )
-        print(new_msg_json)
+# if msgs_incoming is None:
+#     msgs_incoming = list()
+# for msgnum in range(0, len(msgs_incoming)):
+#     if cfg.devclass == "generic":
+#         msg = msgs_incoming[msgnum]
+#         msg_pos = 0
+#         msg_len = len(msg)
+#         if cfg.tracking:
+#             log.track(1, "Evaluating C&C Message #" + str(msgnum), True)
+#             log.track(2, "msg_pos: [" + str(msg_pos) + "]", True)
+#             log.track(2, "msg_len: [" + str(msg_len) + "]", True)
+#     else:
+#         msg = msgs_incoming[msgnum]
+#         msg_pos = 0
+#         msg_len = len(msg)
+#
+#         if cfg.tracking:
+#             log.track(1, "Evaluating C&C Message #" + str(msgnum), True)
+#             log.track(2, "msg_pos: [" + str(msg_pos) + "]", True)
+#             log.track(2, "msg_len: [" + str(msg_len) + "]", True)
+#             # log.track(14, "msg_hex: [" + str(msg_hex) + "] <-- s/b double.", True)
+#     # -------------------------------------------------------------------
+#     # Loop Through the C&C Segments Until Message is Exhausted.
+#     # ------------------------------------------------------------------_
+#     # TODO Handle more than one message in packet
+#
+#     if cfg.devclass == "generic":
+#         servermsg = nepi_messaging_all_pb2.NEPIMsg()
+#         # servermsg_len = servermsg.ParseFromString(msg)
+#         new_msg_json = json_format.MessageToJson(
+#             servermsg, preserving_proto_field_name=False, indent=2
+#         )
+#         print(new_msg_json)
 
 ########################################################################
 # SDK C&C Downlink Message Notification.
 ########################################################################
-if cfg.tracking:
-    log.track(0, "SDK C&C Downlink Message Notification.", True)
-if sdk_action:
-    if cfg.tracking:
-        log.track(1, "Messages Processed; Proceed.", True)
-    if cfg.devclass == "float1":
-        sdkproc = "/opt/numurus/ros/nepi-utilities/process-updates.sh"
-        sdkwhat = "Live Float Mode"
-    else:
-        sdkproc = str(nepi_home) + "/src/tst/sdktest.sh"
-        sdkwhat = "Local Non-Float Mode."
-    try:
-        if cfg.tracking:
-            log.track(1, str(sdkwhat), True)
-            log.track(1, "File: [" + str(sdkproc) + "]", True)
-            log.track(1, "Setting 'devnull' device", True)
-        devnull = open(os.devnull, "wb")
-        if cfg.tracking:
-            log.track(1, "Execute Popen w/nohup.", True)
-        log.track(1, "Looking for sdkproc at: {}".format(str(sdkproc)), True)
-        if os.path.isfile(str(sdkproc)):
-            proc = Popen(
-                ["nohup", "/bin/sh", str(sdkproc)], stdout=devnull, stderr=devnull
-            )
-            rc = proc.wait()
-            log.track(1, "{} returned {}".format(str(sdkproc), rc), True)
-        else:
-            log.track(1, os.listdir("/opt/numurus/ros/nepi-utilities/"), True)
-            raise ValueError("Can't find SDK Notification Process.")
-        if cfg.tracking:
-            log.track(1, "DONE with SDK Notification.", True)
-    except Exception as e:
-        if cfg.tracking:
-            log.track(2, "Errors(s) Executing Local Test App.", True)
-            log.track(2, "ERROR: [" + str(e) + "]", True)
-            log.track(2, "Continue.", True)
-else:
-    if cfg.tracking:
-        log.track(1, "NO Messages Processed: Ignore SDK Notification.", True)
-
+# if cfg.tracking:
+#     log.track(0, "SDK C&C Downlink Message Notification.", True)
+# if sdk_action:
+#     if cfg.tracking:
+#         log.track(1, "Messages Processed; Proceed.", True)
+#     if cfg.devclass == "float1":
+#         sdkproc = "/opt/numurus/ros/nepi-utilities/process-updates.sh"
+#         sdkwhat = "Live Float Mode"
+#     else:
+#         sdkproc = str(nepi_home) + "/src/tst/sdktest.sh"
+#         sdkwhat = "Local Non-Float Mode."
+#     try:
+#         if cfg.tracking:
+#             log.track(1, str(sdkwhat), True)
+#             log.track(1, "File: [" + str(sdkproc) + "]", True)
+#             log.track(1, "Setting 'devnull' device", True)
+#         devnull = open(os.devnull, "wb")
+#         if cfg.tracking:
+#             log.track(1, "Execute Popen w/nohup.", True)
+#         log.track(1, "Looking for sdkproc at: {}".format(str(sdkproc)), True)
+#         if os.path.isfile(str(sdkproc)):
+#             proc = Popen(
+#                 ["nohup", "/bin/sh", str(sdkproc)], stdout=devnull, stderr=devnull
+#             )
+#             rc = proc.wait()
+#             log.track(1, "{} returned {}".format(str(sdkproc), rc), True)
+#         else:
+#             log.track(1, os.listdir("/opt/numurus/ros/nepi-utilities/"), True)
+#             raise ValueError("Can't find SDK Notification Process.")
+#         if cfg.tracking:
+#             log.track(1, "DONE with SDK Notification.", True)
+#     except Exception as e:
+#         if cfg.tracking:
+#             log.track(2, "Errors(s) Executing Local Test App.", True)
+#             log.track(2, "ERROR: [" + str(e) + "]", True)
+#             log.track(2, "Continue.", True)
+# else:
+#     if cfg.tracking:
+#         log.track(1, "NO Messages Processed: Ignore SDK Notification.", True)
+#
 
 ########################################################################
 # Database Housekeeping.
 ########################################################################
+
+
 
 if cfg.tracking:
     log.track(0, "Peform DB Housekeeping.", True)
@@ -952,7 +1147,7 @@ if sm.len > 0:
                 1, "Reset Bit-Packed Status Record(s) to 'new/active' Status.", True
             )
 
-        sql = "UPDATE status SET state = '0' WHERE state = '1'"
+        sql = "UPDATE status SET rec_state = '0' WHERE rec_state = '1'"
         success = db.update(2, sql)
         if not success[0]:
             if cfg.tracking:
@@ -966,7 +1161,7 @@ if sm.len > 0:
                 1, "Reset Bit-Packed Meta Record(s) to 'new/active' Status.", True
             )
 
-        sql = "UPDATE meta SET state = '0' WHERE state = '1'"
+        sql = "UPDATE meta SET rec_state = '0' WHERE rec_state = '1'"
         success = db.update(2, sql)
         if not success[0]:
             if cfg.tracking:
@@ -990,6 +1185,7 @@ if sm.len > 0:
 else:
     if cfg.tracking:
         log.track(1, "NO Message = NO Housekeeping to be Done.", True)
+
 
 # save botcomm_index to db and close db
 success = db.save_botcomm_index()

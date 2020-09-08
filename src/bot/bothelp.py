@@ -52,7 +52,7 @@ def getDevId(_cfg, _log, _lev, _filename):
         )
         val_str = "0000000000"
     val_bytes = val_str.encode("utf-8")
-    remote_id_str = "N" + val_str
+    remote_id_str = val_str
     return val_str, val_bytes, remote_id_str
 
 

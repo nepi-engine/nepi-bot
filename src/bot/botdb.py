@@ -106,7 +106,7 @@ class BotDB(object):
             self.bot_comm_index = int(results[0])
         self.bot_comm_index = self.bot_comm_index + 1
         if self.cfg.tracking:
-            self.log.track(1, f"Current bot_comm_index set to {self.bot_comm_index}.")
+            self.log.track(1, f"Current bot_comm_index set to {self.bot_comm_index}.", True)
         return self.bot_comm_index
 
     def save_botcomm_index(self):
@@ -124,7 +124,7 @@ class BotDB(object):
             self.log.track(
                 1 + 1,
                 f"SQL Executed. Saved latest bot_comm_index as {self.bot_comm_index} in DB.",
-                True,
+                True
             )
 
     def pushstat(self, _lev, _statjson):

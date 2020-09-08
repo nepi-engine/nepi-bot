@@ -27,7 +27,6 @@ from botdefs import (
     msgs_incoming,
     msgs_outgoing,
     bot_devnuid_file,
-    send_delay_secs,
 )
 
 from bothelp import getDevId
@@ -429,7 +428,7 @@ class BotComm(object):
             # read from socket until there is no more data
             while True:
                 try:
-                    rec = self.con.recv(4096)
+                    rec = self.con.recv(65507)
                     msgs_incoming.append(rec)
                 except socket.timeout as e:  # no data available
                     enum = "BC140"
