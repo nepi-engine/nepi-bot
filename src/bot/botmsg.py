@@ -153,10 +153,21 @@ class BotMsg(object):
 
         msgs_outgoing.append(self.buf1)
 
+        nepi_msg2 = nepi_messaging_all_pb2.NEPIMsg()
+        nepi_msg2.ParseFromString(self.buf1)
+        buf_str2 = json_format.MessageToJson(
+            nepi_msg2,
+            including_default_value_fields=False,
+            preserving_proto_field_name=False,
+            indent=2,
+        )
+
         if self.cfg.tracking:
             self.log.track(_lev + 1, "Status Record PACKED.", True)
             self.log.track(_lev + 2, self.buf_str1, True)
             self.log.track(_lev + 2, "Msg Siz: " + str(self.len), True)
+            self.log.track(_lev + 2, "Contents of serialized message:", True)
+            self.log.track(_lev + 3, buf_str2, True)
 
         return [True, None, None]
 
@@ -213,10 +224,21 @@ class BotMsg(object):
 
         msgs_outgoing.append(self.buf1)
 
+        nepi_msg2 = nepi_messaging_all_pb2.NEPIMsg()
+        nepi_msg2.ParseFromString(self.buf1)
+        buf_str2 = json_format.MessageToJson(
+            nepi_msg2,
+            including_default_value_fields=False,
+            preserving_proto_field_name=False,
+            indent=2,
+        )
+
         if self.cfg.tracking:
             self.log.track(_lev + 1, "DATA Record ENCODED.", True)
             self.log.track(_lev + 2, self.buf_str1, True)
             self.log.track(_lev + 2, "Msg Siz: " + str(self.len), True)
+            self.log.track(_lev + 2, "Contents of serialized message:", True)
+            self.log.track(_lev + 3, buf_str2, True)
 
         return [True, None, None]
 
@@ -267,10 +289,20 @@ class BotMsg(object):
 
         msgs_outgoing.append(self.buf1)
 
+        nepi_msg2 = nepi_messaging_all_pb2.NEPIMsg()
+        nepi_msg2.ParseFromString(self.buf1)
+        buf_str2 = json_format.MessageToJson(
+            nepi_msg2,
+            including_default_value_fields=False,
+            preserving_proto_field_name=False,
+            indent=2,
+        )
         if self.cfg.tracking:
             self.log.track(_lev + 1, "GENERAL Record ENCODED.", True)
             self.log.track(_lev + 2, "Msg Str: " + self.buf_str1, True)
             self.log.track(_lev + 2, "Msg Siz: " + str(self.len), True)
+            self.log.track(_lev + 2, "Contents of serialized message:", True)
+            self.log.track(_lev + 3, buf_str2, True)
 
         return [True, None, None]
 
@@ -338,8 +370,14 @@ class BotMsg(object):
             # retrieve identifier/payload
 
             msg_stack = dict()
-            ident = getattr(msg_payload, msg_payload.WhichOneof("identifier"), "NotInProtoBufMessage")
-            val = getattr(msg_payload, msg_payload.WhichOneof("value"), "NotInProtoBufMessage")
+            try:
+                ident = getattr(msg_payload, msg_payload.WhichOneof("identifier"))
+            except Exception as e:
+                ident = "NotInProtoBufMessage"
+            try:
+                val = getattr(msg_payload, msg_payload.WhichOneof("value"))
+            except Exception as e:
+                val = "NotInProtoBufMessage"
             if isinstance(val, bytes):
                 val = list(val)
             msg_stack[ident] = val

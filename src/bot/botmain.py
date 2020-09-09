@@ -15,6 +15,7 @@
 
 import argparse
 import json
+import operator
 import os
 import sys
 import pathlib
@@ -814,7 +815,9 @@ while len(msgs_incoming) > 0:
     )
 
     #   decode each message individually
-    cur_msg = msgs_incoming.pop(0)
+    cur_msg = msgs_incoming[0]
+    operator.delitem(msgs_incoming, 0)
+    log.track(1, f"Size Of Current Message in incoming queue: {len(cur_msg)}", True)
     (
         success,
         msg_routing,
@@ -933,7 +936,9 @@ else:
 while len(msgs_incoming) > 0:
 
     #   decode each message individually
-    cur_msg = msgs_incoming.pop(0)
+    cur_msg = msgs_incoming[0]
+    operator.delitem(msgs_incoming, 0)
+    log.track(1, f"Size Of Current Message in incoming queue: {len(cur_msg)}", True)
     (
         success,
         msg_routing,
