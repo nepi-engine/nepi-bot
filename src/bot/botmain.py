@@ -814,6 +814,7 @@ while len(msgs_incoming) > 0:
     )
 
     #   decode each message individually
+    cur_msg = msgs_incoming.pop(0)
     (
         success,
         msg_routing,
@@ -822,7 +823,7 @@ while len(msgs_incoming) > 0:
         msg_stack,
         orig_msg_fmt,
         dev_msg_fmt,
-    ) = sm.decode_server_msg(0, msgs_incoming.pop(0), dev_id_bytes)
+    ) = sm.decode_server_msg(0, cur_msg, dev_id_bytes)
 
     # determine what to do with each message
 
@@ -923,15 +924,16 @@ if len(msgs_incoming) == 0:
     log.track(
         0, f"No messages received from Server on second attempt. Going to cleanup... ", True
     )
-
-while len(msgs_incoming) > 0:
+else:
     log.track(
         0,
         f"Received {len(msgs_incoming)} messages from Server. Proceeding to process...",
         True,
     )
+while len(msgs_incoming) > 0:
 
     #   decode each message individually
+    cur_msg = msgs_incoming.pop(0)
     (
         success,
         msg_routing,
@@ -940,7 +942,7 @@ while len(msgs_incoming) > 0:
         msg_stack,
         orig_msg_fmt,
         dev_msg_fmt,
-    ) = sm.decode_server_msg(0, msgs_incoming.pop(0), dev_id_bytes)
+    ) = sm.decode_server_msg(0, cur_msg, dev_id_bytes)
 
     if not success[0]:
         continue

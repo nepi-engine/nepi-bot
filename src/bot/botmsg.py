@@ -147,7 +147,7 @@ class BotMsg(object):
             nepi_msg,
             including_default_value_fields=False,
             preserving_proto_field_name=False,
-            indent=0,
+            indent=2,
         )
         self.len = len(self.buf)
 
@@ -155,6 +155,7 @@ class BotMsg(object):
 
         if self.cfg.tracking:
             self.log.track(_lev + 1, "Status Record PACKED.", True)
+            self.log.track(_lev + 2, self.buf_str1, True)
             self.log.track(_lev + 2, "Msg Siz: " + str(self.len), True)
 
         return [True, None, None]
@@ -181,7 +182,7 @@ class BotMsg(object):
             # Set nepi-bot metadata
             data_message_nepi_bot = data_message.nepi_bot_metadata
             data_message_nepi_bot.sys_status_id = int(_rec[2])
-            # data_message_nepi_bot.nepi_bot_status_flags = 2
+            data_message_nepi_bot.file_extension = str(_rec[14])
 
             # Set nepi device data
             data_message_device_data = data_message.device_data
@@ -206,7 +207,7 @@ class BotMsg(object):
             nepi_msg,
             including_default_value_fields=False,
             preserving_proto_field_name=False,
-            indent=0,
+            indent=2,
         )
         self.len = len(self.buf)
 
@@ -214,6 +215,7 @@ class BotMsg(object):
 
         if self.cfg.tracking:
             self.log.track(_lev + 1, "DATA Record ENCODED.", True)
+            self.log.track(_lev + 2, self.buf_str1, True)
             self.log.track(_lev + 2, "Msg Siz: " + str(self.len), True)
 
         return [True, None, None]
@@ -235,6 +237,7 @@ class BotMsg(object):
 
             # Set routing
             gen_message_routing = gen_message.routing
+            gen_message_routing.response_index = 0
             gen_message_routing.subsystem = _orig
 
             # Set System Value
@@ -257,7 +260,7 @@ class BotMsg(object):
             nepi_msg,
             including_default_value_fields=False,
             preserving_proto_field_name=False,
-            indent=0,
+            indent=2,
         )
 
         self.len = len(self.buf)
@@ -287,9 +290,17 @@ class BotMsg(object):
                 self.log.track(_lev, "Message Contents:", True)
                 self.log.track(_lev, str(_nepi_msg), True)
 
-            return [False, str(enum), str(emsg)], 0, 0, [], "", ""
+            return [False, str(enum), str(emsg)], 0, 0, "", [], "", ""
 
         buf_json = json_format.MessageToJson(nepi_msg)
+        mybuf = json_format.MessageToJson(
+            nepi_msg,
+            including_default_value_fields=True,
+            preserving_proto_field_name=True,
+            indent=2,
+        )
+        self.log.track(_lev, f"RECEIVED MESSAGE CONTENTS:\n{mybuf}\n\n", True)
+        #return [False, None, None], 0, 0, "", [], "", ""
 
         # There should only be config/general messages from Server to Bot/Device
         svr_comm_index = nepi_msg.comm_index
@@ -314,7 +325,7 @@ class BotMsg(object):
         #     if self.cfg.tracking:
         #         self.log.track(_lev, emsg, True)
 
-        msg_type = nepi_msg.WhichOneOf("msg")
+        msg_type = nepi_msg.WhichOneof("msg")
 
         # general message type
 
@@ -327,8 +338,8 @@ class BotMsg(object):
             # retrieve identifier/payload
 
             msg_stack = dict()
-            ident = getattr(msg_payload, msg_payload.WhichOneof("identifier"))
-            val = getattr(msg_payload, msg_payload.WhichOneof("value"))
+            ident = getattr(msg_payload, msg_payload.WhichOneof("identifier"), "NotInProtoBufMessage")
+            val = getattr(msg_payload, msg_payload.WhichOneof("value"), "NotInProtoBufMessage")
             if isinstance(val, bytes):
                 val = list(val)
             msg_stack[ident] = val
@@ -343,8 +354,8 @@ class BotMsg(object):
 
             msg_stack = dict()
             for i in msg_cfg_vals.cfg_val:
-                ident = getattr(i, i.WhichOneof("identifier"))
-                val = getattr(i, i.WhichOneof("value"))
+                ident = getattr(i, i.WhichOneof("identifier"), "NotInProtoBufMessage")
+                val = getattr(i, i.WhichOneof("value"), "NotInProtoBufMessage")
                 if isinstance(val, bytes):
                     val = list(val)
                 msg_stack[ident] = val
@@ -363,5 +374,5 @@ class BotMsg(object):
             msg_type,
             msg_stack,
             buf_json,
-            dev_json_str
+            dev_json_str,
         )

@@ -428,7 +428,7 @@ class BotComm(object):
             # read from socket until there is no more data
             while True:
                 try:
-                    rec = self.con.recv(65507)
+                    rec = self.con.recv(8192)
                     msgs_incoming.append(rec)
                 except socket.timeout as e:  # no data available
                     enum = "BC140"

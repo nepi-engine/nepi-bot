@@ -106,7 +106,9 @@ class BotDB(object):
             self.bot_comm_index = int(results[0])
         self.bot_comm_index = self.bot_comm_index + 1
         if self.cfg.tracking:
-            self.log.track(1, f"Current bot_comm_index set to {self.bot_comm_index}.", True)
+            self.log.track(
+                1, f"Current bot_comm_index set to {self.bot_comm_index}.", True
+            )
         return self.bot_comm_index
 
     def save_botcomm_index(self):
@@ -124,7 +126,7 @@ class BotDB(object):
             self.log.track(
                 1 + 1,
                 f"SQL Executed. Saved latest bot_comm_index as {self.bot_comm_index} in DB.",
-                True
+                True,
             )
 
     def pushstat(self, _lev, _statjson):
@@ -255,18 +257,14 @@ class BotDB(object):
 
         try:
             try:
-                # _datajson.get("datafile", '')
                 filepath = regex.match(r".*/", _metafile)
-                filename = filepath.group() + _datajson.get("data_file")
-                file = open(filename, mode="rb")
-                filecontent = file.read()
-                file.close()
-                payload_data = bothelp.check_metadata_filename(
-                    _datajson.get("data_file")
-                )
-                payload_data1 = payload_data[1][2]
-            except Exception:
-                payload_data1 = ""
+                filename = filepath.group() + _datajson.get("data_file", "")
+                with open(filename, mode="rb") as file:
+                    filecontent = file.read()
+                payload_data = _datajson.get("data_file")
+                payload_fname, payload_fname_ext = os.path.splitext(payload_data)
+            except Exception as e:
+                payload_fname_ext = ""
                 filecontent = b""
 
             data_tuple = (
@@ -281,7 +279,7 @@ class BotDB(object):
                 int(_datajson.get("roll_offset", 0)),
                 int(_datajson.get("pitch_offset", 0)),
                 str(_datajson.get("data_file", "")),
-                str(payload_data1),
+                str(payload_fname_ext),
                 bytes(filecontent),
                 float(_info[0]),
                 int(0),
