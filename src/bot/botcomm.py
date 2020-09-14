@@ -15,6 +15,7 @@
 
 import struct
 import socket
+import sys
 from pathlib import Path
 
 import serial
@@ -40,7 +41,7 @@ procs = []
 LOCALPORT = "8000"
 LOCALHOST = "127.0.0.1"
 retcode = None
-send_delay_secs = 1.0  # amount of time to wait between sending messages to the server
+send_delay_secs = 0.1  # amount of time to wait between sending messages to the server
 
 
 # from botcfg import BotCfg
@@ -428,11 +429,26 @@ class BotComm(object):
             # read from socket until there is no more data
             while True:
                 try:
-                    rec = self.con.recv(8192)
+                    socket_recv_size = 4096
+                    rec = self.con.recv(socket_recv_size)
                     msgs_incoming.append(rec)
+                    if self.cfg.tracking:
+                        self.log.track(0, f"{'*' * 80}", True)
+                        self.log.track(0, f"SOCKET RECEIVE DATA FOR BUFFER:", True)
+                        self.log.track(0, f"recvmaxsize:    {socket_recv_size}", True)
+                        self.log.track(1, f"buf:            {str(rec)}", True)
+                        self.log.track(1, f"len:            {len(rec)}", True)
+                        self.log.track(1, f"memaddr:        {id(rec)}", True)
+                        self.log.track(1, f"memsize:        {sys.getsizeof(rec)}", True)
+                        self.log.track(0, f"INCOMING MESSAGE INFO AS LIST ITEM FOR LATER PROCESSING:", True)
+                        self.log.track(1, f"buf:            {str(msgs_incoming[-1])}", True)
+                        self.log.track(1, f"len:            {len(msgs_incoming[-1])}", True)
+                        self.log.track(1, f"memaddr:        {id(msgs_incoming[-1])}", True)
+                        self.log.track(1, f"memsize:        {sys.getsizeof(msgs_incoming[-1])}", True)
+                        self.log.track(0, f"{'*' * 80}", True)
                 except socket.timeout as e:  # no data available
                     enum = "BC140"
-                    emsg = str(e)
+                    emsg = "No more data available on socket. " + str(e)
                     if self.cfg.tracking:
                         self.log.errtrack(str(enum), str(emsg))
                     break

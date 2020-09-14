@@ -94,40 +94,23 @@ class BotDB(object):
     # -------------------------------------------------------------------
 
     def get_botcomm_index(self):
-        if self.bot_comm_index == 0:
-            if self.cfg.tracking:
-                self.log.track(1, "Get current value of bot_comm_index from DB.", True)
-            _sql = "SELECT bot_comm_index FROM counters WHERE rowid = 1;"
-            cursor = self.dbc.cursor()
-            cursor.execute(str(_sql))
-            if self.cfg.tracking:
-                self.log.track(1 + 1, "SQL Executed.", True)
-            results = cursor.fetchone()
-            self.bot_comm_index = int(results[0])
-        self.bot_comm_index = self.bot_comm_index + 1
         if self.cfg.tracking:
-            self.log.track(
-                1, f"Current bot_comm_index set to {self.bot_comm_index}.", True
-            )
-        return self.bot_comm_index
-
-    def save_botcomm_index(self):
-        if self.cfg.tracking:
-            self.log.track(1, "Saving current value of bot_comm_index in DB.", True)
-        _sql = (
-            "UPDATE counters SET bot_comm_index = "
-            + str(self.bot_comm_index)
-            + " WHERE rowid = 1;"
-        )
+            self.log.track(1, "Getting value of bot_comm_index from DB.", True)
+        _sql = "UPDATE counters SET bot_comm_index = bot_comm_index + 1 WHERE ROWID = 1;"
+        _sql2 = "SELECT bot_comm_index FROM counters WHERE ROWID = 1;"
         cursor = self.dbc.cursor()
         cursor.execute(str(_sql))
+        cursor.execute(str(_sql2))
+        results = cursor.fetchone()
         self.dbc.commit()
         if self.cfg.tracking:
+            self.log.track(1 + 1, "SQL Executed.", True)
+        self.bot_comm_index = int(results[0])
+        if self.cfg.tracking:
             self.log.track(
-                1 + 1,
-                f"SQL Executed. Saved latest bot_comm_index as {self.bot_comm_index} in DB.",
-                True,
+                1, f"bot_comm_index set to {self.bot_comm_index}.", True
             )
+        return self.bot_comm_index
 
     def pushstat(self, _lev, _statjson):
         # INSERT a 'status' record into the Float DB.  This Module is

@@ -1195,7 +1195,6 @@ else:
 
 
 # save botcomm_index to db and close db
-success = db.save_botcomm_index()
 success = db.close(0)
 
 ########################################################################

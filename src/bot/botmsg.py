@@ -14,10 +14,12 @@
 ########################################################################
 import datetime
 import json
+import sys
 from enum import Enum
 
 import numpy.core as np
 from google.protobuf import json_format
+from google.protobuf import message
 
 import nepi_messaging_all_pb2
 from botdefs import msgs_outgoing, msgs_incoming
@@ -149,12 +151,12 @@ class BotMsg(object):
             preserving_proto_field_name=False,
             indent=2,
         )
-        self.len = len(self.buf)
+        self.len = len(self.buf1)
 
         msgs_outgoing.append(self.buf1)
 
         nepi_msg2 = nepi_messaging_all_pb2.NEPIMsg()
-        nepi_msg2.ParseFromString(self.buf1)
+        nepi_msg2.ParseFromString(msgs_outgoing[-1])
         buf_str2 = json_format.MessageToJson(
             nepi_msg2,
             including_default_value_fields=False,
@@ -220,12 +222,12 @@ class BotMsg(object):
             preserving_proto_field_name=False,
             indent=2,
         )
-        self.len = len(self.buf)
+        self.len = len(self.buf1)
 
         msgs_outgoing.append(self.buf1)
 
         nepi_msg2 = nepi_messaging_all_pb2.NEPIMsg()
-        nepi_msg2.ParseFromString(self.buf1)
+        nepi_msg2.ParseFromString(msgs_outgoing[-1])
         buf_str2 = json_format.MessageToJson(
             nepi_msg2,
             including_default_value_fields=False,
@@ -285,12 +287,12 @@ class BotMsg(object):
             indent=2,
         )
 
-        self.len = len(self.buf)
+        self.len = len(self.buf1)
 
         msgs_outgoing.append(self.buf1)
 
         nepi_msg2 = nepi_messaging_all_pb2.NEPIMsg()
-        nepi_msg2.ParseFromString(self.buf1)
+        nepi_msg2.ParseFromString(msgs_outgoing[-1])
         buf_str2 = json_format.MessageToJson(
             nepi_msg2,
             including_default_value_fields=False,
@@ -311,6 +313,14 @@ class BotMsg(object):
     # -------------------------------------------------------------------
     def decode_server_msg(self, _lev, _nepi_msg, _dev_id_bytes):
 
+        if self.cfg.tracking:
+            self.log.track(0, f"{'*'*80}", True)
+            self.log.track(0, f"RECEIVED MESSAGE INFO PASSED TO decode_server_msg METHOD:", True)
+            self.log.track(1, f"buf:            {str(_nepi_msg)}", True)
+            self.log.track(1, f"len:            {len(_nepi_msg)}", True)
+            self.log.track(1, f"memaddr:        {id(_nepi_msg)}", True)
+            self.log.track(1, f"memsize:        {sys.getsizeof(_nepi_msg)}", True)
+            self.log.track(0, f"{'*' * 80}", True)
         try:
             nepi_msg = nepi_messaging_all_pb2.NEPIMsg()
             nepi_msg.ParseFromString(_nepi_msg)
@@ -331,8 +341,12 @@ class BotMsg(object):
             preserving_proto_field_name=True,
             indent=2,
         )
-        self.log.track(_lev, f"RECEIVED MESSAGE CONTENTS:\n{mybuf}\n\n", True)
-        #return [False, None, None], 0, 0, "", [], "", ""
+
+        if self.cfg.tracking:
+            self.log.track(0, f"{'*' * 80}", True)
+            self.log.track(0, f"INCOMING MESSAGE AFTER LOADED INTO nepi_msg STRUCTURE:", True)
+            self.log.track(1, f"{str(mybuf)}", True)
+            self.log.track(0, f"{'*' * 80}", True)
 
         # There should only be config/general messages from Server to Bot/Device
         svr_comm_index = nepi_msg.comm_index
@@ -391,26 +405,34 @@ class BotMsg(object):
             msg_cfg_vals = msg_cfg_msg.cfg_val
 
             msg_stack = dict()
+
             for i in msg_cfg_vals.cfg_val:
-                ident = getattr(i, i.WhichOneof("identifier"), "NotInProtoBufMessage")
-                val = getattr(i, i.WhichOneof("value"), "NotInProtoBufMessage")
-                if isinstance(val, bytes):
-                    val = list(val)
-                msg_stack[ident] = val
-        else:
-            return [False, None, None], 0, svr_comm_index, msg_type, [], buf_json, ""
+                try:
+                    ident = getattr(i, i.WhichOneof("identifier"), "NotInProtoBufMessage")
+                    val = getattr(i, i.WhichOneof("value"), "NotInProtoBufMessage")
+                    if isinstance(val, bytes):
+                        val = list(val)
+                    msg_stack[ident] = val
+                except Exception as e:
+                    if self.cfg.tracking:
+                        self.log.track(0, f"{'*' * 80}", True)
+                        self.log.track(0, f"INVALID MESSAGE RECEIVED. Message Discarded.", True)
+                        self.log.track(0, f"{'*' * 80}", True)
+                        continue
 
-        # format json for device file
-        dev_json_str = json.dumps(
-            msg_stack, ensure_ascii=True, allow_nan=True, indent=4
-        )
+            #return [False, None, None], 0, svr_comm_index, msg_type, [], buf_json, ""
 
-        return (
-            [True, None, None],
-            int(msg_routing),
-            svr_comm_index,
-            msg_type,
-            msg_stack,
-            buf_json,
-            dev_json_str,
-        )
+            # format json for device file
+            dev_json_str = json.dumps(
+                msg_stack, ensure_ascii=True, allow_nan=True, indent=4
+            )
+
+            return (
+                [True, None, None],
+                int(msg_routing),
+                svr_comm_index,
+                msg_type,
+                msg_stack,
+                buf_json,
+                dev_json_str
+            )
