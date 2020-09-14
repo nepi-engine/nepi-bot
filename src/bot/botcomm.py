@@ -440,11 +440,25 @@ class BotComm(object):
                         self.log.track(1, f"len:            {len(rec)}", True)
                         self.log.track(1, f"memaddr:        {id(rec)}", True)
                         self.log.track(1, f"memsize:        {sys.getsizeof(rec)}", True)
-                        self.log.track(0, f"INCOMING MESSAGE INFO AS LIST ITEM FOR LATER PROCESSING:", True)
-                        self.log.track(1, f"buf:            {str(msgs_incoming[-1])}", True)
-                        self.log.track(1, f"len:            {len(msgs_incoming[-1])}", True)
-                        self.log.track(1, f"memaddr:        {id(msgs_incoming[-1])}", True)
-                        self.log.track(1, f"memsize:        {sys.getsizeof(msgs_incoming[-1])}", True)
+                        self.log.track(
+                            0,
+                            f"INCOMING MESSAGE INFO AS LIST ITEM FOR LATER PROCESSING:",
+                            True,
+                        )
+                        self.log.track(
+                            1, f"buf:            {str(msgs_incoming[-1])}", True
+                        )
+                        self.log.track(
+                            1, f"len:            {len(msgs_incoming[-1])}", True
+                        )
+                        self.log.track(
+                            1, f"memaddr:        {id(msgs_incoming[-1])}", True
+                        )
+                        self.log.track(
+                            1,
+                            f"memsize:        {sys.getsizeof(msgs_incoming[-1])}",
+                            True,
+                        )
                         self.log.track(0, f"{'*' * 80}", True)
                 except socket.timeout as e:  # no data available
                     enum = "BC140"

@@ -828,10 +828,14 @@ while len(msgs_incoming) > 0:
         dev_msg_fmt,
     ) = sm.decode_server_msg(0, cur_msg, dev_id_bytes)
 
-    # determine what to do with each message
-
+    # if decoded message is empty, then move on to text message
+    if not msg_stack:
+        if cfg.tracking:
+            log.track(1, 'Invalid message decoded. Message ignored. Continuing to next message', True)
+        continue
     # message for nepi bot
 
+    # determine what to do with each message
     if msg_routing == 0:
         try:
             if msg_type == "cfg_msg":

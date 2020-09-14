@@ -315,7 +315,9 @@ class BotMsg(object):
 
         if self.cfg.tracking:
             self.log.track(0, f"{'*'*80}", True)
-            self.log.track(0, f"RECEIVED MESSAGE INFO PASSED TO decode_server_msg METHOD:", True)
+            self.log.track(
+                0, f"RECEIVED MESSAGE INFO PASSED TO decode_server_msg METHOD:", True
+            )
             self.log.track(1, f"buf:            {str(_nepi_msg)}", True)
             self.log.track(1, f"len:            {len(_nepi_msg)}", True)
             self.log.track(1, f"memaddr:        {id(_nepi_msg)}", True)
@@ -344,7 +346,9 @@ class BotMsg(object):
 
         if self.cfg.tracking:
             self.log.track(0, f"{'*' * 80}", True)
-            self.log.track(0, f"INCOMING MESSAGE AFTER LOADED INTO nepi_msg STRUCTURE:", True)
+            self.log.track(
+                0, f"INCOMING MESSAGE AFTER LOADED INTO nepi_msg STRUCTURE:", True
+            )
             self.log.track(1, f"{str(mybuf)}", True)
             self.log.track(0, f"{'*' * 80}", True)
 
@@ -372,6 +376,7 @@ class BotMsg(object):
         #         self.log.track(_lev, emsg, True)
 
         msg_type = nepi_msg.WhichOneof("msg")
+        msg_stack = dict()
 
         # general message type
 
@@ -408,31 +413,30 @@ class BotMsg(object):
 
             for i in msg_cfg_vals.cfg_val:
                 try:
-                    ident = getattr(i, i.WhichOneof("identifier"), "NotInProtoBufMessage")
-                    val = getattr(i, i.WhichOneof("value"), "NotInProtoBufMessage")
-                    if isinstance(val, bytes):
-                        val = list(val)
-                    msg_stack[ident] = val
+                    ident = getattr(i, i.WhichOneof("identifier"))
                 except Exception as e:
-                    if self.cfg.tracking:
-                        self.log.track(0, f"{'*' * 80}", True)
-                        self.log.track(0, f"INVALID MESSAGE RECEIVED. Message Discarded.", True)
-                        self.log.track(0, f"{'*' * 80}", True)
-                        continue
+                    ident = "NotInProtoBufMessage"
+                try:
+                    val = getattr(i, i.WhichOneof("value"))
+                except Exception as e:
+                    val = "NotInProtoBufMessage"
+                if isinstance(val, bytes):
+                    val = list(val)
+                msg_stack[ident] = val
 
-            #return [False, None, None], 0, svr_comm_index, msg_type, [], buf_json, ""
+            # return [False, None, None], 0, svr_comm_index, msg_type, [], buf_json, ""
 
             # format json for device file
-            dev_json_str = json.dumps(
-                msg_stack, ensure_ascii=True, allow_nan=True, indent=4
-            )
+        dev_json_str = json.dumps(
+            msg_stack, ensure_ascii=True, allow_nan=True, indent=4
+        )
 
-            return (
-                [True, None, None],
-                int(msg_routing),
-                svr_comm_index,
-                msg_type,
-                msg_stack,
-                buf_json,
-                dev_json_str
-            )
+        return (
+            [True, None, None],
+            int(msg_routing),
+            svr_comm_index,
+            msg_type,
+            msg_stack,
+            buf_json,
+            dev_json_str,
+        )

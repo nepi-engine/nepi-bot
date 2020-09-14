@@ -96,7 +96,9 @@ class BotDB(object):
     def get_botcomm_index(self):
         if self.cfg.tracking:
             self.log.track(1, "Getting value of bot_comm_index from DB.", True)
-        _sql = "UPDATE counters SET bot_comm_index = bot_comm_index + 1 WHERE ROWID = 1;"
+        _sql = (
+            "UPDATE counters SET bot_comm_index = bot_comm_index + 1 WHERE ROWID = 1;"
+        )
         _sql2 = "SELECT bot_comm_index FROM counters WHERE ROWID = 1;"
         cursor = self.dbc.cursor()
         cursor.execute(str(_sql))
@@ -107,9 +109,7 @@ class BotDB(object):
             self.log.track(1 + 1, "SQL Executed.", True)
         self.bot_comm_index = int(results[0])
         if self.cfg.tracking:
-            self.log.track(
-                1, f"bot_comm_index set to {self.bot_comm_index}.", True
-            )
+            self.log.track(1, f"bot_comm_index set to {self.bot_comm_index}.", True)
         return self.bot_comm_index
 
     def pushstat(self, _lev, _statjson):
