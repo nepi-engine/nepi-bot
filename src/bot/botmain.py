@@ -844,14 +844,15 @@ while len(msgs_incoming) > 0:
             elif msg_type == "gen_msg":
                 for i in msg_stack.items():
                     if i == "ping":
-                        sm.encode_gen_msg(0, "ping", "alive", 0, dev_id_bytes)
+                        sm.encode_gen_msg(0, "ping", "NEPI-BOT is alive", 0, dev_id_bytes)
                     elif i == "get_current_config":
                         sm.encode_gen_msg(
-                            0, "get_current_config", "NI", 0, dev_id_bytes
+                            0, "get_current_config", "Not Implemented", 0, dev_id_bytes
                         )
+                    # TODO: change so that factory config is stored in database and then reinitialized
                     elif i == "reset_config":
                         sm.encode_gen_msg(
-                            0, "reset_config", "config reset", 0, dev_id_bytes
+                            0, "reset_config", "Not Implemented", 0, dev_id_bytes
                         )
                     elif i == "get_bot_version":
                         sm.encode_gen_msg(
@@ -1019,6 +1020,27 @@ while len(msgs_incoming) > 0:
         if cfg.tracking:
             log.track(0, f"Unknown message routing '{msg_routing}'", True)
             log.track(0, "Continuing to next message...", True)
+
+if len(msgs_outgoing) > 0:
+    if success[0]:
+        log.track(0, "Sending: ", True)
+        for item in msgs_outgoing:
+            send_success, cnc_msg = bc.send(1, item, 5)
+            if send_success[0]:
+                log.track(0, "send returned Success", True)
+                bcsuccess = 1  # Added as gap fix for no scuttle
+            else:
+                log.track(0, "send returned Not Success", True)
+                bcsuccess = 0  # Added as gap fix for no scuttle
+
+    else:
+        send_success = [False, None, None]
+        msgs_outgoing = None
+        log.track(0, "getconn returned Not Success", True)
+        bcsuccess = 0  # Added as gap fix for no scuttle
+else:
+    if cfg.tracking:
+        log.track(0, "NO Uplink Message to Send.", True)
 
 success = bc.close(1)
 

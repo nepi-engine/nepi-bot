@@ -313,16 +313,16 @@ class BotMsg(object):
     # -------------------------------------------------------------------
     def decode_server_msg(self, _lev, _nepi_msg, _dev_id_bytes):
 
-        if self.cfg.tracking:
-            self.log.track(0, f"{'*'*80}", True)
-            self.log.track(
-                0, f"RECEIVED MESSAGE INFO PASSED TO decode_server_msg METHOD:", True
-            )
-            self.log.track(1, f"buf:            {str(_nepi_msg)}", True)
-            self.log.track(1, f"len:            {len(_nepi_msg)}", True)
-            self.log.track(1, f"memaddr:        {id(_nepi_msg)}", True)
-            self.log.track(1, f"memsize:        {sys.getsizeof(_nepi_msg)}", True)
-            self.log.track(0, f"{'*' * 80}", True)
+        # if self.cfg.tracking:
+            # self.log.track(0, f"{'*'*80}", True)
+            # self.log.track(
+            #     0, f"RECEIVED MESSAGE INFO PASSED TO decode_server_msg METHOD:", True
+            # )
+            # self.log.track(1, f"buf:            {str(_nepi_msg)}", True)
+            # self.log.track(1, f"len:            {len(_nepi_msg)}", True)
+            # self.log.track(1, f"memaddr:        {id(_nepi_msg)}", True)
+            # self.log.track(1, f"memsize:        {sys.getsizeof(_nepi_msg)}", True)
+            # self.log.track(0, f"{'*' * 80}", True)
         try:
             nepi_msg = nepi_messaging_all_pb2.NEPIMsg()
             nepi_msg.ParseFromString(_nepi_msg)
