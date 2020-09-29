@@ -672,7 +672,7 @@ if meta_rows:
                             log.track(3, "PACKED Assoc SR into This Message.", True)
 
                         sql = (
-                            "UPDATE status SET rec_state = '1' WHERE sys_status_ref_id = '"
+                            "UPDATE status SET rec_state = '1' WHERE ROWID = '"
                             + str(assoc_statrec[0][0])
                             + "'"
                         )
