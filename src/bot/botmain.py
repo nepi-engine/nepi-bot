@@ -22,7 +22,7 @@ import pathlib
 
 from subprocess import Popen
 
-from google.protobuf import json_format
+#from google.protobuf import json_format
 
 import nepi_messaging_all_pb2
 from botcfg import BotCfg
