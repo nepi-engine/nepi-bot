@@ -1,0 +1,7 @@
+protobuf
+regex
+pylocker
+python-dateutil
+pyserial
+numpy
+
