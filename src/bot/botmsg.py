@@ -118,8 +118,8 @@ class BotMsg(object):
 
             # Set Sys status components added by NEPI-BOT
             system_status_nepi_bot = system_status.nepi_bot_status
-            system_status_nepi_bot.sys_status_id = 1
-            system_status_nepi_bot.nepi_bot_status_flags = 2
+            system_status_nepi_bot.sys_status_id = _rec[0] # ROWID is the unique identifier for each status entry
+            system_status_nepi_bot.nepi_bot_status_flags = 2 # TODO: Should not be hard-coded
 
             # Set Sys status components provided by device
             system_status_device = system_status.device_status
