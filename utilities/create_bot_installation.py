@@ -46,6 +46,25 @@ now_str = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
 build_folder = os.getcwd() + '/../dist/nuid_' + args.nuid[0] + '/' + now_str
 os.makedirs(build_folder)
 
+# Add some version info
+version_cmd = subprocess.Popen(['git', '--no-pager', 'describe', '--tags'], stdout=subprocess.PIPE, encoding='utf-8')
+version_cmd_out = version_cmd.communicate()[0]
+status_cmd = subprocess.Popen(['git', '--no-pager', 'status', '--porcelain'], stdout=subprocess.PIPE, encoding='utf-8')
+status_cmd_out = status_cmd.communicate()[0]
+diff_cmd = subprocess.Popen(['git', '--no-pager', 'diff'], stdout=subprocess.PIPE, encoding='utf-8')
+diff_cmd_out = diff_cmd.communicate()[0]
+with open(build_folder + '/version.txt', 'w') as f:
+    f.write('Version:')
+    f.write('\n\t' + version_cmd_out)
+    f.write('\n'+'-'*80)
+    f.write('Status:')
+    for line in status_cmd_out.splitlines():
+        f.write('\n\t' + line)
+    f.write('\n'+'-'*80)
+    f.write('Diff:')
+    for line in diff_cmd_out.splitlines():
+        f.write('\n\t' + line)
+
 script_build_folder = build_folder + '/nepi-bot'
 binary_build_folder = build_folder + '/nepi-bot-binary'
 
@@ -99,8 +118,8 @@ if (os.path.exists(tmp_src_folder)):
 os.makedirs(tmp_src_folder)
 
 shutil.copytree('../src/bot', tmp_src_folder + '/bot') # Verbatim copy
+cwd=os.getcwd()
 # Need to generate the protobuf python files in the source folder
-cwd = os.getcwd()
 os.chdir('../nepi-protobuf')
 subprocess.call(['protoc', '--proto_path=.', '--python_out='+tmp_src_folder+'/bot', 'nepi_messaging-all.proto'])
 subprocess.call(['protoc', '--proto_path=.', '--python_out='+tmp_src_folder+'/bot', 'timestamp.proto'])
