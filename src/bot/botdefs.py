@@ -86,3 +86,6 @@ locking = False
 
 msgs_incoming = list()
 msgs_outgoing = list()
+
+udp_ipv4_overhead = 28
+upd_ipv6_overhead = 48

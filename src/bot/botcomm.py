@@ -12,7 +12,6 @@
 # to our interests.
 ##
 ########################################################################
-
 import struct
 import socket
 import sys
@@ -27,11 +26,11 @@ from botdefs import (
     bot_devsshkeys_file,
     msgs_incoming,
     msgs_outgoing,
-    bot_devnuid_file,
+    bot_devnuid_file, udp_ipv4_overhead,
 )
 
 from bothelp import getDevId
-
+from botmain import cfg
 
 v_botcomm = "bot71-20200601"
 
@@ -621,21 +620,53 @@ class BotComm(object):
 
         if self.typ == "ethernet":
             try:
+                max_packet_size = cfg.lb_ip.packet_size - udp_ipv4_overhead
+                msg_num = 10000
                 while len(msgs_outgoing):
                     msg = msgs_outgoing.pop(0)
-                    retcode = self.con.sendall(msg)
-                    self.log.track(
-                        _lev + 1,
-                        "Sent 1 message (" + str(len(msg)) + " bytes)",
-                        True,
-                    )
-                    time.sleep(send_delay_secs)
-                if retcode is None:
-                    return [True, None, None], None
-                else:
-                    enum = "BC161"
-                    emsg = "IP Data Not Sent."
-                    return [False, str(enum), str(emsg)], None
+
+                    # TODO: section to split message up into multiple packets
+
+                    msg_index = 0
+                    msg_length = len(msg)
+                    msg_total_packets = int(msg_length/max_packet_size + 1)
+                    msg_packet_num = 0
+                    while msg_packet_num < msg_total_packets:
+                        # full UDP packet
+                        msg_index_end = msg_index + max_packet_size
+                        if msg_packet_num < (msg_total_packets - 1):
+                            udp_packet = struct.pack(f"!HBBH{max_packet_size}s",
+                                                     msg_num,
+                                                     msg_total_packets,
+                                                     msg_packet_num,
+                                                     max_packet_size,
+                                                     msg[msg_index:msg_index_end])
+                            msg_index = msg_index_end
+                            msg_packet_num = msg_packet_num + 1
+                        # partial UDP packet
+                        else:
+                            udp_packet_len = msg_length - msg_index
+                            udp_packet = struct.pack(f"!HBBH{udp_packet_len}s",
+                                                     msg_num,
+                                                     msg_total_packets,
+                                                     msg_packet_num,
+                                                     udp_packet_len,
+                                                     msg[msg_index:])
+                            msg_index = msg_index_end
+                            msg_packet_num = msg_packet_num + 1
+                        retcode = self.con.sendall(udp_packet)
+                        self.log.track(
+                            _lev + 1,
+                            "Sent 1 message (" + str(len(msg)) + " bytes)",
+                            True,
+                        )
+                        time.sleep(send_delay_secs)
+                    if retcode is None:
+                        return [True, None, None], None
+                    else:
+                        enum = "BC161"
+                        emsg = "IP Data Not Sent."
+                        return [False, str(enum), str(emsg)], None
             except Exception as e:
                 enum = "BC162"
                 emsg = "IP Data Not Sent."

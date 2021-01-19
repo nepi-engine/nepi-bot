@@ -602,7 +602,8 @@ class BotDB(object):
             try:
                 cursor.execute(
                     """CREATE TABLE counters (
-                    bot_comm_index INTEGER
+                    bot_comm_index INTEGER,
+                    packet_msg_index INTEGER
                     )
                     """
                 )
