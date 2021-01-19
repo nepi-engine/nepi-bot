@@ -88,7 +88,7 @@
     "hb_ip": {
         "enabled": 0,
         "type": "ethernet",
-        "host": "nepi.io",
+        "host": "3dx.nepi.io",
         "port": "2222",
         "tout": 3,
         "open_attm": 2,
