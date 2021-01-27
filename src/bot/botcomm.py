@@ -26,11 +26,13 @@ from botdefs import (
     bot_devsshkeys_file,
     msgs_incoming,
     msgs_outgoing,
-    bot_devnuid_file, udp_ipv4_overhead,
+    bot_devnuid_file,
+    udp_ipv4_overhead,
 )
 
 from bothelp import getDevId
-#from botmain import cfg
+
+# from botmain import cfg
 
 v_botcomm = "bot71-20200601"
 
@@ -619,57 +621,63 @@ class BotComm(object):
         # ---------------------------------------------------------------
 
         if self.typ == "ethernet":
-            logtofile = True # flag to log to file instead of sending down tunnel
+            logtofile = False  # flag to log to file instead of sending down tunnel
             if logtofile:
-                om = open('protobuf_msg', 'wb')
-                sf = open('split_protobuf_message', 'wb')
-                sfs = open('split_protobuf_message_sep', 'wb')
-                sft = open('samplepacketfiletrace', 'w')
-                sep = b'@@@@@@'
+                om = open("protobuf_msg", "wb")
+                sf = open("split_protobuf_message", "wb")
+                sfs = open("split_protobuf_message_sep", "wb")
+                sft = open("samplepacketfiletrace", "w")
+                sep = b"@@@@@@"
 
             try:
                 msg_num = 10000
                 max_packet_size = self.cfg.lb_ip.packet_size - udp_ipv4_overhead
                 if logtofile:
-                    sft.write(f"""
+                    sft.write(
+                        f"""
                     Packet Trace File \n
                     {udp_ipv4_overhead} = \n
                     {self.cfg.lb_ip.packet_size} = \n
                     {max_packet_size} = \n
                     {msg_num} = \n
-                    """)
+                    """
+                    )
                 while len(msgs_outgoing):
                     msg = msgs_outgoing.pop(0)
                     if logtofile:
                         om.write(msg)
                         om.close()
-                        sft.write('\n\n')
+                        sft.write("\n\n")
 
                     # TODO: section to split message up into multiple packets
 
                     msg_index = 0
                     msg_length = len(msg)
-                    msg_total_packets = int(msg_length/max_packet_size + 1)
+                    msg_total_packets = int(msg_length / max_packet_size + 1)
                     msg_packet_num = 0
                     if logtofile:
-                        sft.write(f"""
+                        sft.write(
+                            f"""
                         {msg_index} = \n
                         {msg_length} = \n
                         {msg_total_packets} = \n
                         {msg_packet_num} = \n
-                        """)
+                        """
+                        )
                     while msg_packet_num < msg_total_packets:
                         # full UDP packet
                         msg_index_end = msg_index + max_packet_size
                         if logtofile:
                             sft.write("{msg_index_end} = \n{msg_packet_num} = \n")
                         if msg_packet_num < (msg_total_packets - 1):
-                            udp_packet = struct.pack(f"!HBBH{max_packet_size}s",
-                                                     msg_num,
-                                                     msg_total_packets,
-                                                     msg_packet_num,
-                                                     max_packet_size,
-                                                     msg[msg_index:msg_index_end])
+                            udp_packet = struct.pack(
+                                f"!HBBH{max_packet_size}s",
+                                msg_num,
+                                msg_total_packets,
+                                msg_packet_num,
+                                max_packet_size,
+                                msg[msg_index:msg_index_end],
+                            )
                             msg_index = msg_index_end
                             msg_packet_num = msg_packet_num + 1
                             if logtofile:
@@ -677,19 +685,23 @@ class BotComm(object):
                         # partial UDP packet
                         else:
                             udp_packet_len = msg_length - msg_index
-                            udp_packet = struct.pack(f"!HBBH{udp_packet_len}s",
-                                                     msg_num,
-                                                     msg_total_packets,
-                                                     msg_packet_num,
-                                                     udp_packet_len,
-                                                     msg[msg_index:])
+                            udp_packet = struct.pack(
+                                f"!HBBH{udp_packet_len}s",
+                                msg_num,
+                                msg_total_packets,
+                                msg_packet_num,
+                                udp_packet_len,
+                                msg[msg_index:],
+                            )
                             msg_index = msg_index_end
                             msg_packet_num = msg_packet_num + 1
-                            sft.write(f"""
+                            sft.write(
+                                f"""
                             {udp_packet_len} = \n
                             {msg_index} = \n
                             {msg_packet_num} = \n
-                            """)
+                            """
+                            )
                         if logtofile:
                             sf.write(udp_packet)
                             sfs.write(udp_packet)
@@ -703,9 +715,10 @@ class BotComm(object):
                         )
                         time.sleep(send_delay_secs)
                     if retcode is None:
-                        sft.close()
-                        sf.close()
-                        sfs.close()
+                        if logtofile:
+                            sft.close()
+                            sf.close()
+                            sfs.close()
                         return [True, None, None], None
                     else:
                         enum = "BC161"
