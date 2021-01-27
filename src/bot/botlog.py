@@ -26,7 +26,7 @@ from botdefs import Machines, nepi_home, bot_cfg_file, bot_db_file, v_botdefs
 # from bothelp import v_bothelp
 # from botmsg import v_botmsg
 # from botpipo import v_botpipo
-import botcomm
+#import botcomm
 
 v_botlog = "bot71-20200601"
 

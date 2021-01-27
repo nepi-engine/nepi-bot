@@ -602,8 +602,8 @@ class BotDB(object):
             try:
                 cursor.execute(
                     """CREATE TABLE counters (
-                    bot_comm_index INTEGER,
-                    packet_msg_index INTEGER
+                    "bot_comm_index" INTEGER,
+                    "packet_msg_index" INTEGER
                     )
                     """
                 )
@@ -620,9 +620,8 @@ class BotDB(object):
 
             if self.cfg.tracking:
                 self.log.track(_lev + 1, "Instantiate the 'counters' Table.", True)
-
             try:
-                cursor.execute("INSERT INTO counters VALUES (1);")
+                cursor.execute("INSERT INTO counters VALUES (1, 1);")
             except Exception as e:
                 enum = "DB107"
                 emsg = "reset(): [" + str(e) + "]"

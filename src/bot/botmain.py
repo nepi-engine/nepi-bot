@@ -22,7 +22,7 @@ import pathlib
 
 from subprocess import Popen
 
-#from google.protobuf import json_format
+from google.protobuf import json_format
 
 import nepi_messaging_all_pb2
 from botcfg import BotCfg
@@ -42,9 +42,10 @@ from bothelp import (
     create_nepi_dirs,
 )
 from botlog import BotLog
-import botcomm
+#import botlog
+#import botcomm
 
-# from botcomm import BotComm
+from botcomm import BotComm
 from botmsg import BotMsg
 import bothbproc
 from botpipo import BotPIPO
@@ -790,7 +791,7 @@ def get_enabled_link(_cfg):
     return None
 
 
-bc = botcomm.BotComm(cfg, log, "ethernet", 1)
+bc = BotComm(cfg, log, "ethernet", 1)
 success = bc.getconn(0)
 
 # Receive messages from server
