@@ -73,9 +73,8 @@ def create_nepi_dirs(_cfg, _log, _lev):
         "lb/cfg",
         "lb/dt-msg",
         "lb/do-msg",
-        "hb/clone/dt",
-        "hb/clone/do",
-        "hb/clone/logs",
+        "hb/data",
+        "hb/dt",
     ]
 
     bot_dirs_exp = list()
