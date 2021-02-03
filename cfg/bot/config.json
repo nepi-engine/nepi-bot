@@ -1,4 +1,5 @@
 {
+    "alias": "nepi-bot-simulation",
     "devclass": "generic",
     "logging": 23,
     "locking": 0,
@@ -10,6 +11,8 @@
     "lb_req_dir": "lb/req",
     "lb_resp_dir": "lb/resp",
     "hb_data_dir": "hb/data",
+    "hb_dir_outgoing": "hb/data",
+    "hb_dir_incoming": "hb/dt",
     "data_zlib": 1,
     "data_msgpack": 1,
     "db_dir": "db",
@@ -51,7 +54,7 @@
     "lb_ip": {
         "enabled": 1,
         "type": "ethernet",
-        "host": "nepi.io",
+        "host": "3dx.nepi.io",
         "port": "2222",
         "tout": 3,
         "open_attm": 2,
@@ -95,16 +98,8 @@
         "open_tout": 1,
         "protocol": 2,
         "max_msg_size": 1500,
-        "packet_size": 1500,
-        "dir_outgoing": "hb/clone/do",
-        "dir_incoming": "hb/clone/dt"
+        "packet_size": 1500
     },
-    "lb_conn_order": [
-        "lb_ip",
-        "lb_iridium",
-        "lb_rs232"
-    ],
-    "hb_conn_order": [
-        "hb_ip"
-    ]
+    "lb_conn_order": ["lb_ip", "lb_iridium", "lb_rs232"],
+    "hb_conn_order": ["hb_ip"]
 }
