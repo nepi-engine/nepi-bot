@@ -112,6 +112,25 @@ class BotDB(object):
             self.log.track(1, f"bot_comm_index set to {self.bot_comm_index}.", True)
         return self.bot_comm_index
 
+    def get_packet_msg_index(self):
+        if self.cfg.tracking:
+            self.log.track(1, "Getting value of packet_msg_index from DB.", True)
+        _sql = (
+            "UPDATE counters SET packet_msg_index = (packet_msg_index % 65000 + 1) WHERE ROWID = 1;"
+        )
+        _sql2 = "SELECT packet_msg_index FROM counters WHERE ROWID = 1;"
+        cursor = self.dbc.cursor()
+        cursor.execute(str(_sql))
+        cursor.execute(str(_sql2))
+        results = cursor.fetchone()
+        self.dbc.commit()
+        if self.cfg.tracking:
+            self.log.track(1 + 1, "SQL Executed.", True)
+        self.bot_comm_index = int(results[0])
+        if self.cfg.tracking:
+            self.log.track(1, f"bot_comm_index set to {self.bot_comm_index}.", True)
+        return self.bot_comm_index
+
     def pushstat(self, _lev, _statjson):
         # INSERT a 'status' record into the Float DB.  This Module is
         # designed to insert the exact number of columns by picking
@@ -621,7 +640,7 @@ class BotDB(object):
             if self.cfg.tracking:
                 self.log.track(_lev + 1, "Instantiate the 'counters' Table.", True)
             try:
-                cursor.execute("INSERT INTO counters VALUES (1, 1);")
+                cursor.execute("INSERT INTO counters VALUES (1, 1, 1);")
             except Exception as e:
                 enum = "DB107"
                 emsg = "reset(): [" + str(e) + "]"

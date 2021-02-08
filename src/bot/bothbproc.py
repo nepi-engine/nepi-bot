@@ -22,7 +22,7 @@ import subprocess
 
 class HbProc(object):
     def __init__(self, _cfg, _log, _lev, _dev_id_str, _nepi_args):
-        global gen_msg_contents
+        # global gen_msg_contents
 
         self.cfg = _cfg
         self.log = _log
@@ -50,12 +50,20 @@ class HbProc(object):
         self.gen_msg_contents += f"Changed directory to: {self.hb_dir}.\n"
         try:
             self.gen_msg_contents += f"Created do dt logs directories.\n"
-            Path("do").mkdir(mode=0o755, exist_ok=True)
-            Path("dt").mkdir(mode=0o755, exist_ok=True)
-            Path("logs").mkdir(mode=0o755, exist_ok=True)
-            self.gen_msg_contents += f"Created do dt logs directories.\n"
+            Path(f"{self.cfg.hb_dir_outgoing}").mkdir(
+                mode=0o755, parents=True, exist_ok=True
+            )
+            Path(f"{self.cfg.hb_dir_incoming}").mkdir(
+                mode=0o755, parents=True, exist_ok=True
+            )
+            Path(f"logs").mkdir(mode=0o755, parents=True, exist_ok=True)
+            self.gen_msg_contents += f"Created {self.cfg.hb_dir_outgoing} {self.cfg.hb_dir_incoming} logs directories.\n"
             if self.cfg.tracking:
-                self.log.track(self.lev, "Created hb/clone dirs.", True)
+                self.log.track(
+                    self.lev,
+                    f"Created {self.cfg.hb_dir_outgoing} {self.cfg.hb_dir_incoming} logs dirs.",
+                    True,
+                )
         except Exception as e:
             self.gen_msg_contents += (
                 f"Unable to create local ${self.hb_dir}/<do|dt|logs> directories.\n"
@@ -63,7 +71,7 @@ class HbProc(object):
             if self.cfg.tracking:
                 self.log.track(
                     self.lev,
-                    f"Unable to create local ${self.hb_dir}/<do|dt|logs> directories.",
+                    f"Unable to create local {self.cfg.hb_dir_outgoing} {self.cfg.hb_dir_incoming} logs directories.",
                     True,
                 )
 
@@ -75,7 +83,7 @@ class HbProc(object):
             "-i",
             f"{self.ssh_key_file}",
             f"{self.dev_id_str}@{self.cfg.hb_ip.host}",
-            "mkdir -p hb/clone/do hb/clone/dt hb/clone/logs",
+            f"mkdir -p {self.cfg.hb_dir_outgoing} {self.cfg.hb_dir_incoming} hb/logs",
         ]
         self.gen_msg_contents += f"Built ssh command.\n\t{args_sshcmd}\n"
         try:
@@ -88,20 +96,22 @@ class HbProc(object):
             if ssh_cmd.returncode != 0:
                 if self.cfg.tracking:
                     self.log.track(
-                        self.lev, "Unable to create hb/clone dirs on server.", True
+                        self.lev, "Unable to create hb directories on server.", True
                     )
                 self.gen_msg_contents += (
                     f"ssh command returned error code {ssh_cmd.returncode}\n"
                 )
             if self.cfg.tracking:
                 self.log.track(
-                    self.lev, "Created hb/clone/<do|dt|logs> dirs on server.", True
+                    self.lev,
+                    f"Created {self.cfg.hb_dir_outgoing} {self.cfg.hb_dir_incoming} hb/logs dirs on server.",
+                    True,
                 )
         except Exception as e:
             if self.cfg.tracking:
                 self.log.track(
                     self.lev,
-                    f"Unable to create hb/clone/<do|dt|logs> dirs on server {ssh_cmd.returncode}.",
+                    f"Unable to create {self.cfg.hb_dir_outgoing} {self.cfg.hb_dir_incoming} hb/logs dirs on server {ssh_cmd.returncode}.",
                     True,
                 )
             return False
@@ -124,7 +134,7 @@ class HbProc(object):
             "-rIvvvatiRzte",
             f"ssh -p {self.cfg.hb_ip.port} -i {self.ssh_key_file}",
             f"do",
-            f"{self.dev_id_str}@{self.cfg.hb_ip.host}:~/hb/clone",
+            f"{self.dev_id_str}@{self.cfg.hb_ip.host}:~/{self.cfg.hb_dir_outgoing}",
         ]
 
         rsync_cmd = subprocess.run(
@@ -138,7 +148,8 @@ class HbProc(object):
             if self.cfg.tracking:
                 self.log.track(
                     self.lev,
-                    f"Error encountered executing rsync to server. Return code = {rsync_cmd.returncode}", True
+                    f"Error encountered executing rsync to server. Return code = {rsync_cmd.returncode}",
+                    True,
                 )
 
         # transfer do log file from bot to server
@@ -149,7 +160,7 @@ class HbProc(object):
             "-rvvvatiRzte",
             f"ssh -p {self.cfg.hb_ip.port} -i {self.ssh_key_file}",
             f"logs",
-            f"{self.dev_id_str}@{self.cfg.hb_ip.host}:~/hb/clone",
+            f"{self.dev_id_str}@{self.cfg.hb_ip.host}:~/{self.cfg.hb_dir_outgoing}",
         ]
 
         rsync_cmd = subprocess.run(
@@ -164,7 +175,7 @@ class HbProc(object):
                 self.log.track(
                     self.lev,
                     f"Error encountered executing rsync of log file to server. Return code = {rsync_cmd.returncode}",
-                    True
+                    True,
                 )
 
         # transfer dt files from server to bot
@@ -176,7 +187,7 @@ class HbProc(object):
             "--stats",
             "-rIvvvatiRzte",
             f"ssh -p {self.cfg.hb_ip.port} -i {self.ssh_key_file}",
-            f"{self.dev_id_str}@{self.cfg.hb_ip.host}:hb/clone/dt",
+            f"{self.dev_id_str}@{self.cfg.hb_ip.host}:{self.cfg.hb_dir_incoming}",
             f"dt",
         ]
         # AGV
@@ -192,6 +203,7 @@ class HbProc(object):
                 self.log.track(
                     self.lev,
                     f"Error encountered executing rsync to server. Return code = {rsync_cmd.returncode}",
+                    True,
                 )
 
         # transfer dt log file from bot to server
@@ -217,13 +229,23 @@ class HbProc(object):
                 self.log.track(
                     self.lev,
                     f"Error encountered executing rsync of log file to server. Return code = {rsync_cmd.returncode}",
-                    True
+                    True,
                 )
 
         # mv dt subdirectory rsync creates into dt.
-        completed = subprocess.run(['mv -f dt/hb/clone/dt/* dt'], shell=True, universal_newlines=True,
-                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        completed = subprocess.run(['rm -fr dt/hb'], shell=True, universal_newlines=True, stdout=subprocess.PIPE,
-                                   stderr=subprocess.PIPE)
+        completed = subprocess.run(
+            ["mv -f dt/hb/clone/dt/* dt"],
+            shell=True,
+            universal_newlines=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        completed = subprocess.run(
+            ["rm -fr dt/hb"],
+            shell=True,
+            universal_newlines=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
 
         os.chdir(self.original_dir)

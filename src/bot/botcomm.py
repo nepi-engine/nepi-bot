@@ -62,10 +62,12 @@ class BotComm(object):
     # -------------------------------------------------------------------
     # Initialize the BotComm Class w/ BotCfg, BotLog, and Type objects.
     # -------------------------------------------------------------------
-    def __init__(self, _cfg, _log, _typ, _lev):
+    def __init__(self, _cfg, _log, _typ, _lev, _db):
         self.cfg = _cfg
         self.log = _log
         self.typ = _typ
+        self.level = _lev
+        self.db = _db
         self.con = None
         self.serialport = None
         self.dev_id_str, self.dev_id_bytes, self.remote_id_str = getDevId(
@@ -87,7 +89,7 @@ class BotComm(object):
         global procs
 
         if self.cfg.tracking:
-            self.log.track(_lev, "Establish Communcations Connection.", True)
+            self.log.track(_lev, "Establish Communications Connection.", True)
             self.log.track(_lev + 13, "^typ: " + str(self.typ), True)
             self.log.track(_lev + 13, "_lev: " + str(_lev), True)
 
@@ -630,7 +632,7 @@ class BotComm(object):
                 sep = b"@@@@@@"
 
             try:
-                msg_num = 10000
+                msg_num = self.db.get_packet_msg_index()
                 max_packet_size = self.cfg.lb_ip.packet_size - udp_ipv4_overhead
                 if logtofile:
                     sft.write(

@@ -19,6 +19,8 @@ import time
 import uuid
 import json
 import shutil
+import threading
+from collections import OrderedDict
 
 import regex
 
@@ -29,11 +31,22 @@ import regex
 
 v_bothelp = "bot71-20200601"
 
+########################################################################
+# Threading Control And Alarms Section
+########################################################################
+
+# flags to terminate threads on request or timeout
+exit_event_main = threading.Event()
+exit_event_hb = threading.Event()
+exit_event_lb = threading.Event()
+
 
 ########################################################################
-# Check the required directories for device/bot exist.
+# Create dicts for hb and lb status reports
 ########################################################################
 
+hb_status_report = OrderedDict()
+lb_status_report = OrderedDict()
 
 ########################################################################
 # Retrieve the device NUID and put into variables
@@ -75,6 +88,7 @@ def create_nepi_dirs(_cfg, _log, _lev):
         "lb/do-msg",
         "hb/data",
         "hb/dt",
+        "tmp"
     ]
 
     bot_dirs_exp = list()
@@ -556,3 +570,6 @@ def deleteDataProduct(_cfg, _log, _lev, _dp):
     except:
         if _cfg.tracking:
             _log.track(_lev + 3, "Ignored.", True)
+
+
+
