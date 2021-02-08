@@ -48,6 +48,7 @@ class HbProc(object):
                     self.lev, f"Current working directory is: {self.original_dir}.", True
                 )
         bothelp.exit_event_hb.set()
+        return
 
 
     # double check hb directory structure on nepibot and server
@@ -321,14 +322,17 @@ class HbProc(object):
         )
 
         os.chdir(self.original_dir)
+        return
 
     def run_hb_proc(self):
         # set timer when process starts
-        if self.nepi_args.hbto > 0:
-            thr=Timer(self.nepi_args.hbto, self.hb_early_terminate)
-            thr.start()
-            if self.cfg.tracking:
-                self.log.track(self.lev, "HB815: Received STOP command. Terminating early.", True)
-                self.log.track(self.lev, f"Current working directory is: {self.original_dir}.", True)
+        # if self.nepi_args.hbto > 0:
+        #     thr=Timer(self.nepi_args.hbto, self.hb_early_terminate)
+        #     thr.start()
+        #     if self.cfg.tracking:
+        #         self.log.track(self.lev, "HB815: Received STOP command. Terminating early.", True)
+        #         self.log.track(self.lev, f"Current working directory is: {self.original_dir}.", True)
         self.check_hb_dirs()
         self.transfer_files()
+        return
+
