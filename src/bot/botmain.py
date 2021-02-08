@@ -169,8 +169,10 @@ sm = BotMsg(cfg, log, db, 1)
 
 if nepi_args.hb is True:
     hbproc = bothbproc.HbProc(cfg, log, 0, dev_id_str, nepi_args)
-    success = hbproc.check_hb_dirs()
-    success = hbproc.transfer_files()
+#     log.track(1, "Starting HB thread worker process.", True)
+#     hb_thread = threading.Thread(target=hbproc.run_hb_proc)
+#     hb_thread.start()
+    success = hbproc.run_hb_proc()
 
 ########################################################################
 # Re-Evaluate PIPO Ratings for Archived Data Products if Required.
