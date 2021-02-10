@@ -42,7 +42,7 @@ procs = []
 LOCALPORT = "8000"
 LOCALHOST = "127.0.0.1"
 retcode = None
-send_delay_secs = 1.0  # amount of time to wait between sending messages to the server
+send_delay_secs = .5  # amount of time to wait between sending messages to the server
 
 
 # from botcfg import BotCfg
@@ -55,6 +55,66 @@ send_delay_secs = 1.0  # amount of time to wait between sending messages to the 
 
 class obj(object):
     pass
+
+
+class MessageSplitter:
+
+    def __init__(self, _packetsize, _trace=0, _db=None, _ipv4=True):
+
+        self.packetsize = _packetsize
+        self.trace = _trace
+        self.db = _db
+        if _ipv4:
+            self.udp_overhead = 28
+        else:
+            self.udp_overhead = 48
+        self.nepihdrsize = 6
+        self.maxpktsize = self.packetsize - self.udp_overhead - self.nepihdrsize
+        if self.maxpktsize < 1:
+            self.maxpktsize = 20
+
+    def splitmsg(self, _message):
+
+        msg = _message
+        retcode = 0
+        msg_index = 0
+
+        if self.db:
+            msg_num = self.db.get_packet_msg_index()
+        else:
+            msg_num = 10000
+
+        msg_len = len(msg)
+        print(msg_num)
+
+        # msg_total_pkts = math.ceil(msg_len/self.maxpktsize)
+        msg_total_pkts = int(msg_len / self.maxpktsize + .9999)
+        indexlist = [x for x in range(0, msg_len, self.maxpktsize)]
+        packetlist = []
+
+        for i in indexlist:
+            try:
+                upper_bound = min(i + self.maxpktsize, msg_len)
+                this_msg = msg[i:upper_bound]
+                this_msg_len = len(this_msg)
+                udp_packet = struct.pack(
+                    f"!HBBH{upper_bound - i}s",
+                    msg_num,
+                    msg_total_pkts,
+                    msg_index,
+                    this_msg_len,
+                    this_msg,
+                )
+                packetlist.append(udp_packet)
+                msg_index += 1
+            except Exception as e:
+                return list()
+        if self.trace:
+            filename = f"sampledatafile{msg_num}"
+            with open(filename, 'wb') as f:
+                for line in packetlist:
+                    f.write(line)
+        return packetlist
 
 
 class BotComm(object):
@@ -73,6 +133,7 @@ class BotComm(object):
         self.dev_id_str, self.dev_id_bytes, self.remote_id_str = getDevId(
             self.cfg, self.log, 0, bot_devnuid_file
         )
+        self.smsg = None
         if self.cfg.tracking:
             self.log.track(_lev, "Created BotComm Class Object.", True)
             self.log.track(_lev + 13, "^cfg: " + str(self.cfg), True)
@@ -223,6 +284,9 @@ class BotComm(object):
                 self.log.track(_lev + 1, "host: " + str(self.cfg.lb_ip.host), True)
                 self.log.track(_lev + 1, "port: " + str(self.cfg.lb_ip.port), True)
 
+            # TODO: fix creating message splitter so more robust
+            self.smsg = MessageSplitter(self.cfg.lb_ip.packet_size, 1, self.db, True)
+
             # if ssh or socat background processes are already running, terminate them and create a new tunnel
             if procs:
                 self.log.track(
@@ -291,7 +355,7 @@ class BotComm(object):
 
             if self.con is None:
                 for res in socket.getaddrinfo(
-                    LOCALHOST, LOCALPORT, socket.AF_UNSPEC, socket.SOCK_DGRAM
+                        LOCALHOST, LOCALPORT, socket.AF_UNSPEC, socket.SOCK_DGRAM
                 ):
                     af, socktype, proto, canonname, sa = res
                     try:
@@ -513,7 +577,6 @@ class BotComm(object):
             else:
                 response = response[2:-2]
                 if self.cfg.tracking:
-
                     self.log.track(
                         _lev + 1,
                         "Message: ",
@@ -623,113 +686,140 @@ class BotComm(object):
         # ---------------------------------------------------------------
 
         if self.typ == "ethernet":
-            logtofile = False  # flag to log to file instead of sending down tunnel
-            if logtofile:
-                om = open("protobuf_msg", "wb")
-                sf = open("split_protobuf_message", "wb")
-                sfs = open("split_protobuf_message_sep", "wb")
-                sft = open("samplepacketfiletrace", "w")
-                sep = b"@@@@@@"
-
-            try:
-                msg_num = self.db.get_packet_msg_index()
-                max_packet_size = self.cfg.lb_ip.packet_size - udp_ipv4_overhead
-                if logtofile:
-                    sft.write(
-                        f"""
-                    Packet Trace File \n
-                    {udp_ipv4_overhead} = \n
-                    {self.cfg.lb_ip.packet_size} = \n
-                    {max_packet_size} = \n
-                    {msg_num} = \n
-                    """
-                    )
-                while len(msgs_outgoing):
+            err_detected = False
+            while len(msgs_outgoing):
+                try:
                     msg = msgs_outgoing.pop(0)
-                    if logtofile:
-                        om.write(msg)
-                        om.close()
-                        sft.write("\n\n")
-
-                    # TODO: section to split message up into multiple packets
-
-                    msg_index = 0
-                    msg_length = len(msg)
-                    msg_total_packets = int(msg_length / max_packet_size + 1)
-                    msg_packet_num = 0
-                    if logtofile:
-                        sft.write(
-                            f"""
-                        {msg_index} = \n
-                        {msg_length} = \n
-                        {msg_total_packets} = \n
-                        {msg_packet_num} = \n
-                        """
-                        )
-                    while msg_packet_num < msg_total_packets:
-                        # full UDP packet
-                        msg_index_end = msg_index + max_packet_size
-                        if logtofile:
-                            sft.write("{msg_index_end} = \n{msg_packet_num} = \n")
-                        if msg_packet_num < (msg_total_packets - 1):
-                            udp_packet = struct.pack(
-                                f"!HBBH{max_packet_size}s",
-                                msg_num,
-                                msg_total_packets,
-                                msg_packet_num,
-                                max_packet_size,
-                                msg[msg_index:msg_index_end],
-                            )
-                            msg_index = msg_index_end
-                            msg_packet_num = msg_packet_num + 1
-                            if logtofile:
-                                sft.write("{msg_index_end} = \n{msg_packet_num} = \n")
-                        # partial UDP packet
-                        else:
-                            udp_packet_len = msg_length - msg_index
-                            udp_packet = struct.pack(
-                                f"!HBBH{udp_packet_len}s",
-                                msg_num,
-                                msg_total_packets,
-                                msg_packet_num,
-                                udp_packet_len,
-                                msg[msg_index:],
-                            )
-                            msg_index = msg_index_end
-                            msg_packet_num = msg_packet_num + 1
-                            sft.write(
-                                f"""
-                            {udp_packet_len} = \n
-                            {msg_index} = \n
-                            {msg_packet_num} = \n
-                            """
-                            )
-                        if logtofile:
-                            sf.write(udp_packet)
-                            sfs.write(udp_packet)
-                            sfs.write(sep)
-                        else:
-                            retcode = self.con.sendall(udp_packet)
-                        self.log.track(
-                            _lev + 1,
-                            "Sent 1 message (" + str(len(msg)) + " bytes)",
-                            True,
-                        )
+                    packets_to_send = self.smsg.splitmsg(msg)
+                    counter = 0
+                    if self.cfg.tracking:
+                        self.log.track(_lev, f"{str(len(packets_to_send))} UDP packets to send.", True)
+                    for i in packets_to_send:
+                        counter += 1
+                        retval = self.con.sendall(i)
                         time.sleep(send_delay_secs)
-                    if retcode is None:
-                        if logtofile:
-                            sft.close()
-                            sf.close()
-                            sfs.close()
-                        return [True, None, None], None
-                    else:
-                        enum = "BC161"
-                        emsg = "IP Data Not Sent."
-                        return [False, str(enum), str(emsg)], None
-            except Exception as e:
-                enum = "BC162"
-                emsg = "IP Data Not Sent."
-                return [False, str(enum), str(emsg)], None
+                        if self.cfg.tracking:
+                            self.log.track(_lev, f"   packet number {str(counter)} sent.", True)
+                except Exception as e:
+                    enum = "BC162"
+                    emsg = "IP Data Not Sent."
+                    return [False, str(enum), str(emsg)], None
+            return [True, None, None], None
+
+            # logtofile = False  # flag to log to file instead of sending down tunnel
+            # if logtofile:
+            #     om = open("protobuf_msg", "wb")
+            #     sf = open("split_protobuf_message", "wb")
+            #     sfs = open("split_protobuf_message_sep", "wb")
+            #     sft = open("samplepacketfiletrace", "w")
+            #     sep = b"@@@@@@"
+            #
+            # try:
+            #     msg_num = self.db.get_packet_msg_index()
+            #     max_packet_size = self.cfg.lb_ip.packet_size - udp_ipv4_overhead
+            #     if logtofile:
+            #         sft.write(
+            #             f"""
+            #         Packet Trace File \n
+            #         {udp_ipv4_overhead} = \n
+            #         {self.cfg.lb_ip.packet_size} = \n
+            #         {max_packet_size} = \n
+            #         {msg_num} = \n
+            #         """
+            #         )
+            #     while len(msgs_outgoing):
+            #         msg = msgs_outgoing.pop(0)
+            #         if logtofile:
+            #             om.write(msg)
+            #             om.close()
+            #             sft.write("\n\n")
+            #
+            #         # TODO: section to split message up into multiple packets
+            #
+            #         msg_index = 0
+            #         msg_length = len(msg)
+            #         msg_total_packets = int(msg_length / max_packet_size + 1)
+            #         msg_packet_num = 0
+            #         if logtofile:
+            #             sft.write(
+            #                 f"""
+            #             {msg_index} = \n
+            #             {msg_length} = \n
+            #             {msg_total_packets} = \n
+            #             {msg_packet_num} = \n
+            #             """
+            #             )
+            #         while msg_packet_num < msg_total_packets:
+            #             # full UDP packet
+            #             msg_index_end = msg_index + max_packet_size
+            #             if logtofile:
+            #                 sft.write("{msg_index_end} = \n{msg_packet_num} = \n")
+            #             if msg_packet_num < (msg_total_packets - 1):
+            #                 udp_packet = struct.pack(
+            #                     f"!HBBH{max_packet_size}s",
+            #                     msg_num,
+            #                     msg_total_packets,
+            #                     msg_packet_num,
+            #                     max_packet_size,
+            #                     msg[msg_index:msg_index_end],
+            #                 )
+            #                 msg_index = msg_index_end
+            #                 msg_packet_num = msg_packet_num + 1
+            #                 if logtofile:
+            #                     sft.write("{msg_index_end} = \n{msg_packet_num} = \n")
+            #                 else:
+            #                     self.log.track(
+            #                         _lev + 1,
+            #                         "Sent 1 packet (" + str(len(udp_packet)) + " bytes)",
+            #                         True,
+            #                     )
+            #             # partial UDP packet
+            #             else:
+            #                 udp_packet_len = msg_length - msg_index
+            #                 udp_packet = struct.pack(
+            #                     f"!HBBH{udp_packet_len}s",
+            #                     msg_num,
+            #                     msg_total_packets,
+            #                     msg_packet_num,
+            #                     udp_packet_len,
+            #                     msg[msg_index:],
+            #                 )
+            #                 msg_index = msg_index_end
+            #                 msg_packet_num = msg_packet_num + 1
+            #                 if logtofile:
+            #                     sft.write(
+            #                     f"""
+            #                     {udp_packet_len} = \n
+            #                     {msg_index} = \n
+            #                     {msg_packet_num} = \n
+            #                     """
+            #                     )
+            #             if logtofile:
+            #                 sf.write(udp_packet)
+            #                 sfs.write(udp_packet)
+            #                 sfs.write(sep)
+            #             else:
+            #                 retcode = self.con.sendall(udp_packet)
+            #             self.log.track(
+            #                 _lev + 1,
+            #                 "Sent 1 packet (" + str(len(udp_packet)) + " bytes)",
+            #                 True,
+            #             )
+            #             time.sleep(send_delay_secs)
+            #         if retcode is None:
+            #             if logtofile:
+            #                 sft.close()
+            #                 sf.close()
+            #                 sfs.close()
+            #             return [True, None, None], None
+            #         else:
+            #             enum = "BC161"
+            #             emsg = "IP Data Not Sent."
+            #             return [False, str(enum), str(emsg)], None
+            # except Exception as e:
+            #     enum = "BC162"
+            #     emsg = "IP Data Not Sent."
+            #     return [False, str(enum), str(emsg)], None
 
     # -------------------------------------------------------------------
     # close() Class Method (Close the Connection).
@@ -1039,7 +1129,7 @@ class BotComm(object):
 
             elif action == "receive":
                 while (
-                    mt_received == False or (mt_queued > 0 and num > 0)
+                        mt_received == False or (mt_queued > 0 and num > 0)
                 ) and time.time() < timeout:
                     signal_strength = self.check_signal_quality(_lev + 1)
 
