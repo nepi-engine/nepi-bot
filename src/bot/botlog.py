@@ -236,7 +236,7 @@ class BotLog(object):
             else:
                 self.nl = ""
 
-            self.ind = self.indent[0 : 2 * inum]
+            self.ind = self.indent[0: 2 * inum]
             self.msg = str(self.ti) + str(self.ind) + str(msg) + str(self.nl)
 
             if yesdbg:
