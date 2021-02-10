@@ -35,6 +35,9 @@ class HbProc(object):
         self.original_dir = Path.cwd()
         self.hb_dir = os.path.abspath(botdefs.bot_hb_dir)
         self.ssh_key_file = os.path.abspath(botdefs.bot_devsshkeys_file)
+        self.botlock_fname = '.botlock'     # written on server in home directory while bot is busy on server.
+        self.server_do_dir = '.'   # where the dirs and files under nepi_home/hb/do go.
+        self.server_log_dir = './NEPI-Logs'
 
         if self.cfg.tracking:
             self.log.track(self.lev, "Created HbProc Class Object.", True)
@@ -104,6 +107,54 @@ class HbProc(object):
                     self.lev, f"Current working directory is: {self.original_dir}.", True
                 )
             return True
+
+        # write a lock file on server so it knows bot is busy
+        args_sshcmd = [
+            "ssh",
+            "-p",
+            f"{self.cfg.hb_ip.port}",
+            "-o",
+            "StrictHostKeyChecking=no",
+            "-o",
+            "GlobalKnownHostsFile=/dev/null",
+            "-o",
+            "UserKnownHostsFile=/dev/null",
+            "-i",
+            f"{self.ssh_key_file}",
+            f"{self.dev_id_str}@{self.cfg.hb_ip.host}",
+            f"echo > {self.botlock_fname}",
+        ]
+        self.gen_msg_contents += f"Built ssh command.\n\t{args_sshcmd}\n"
+        try:
+            ssh_cmd = subprocess.run(
+                args_sshcmd,
+                universal_newlines=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            if ssh_cmd.returncode != 0:
+                if self.cfg.tracking:
+                    self.log.track(
+                        self.lev, f"Unable to create {self.botlock_fname} on server.", True
+                    )
+                self.gen_msg_contents += (
+                    f"ssh command returned error code {ssh_cmd.returncode}\n"
+                )
+            if self.cfg.tracking:
+                self.log.track(
+                    self.lev,
+                    f"Created {self.botlock_fname} on server.",
+                    True,
+                )
+        except Exception as e:
+            if self.cfg.tracking:
+                self.log.track(
+                    self.lev,
+                    f"Unable to create {self.botlock_fname} on server. {ssh_cmd.returncode}.",
+                    True,
+                )
+            return False
+
         # check directories on server
         args_sshcmd = [
             "ssh",
@@ -119,7 +170,7 @@ class HbProc(object):
             f"{self.ssh_key_file}",
             f"{self.dev_id_str}@{self.cfg.hb_ip.host}",
             f"mkdir -p {self.cfg.hb_dir_outgoing} {self.cfg.hb_dir_incoming} log",
-        ]
+            ]
         self.gen_msg_contents += f"Built ssh command.\n\t{args_sshcmd}\n"
         try:
             ssh_cmd = subprocess.run(
@@ -321,6 +372,53 @@ class HbProc(object):
             stderr=subprocess.PIPE,
         )
 
+        # remove the lock file on server so it knows bot is done
+        args_sshcmd = [
+            "ssh",
+            "-p",
+            f"{self.cfg.hb_ip.port}",
+            "-o",
+            "StrictHostKeyChecking=no",
+            "-o",
+            "GlobalKnownHostsFile=/dev/null",
+            "-o",
+            "UserKnownHostsFile=/dev/null",
+            "-i",
+            f"{self.ssh_key_file}",
+            f"{self.dev_id_str}@{self.cfg.hb_ip.host}",
+            f"rm -f {self.botlock_fname}",
+        ]
+        self.gen_msg_contents += f"Built ssh command.\n\t{args_sshcmd}\n"
+        try:
+            ssh_cmd = subprocess.run(
+                args_sshcmd,
+                universal_newlines=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            if ssh_cmd.returncode != 0:
+                if self.cfg.tracking:
+                    self.log.track(
+                        self.lev, f"Unable to remove {self.botlock_fname} on server.", True
+                    )
+                self.gen_msg_contents += (
+                    f"ssh command returned error code {ssh_cmd.returncode}\n"
+                )
+            if self.cfg.tracking:
+                self.log.track(
+                    self.lev,
+                    f"Removed {self.botlock_fname} on server.",
+                    True,
+                )
+        except Exception as e:
+            if self.cfg.tracking:
+                self.log.track(
+                    self.lev,
+                    f"Unable to create {self.botlock_fname} on server. {ssh_cmd.returncode}.",
+                    True,
+                )
+            return False
+
         os.chdir(self.original_dir)
         return
 
@@ -334,5 +432,6 @@ class HbProc(object):
         #         self.log.track(self.lev, f"Current working directory is: {self.original_dir}.", True)
         self.check_hb_dirs()
         self.transfer_files()
-        return
+
+        return True
 
