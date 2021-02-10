@@ -184,6 +184,7 @@ try:
 except Exception as e:
     log.track(1, "ERROR: Cannot create the LbProc class. NEPI-BOT terminating.", True)
     sys.exit(1)
+success = lbproc.lb_process_data()
 
 # if cfg.tracking:
 #     log.track(0, "Recalculate Archived PIPO Ratings.", True)
