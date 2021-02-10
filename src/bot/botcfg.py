@@ -96,7 +96,7 @@ class BotCfg(object):
         self.lb_resp_dir_path = "/".join((nepi_home, self.lb_resp_dir))
         self.hb_data_dir = str(self.bot_cfg_json.get("hb_data_dir", "hb/data"))
         self.hb_data_dir_path = "/".join((nepi_home, self.hb_data_dir))
-        self.hb_dir_outgoing = str(self.bot_cfg_json.get("hb_dir_outgoing", "hb/data"))
+        self.hb_dir_outgoing = str(self.bot_cfg_json.get("hb_dir_outgoing", "hb/do"))
         self.hb_dir_outgoing_path = "/".join((nepi_home, self.hb_dir_outgoing))
         self.hb_dir_incoming = str(self.bot_cfg_json.get("hb_dir_incoming", "hb/dt"))
         self.hb_dir_incoming_path = "/".join((nepi_home, self.hb_dir_incoming))
