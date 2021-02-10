@@ -126,10 +126,10 @@ class BotDB(object):
         self.dbc.commit()
         if self.cfg.tracking:
             self.log.track(1 + 1, "SQL Executed.", True)
-        self.bot_comm_index = int(results[0])
+        self.packet_msg_index = int(results[0])
         if self.cfg.tracking:
-            self.log.track(1, f"bot_comm_index set to {self.bot_comm_index}.", True)
-        return self.bot_comm_index
+            self.log.track(1, f"packet_msg_index set to {self.packet_msg_index}.", True)
+        return self.packet_msg_index
 
     def pushstat(self, _lev, _statjson):
         # INSERT a 'status' record into the Float DB.  This Module is
