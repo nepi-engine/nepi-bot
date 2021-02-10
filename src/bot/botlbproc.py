@@ -35,17 +35,17 @@ v_botlbproc = "bot71-20210205"
 
 class LbProc(object):
     def __init__(
-        self,
-        _cfg,
-        _log,
-        _lev,
-        _dev_id_str,
-        _dev_id_bytes,
-        _nepi_args,
-        _db,
-        _pipo,
-        _sm,
-        _v_botmain,
+            self,
+            _cfg,
+            _log,
+            _lev,
+            _dev_id_str,
+            _dev_id_bytes,
+            _nepi_args,
+            _db,
+            _pipo,
+            _sm,
+            _v_botmain,
     ):
         # global gen_msg_contents
 
@@ -133,12 +133,12 @@ class LbProc(object):
                         self.log.track(2, str(pipo_rating), True)
 
                     sql = (
-                        "UPDATE data SET numerator="
-                        + str(numerator)
-                        + ", pipo="
-                        + str(pipo_rating)
-                        + " WHERE rowid="
-                        + str(rwid)
+                            "UPDATE data SET numerator="
+                            + str(numerator)
+                            + ", pipo="
+                            + str(pipo_rating)
+                            + " WHERE rowid="
+                            + str(rwid)
                     )
 
                     success = self.db.update(2, sql)
@@ -450,10 +450,10 @@ class LbProc(object):
         #             yield link
         #     return None
 
-        for link in self.cfg.lb_conn_order:
+        # for link in self.cfg.lb_conn_order:
 
-            bc = BotComm(self.cfg, self.log, "ethernet", 1, self.db)
-            success = bc.getconn(0)
+        bc = BotComm(self.cfg, self.log, "ethernet", 1, self.db)
+        success = bc.getconn(0)
 
         ########################################################################
         # Create the Float Message.
@@ -523,9 +523,9 @@ class LbProc(object):
                             )
 
                         sql = (
-                            "UPDATE status SET rec_state = '1' WHERE rowid = '"
-                            + str(new_stat_rowid)
-                            + "'"
+                                "UPDATE status SET rec_state = '1' WHERE rowid = '"
+                                + str(new_stat_rowid)
+                                + "'"
                         )
                         success = self.db.update(2, sql)
                         if success[0]:
@@ -632,7 +632,7 @@ class LbProc(object):
                 # and save the Status Record's timestamp.
                 # if not stat_sent_flag:
                 sql = (
-                    "SELECT rowid, * FROM status WHERE rowid = '" + str(statusFK) + "'"
+                        "SELECT rowid, * FROM status WHERE rowid = '" + str(statusFK) + "'"
                 )
                 success, assoc_statrec = self.db.getResults(3, sql, False)
                 if success[0]:
@@ -686,9 +686,9 @@ class LbProc(object):
                                     )
 
                                 sql = (
-                                    "UPDATE status SET rec_state = '1' WHERE ROWID = '"
-                                    + str(assoc_statrec[0][0])
-                                    + "'"
+                                        "UPDATE status SET rec_state = '1' WHERE ROWID = '"
+                                        + str(assoc_statrec[0][0])
+                                        + "'"
                                 )
 
                                 if self.cfg.tracking:
@@ -747,9 +747,9 @@ class LbProc(object):
                         )
 
                         sql = (
-                            "UPDATE data SET rec_state = '1' WHERE rowid = '"
-                            + str(row[0])
-                            + "'"
+                                "UPDATE data SET rec_state = '1' WHERE rowid = '"
+                                + str(row[0])
+                                + "'"
                         )
                         success = self.db.update(4, sql)
                         if not success[0]:
@@ -770,10 +770,27 @@ class LbProc(object):
                         self.log.track(3, "Can't PACK Data Product Record.", True)
                         continue
 
-            # send messages from msg_outgoing
+                # send messages from msg_outgoing
+                if self.msgs_outgoing:  # TODO: CHECK original not
+                    if success[0]:
+                        self.log.track(0, "Sending: ", True)
+                        for item in self.msgs_outgoing:
+                            send_success, cnc_msg = bc.send(1, item, 5)
+                            if send_success[0]:
+                                self.log.track(0, "send returned Success", True)
+                                bcsuccess = 1  # Added as gap fix for no scuttle
+                            else:
+                                self.log.track(0, "send returned Not Success", True)
+                                bcsuccess = 0  # Added as gap fix for no scuttle
 
-
-
+                    else:
+                        send_success = [False, None, None]
+                        self.msgs_outgoing = None
+                        self.log.track(0, "getconn returned Not Success", True)
+                        bcsuccess = 0  # Added as gap fix for no scuttle
+                else:
+                    if self.cfg.tracking:
+                        self.log.track(0, "NO Uplink Message to Send.", True)
 
         if self.cfg.tracking:
             self.log.track(1, "Final Message Complete.", True)
@@ -967,8 +984,8 @@ class LbProc(object):
                             f.write(dev_msg_fmt)
                     elif msg_type == "gen_msg":
                         fname = (
-                            self.nepi_home
-                            + f"/lb/dt-msg/gen_msg_{svr_comm_index:010d}.json"
+                                self.nepi_home
+                                + f"/lb/dt-msg/gen_msg_{svr_comm_index:010d}.json"
                         )
                         with open(fname, "w") as f:
                             f.write(dev_msg_fmt)
@@ -1125,16 +1142,16 @@ class LbProc(object):
                 try:
                     if msg_type == "cfg_msg":
                         fname = (
-                            botdefs.nepi_home
-                            + self.cfg.lb_cfg_dir
-                            + f"/cfg_msg_{svr_comm_index:010d}.json"
+                                botdefs.nepi_home
+                                + self.cfg.lb_cfg_dir
+                                + f"/cfg_msg_{svr_comm_index:010d}.json"
                         )
                         with open(fname, "w") as f:
                             f.write(dev_msg_fmt)
                     elif msg_type == "gen_msg":
                         fname = (
-                            botdefs.nepi_home
-                            + f"/lb/dt-msg/gen_msg_{svr_comm_index:010d}.json"
+                                botdefs.nepi_home
+                                + f"/lb/dt-msg/gen_msg_{svr_comm_index:010d}.json"
                         )
                         with open(fname, "w") as f:
                             f.write(dev_msg_fmt)
@@ -1338,7 +1355,7 @@ class LbProc(object):
                         True,
                     )
 
-                sql = "UPDATE meta SET rec_state = '0' WHERE rec_state = '1'"
+                sql = "UPDATE data SET rec_state = '0' WHERE rec_state = '1'"
                 success = self.db.update(2, sql)
                 if not success[0]:
                     if self.cfg.tracking:
