@@ -68,7 +68,7 @@ class MessageSplitter:
             self.udp_overhead = 28
         else:
             self.udp_overhead = 48
-        self.nepihdrsize = 6
+        self.nepihdrsize = 12
         self.maxpktsize = self.packetsize - self.udp_overhead - self.nepihdrsize
         if self.maxpktsize < 1:
             self.maxpktsize = 20
@@ -98,7 +98,7 @@ class MessageSplitter:
                 this_msg = msg[i:upper_bound]
                 this_msg_len = len(this_msg)
                 udp_packet = struct.pack(
-                    f"!HBBH{upper_bound - i}s",
+                    f"!HIIH{upper_bound - i}s",
                     msg_num,
                     msg_total_pkts,
                     msg_index,
