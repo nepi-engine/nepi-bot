@@ -86,7 +86,7 @@ def create_nepi_dirs(_cfg, _log, _lev):
         "lb/cfg",
         "lb/dt-msg",
         "lb/do-msg",
-        "hb/data",
+        "hb/do",
         "hb/dt",
         "tmp"
     ]
