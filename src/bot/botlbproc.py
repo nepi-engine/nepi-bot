@@ -70,6 +70,24 @@ class LbProc(object):
         self.log.track(self.lev, "Created LbProc Class Object.", True)
 
     def lb_process_data(self):
+
+        if self.cfg.db_deletes:
+            # remove sent metadata records from database
+            sql = "DELETE FROM data WHERE rec_state = 2"
+            success = self.db.update(2, sql)
+            if success[0]:
+                self.log.track(0, "Deleting SENT metadata records from database.")
+            else:
+                self.log.track(0, "Unable to delete SENT metadata records from database.")
+
+            # remove sent status records from database
+            sql = "DELETE FROM status WHERE rec_state = 2"
+            success = self.db.update(2, sql)
+            if success[0]:
+                self.log.track(0, "Deleting SENT status records from database.")
+            else:
+                self.log.track(0, "Unable to delete SENT status records from database.")
+
         if self.cfg.tracking:
             self.log.track(0, "Recalculate Archived PIPO Ratings.", True)
             self.log.track(1, "Select 'Active' Data Records from Database.", True)
