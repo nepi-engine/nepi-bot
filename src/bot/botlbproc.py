@@ -464,7 +464,7 @@ class LbProc(object):
         # not). Note that it is ordered by 'timestamp' to percolate the latest
         # Status Record to the top of the list. If a new Status Record is found,
         # it will be placed first in the uplink Message. Otherwise, skip this
-        # process and continue on processing both new or previoisly-stored Data
+        # process and continue on processing both new or previously-stored Data
         # Products.
 
         if self.cfg.tracking:
