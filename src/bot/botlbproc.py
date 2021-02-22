@@ -1381,4 +1381,4 @@ class LbProc(object):
                 self.log.track(1, "NO Message = NO Housekeeping to be Done.", True)
 
         # save botcomm_index to db and close db
-        success = self.db.close(0)
+        #success = self.db.close(0)
