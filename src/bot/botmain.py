@@ -167,10 +167,10 @@ sm = BotMsg(cfg, log, db, 1)
 # Instantiate a HB transfer process if requested
 ########################################################################
 
-# if nepi_args.hb is True:
-hbproc = bothbproc.HbProc(cfg, log, 0, dev_id_str, nepi_args)
-rc = hbproc.run_hb_proc()
-exit()
+if nepi_args.hb is True:
+    hbproc = bothbproc.HbProc(cfg, log, 0, dev_id_str, nepi_args)
+    rc = hbproc.run_hb_proc()
+
 # #     log.track(1, "Starting HB thread worker process.", True)
 # #     hb_thread = threading.Thread(target=hbproc.run_hb_proc)
 # #     hb_thread.start()
@@ -186,7 +186,10 @@ try:
 except Exception as e:
     log.track(1, "ERROR: Cannot create the LbProc class. NEPI-BOT terminating.", True)
     sys.exit(1)
-success = lbproc.lb_process_data()
+try:
+    success = lbproc.lb_process_data()
+except Exception as e:
+    log.track(1, "ERROR: Problem processing LB Data. NEPI-BOT continuing.", True)
 
 # if cfg.tracking:
 #     log.track(0, "Recalculate Archived PIPO Ratings.", True)
