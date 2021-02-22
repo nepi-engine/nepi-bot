@@ -28,7 +28,6 @@ from google.protobuf import json_format
 import nepi_messaging_all_pb2
 from botcfg import BotCfg
 
-
 from botdb import BotDB
 from botlbproc import LbProc
 from botdefs import nepi_home, bot_devnuid_file, msgs_outgoing, msgs_incoming
@@ -55,7 +54,6 @@ import bothbproc
 from botpipo import BotPIPO
 
 v_botmain = "bot71-20200601"
-
 
 ########################################################################
 # Get any nepibot specific env variables
@@ -103,12 +101,9 @@ elif nepi_args.hbto == 0 and HB_PROC_TIMEOUT:
 elif nepi_args.tr == 0 and BOT_TRACE:
     nepi_args.tr = True
 
-
 testiplink = False
 servermsg = object()
 servermsgtype = int()
-
-
 
 ########################################################################
 # Instantiate a NEPI-Bot Configuration Class (from 'botcfg.py')
@@ -129,7 +124,6 @@ log.initlog(0)
 ########################################################################
 
 dev_id_str, dev_id_bytes, remote_id_str = getDevId(cfg, log, 0, bot_devnuid_file)
-
 
 ########################################################################
 # Create necessary directories for messaging if they do not exist.
@@ -163,13 +157,12 @@ if not success[0]:
 
 sm = BotMsg(cfg, log, db, 1)
 
-
-
 ########################################################################
 # Re-Evaluate PIPO Ratings for Archived Data Products if Required.
 ########################################################################
 log.track(1, "Launching botmain.py version " + v_botmain, True)
 
+lbproc = None
 try:
     lbproc = LbProc(cfg, log, 23, dev_id_str, dev_id_bytes, nepi_args, db, pipo, sm, v_botmain)
 except Exception as e:
@@ -184,6 +177,7 @@ except Exception as e:
 # Instantiate a HB transfer process if requested
 ########################################################################
 
+hbproc = None
 if nepi_args.hb is True:
     hbproc = bothbproc.HbProc(cfg, log, 0, dev_id_str, nepi_args)
     rc = hbproc.run_hb_proc()
@@ -1255,6 +1249,32 @@ if nepi_args.hb is True:
 #
 # # save botcomm_index to db and close db
 # success = db.close(0)
+
+########################################################################
+# Close the database
+########################################################################
+
+try:
+    if db:
+        db.close(0)
+        log.track(0, 'Successfully closed database', True)
+    else:
+        log.track(0, "Unsuccessful database closure.", True)
+except Exception as e:
+    log.track(0, 'Unsuccessful database closure.', True)
+
+########################################################################
+# Copy the Bot Log files to the server before exiting if HB active.
+########################################################################
+
+try:
+    if hbproc:
+        hbproc.transfer_logs()
+        log.track(0, "Log files copied to Server.", True)
+    else:
+        log.track(0, "Unable to copy log files to Server. HB connection inactive.", True)
+except Exception as e:
+    log.track(0, f"Unable to copy log files to Server.", True)
 
 ########################################################################
 # Close the Bot-Main Subsystem.
