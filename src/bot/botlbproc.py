@@ -438,6 +438,11 @@ class LbProc(object):
         if self.cfg.tracking:
             self.log.track(1, "Clean-Up Completed; Continue.", True)
 
+        # Terminate early if env var RUN_LB_LINK is False.
+        if not self.nepi_args.lb:
+            if self.cfg.tracking:
+                self.log.track(1, "LB Data not requested to be sent to server. LB terminating early after storing status/data records.", True)
+
         ########################################################################
         # Open The Comm Channel
         ########################################################################
