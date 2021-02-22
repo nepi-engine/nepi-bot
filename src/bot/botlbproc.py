@@ -442,6 +442,7 @@ class LbProc(object):
         if not self.nepi_args.lb:
             if self.cfg.tracking:
                 self.log.track(1, "LB Data not requested to be sent to server. LB terminating early after storing status/data records.", True)
+            return True
 
         ########################################################################
         # Open The Comm Channel
