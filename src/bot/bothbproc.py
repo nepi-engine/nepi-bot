@@ -415,10 +415,6 @@ class HbProc(object):
                             'Bot moved log dir to proper place on server',
                             'Bot could not move log data to proper place on server')
 
-        # move log directory up 1 level on server and cleanup
-        self.run_server_cmd(f"cd {self.server_log_dir}; mv log/* .; rm -fr log",
-                            'Bot moved LOG dir to proper place on server',
-                            'Bot could not move LOG data to proper place on server')
 
     def run_hb_proc(self):
         # set timer when process starts
