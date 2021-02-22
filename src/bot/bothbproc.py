@@ -332,20 +332,31 @@ class HbProc(object):
         self.run_server_cmd(f"cd {self.server_do_dir}; mv do/* .; rm -fr do",
                             'Bot moved DO dir to proper place on server',
                             'Bot could not move DO data to proper place on server')
+
         # remove empty directories from bot DO
         # self.run_local_cmd(f"cd {self.hb_dir}/do", f"Removed empty directories in {self.hb_dir}/do",
         #                    f"Unable to remove empty directories in {self.hb_dir}/do")
         self.run_local_cmd(f"cd {self.hb_dir}/do; find -L . -type d -empty -delete",
                            f"Removed empty directories in {self.hb_dir}/do",
-                         f"Unable to remove empty directories in {self.hb_dir}/do")
+                           f"Unable to remove empty directories in {self.hb_dir}/do")
+
         # transfer software files from server to bot
         self.run_rsync_cmd2(f"{self.hb_dir}/dt",
                             f"{self.dev_id_str}@{self.cfg.hb_ip.host}:{self.server_sw_dir}/",
-                            #f"{self.cfg.hb_dir_incoming}/{self.server_sw_dir}",
                             ".",
                             f"{self.bot_log_dir}/bot_sw_transfer.log",
                             'Bot SW transfer succeeded.', 'Bot SW transfer failed.')
 
+        # remove empty directories in server Software directories
+        self.run_server_cmd(f"cd Software; find . -type d -empty -delete",
+                            'Successfully cleaned up Software dir on server',
+                            'Could not clean up Software dir on server.')
+
+        # remove a lock file on server so server knows bot is finished screwing off.
+        self.run_server_cmd(f'rm -f .botlog', 'Deleted bot lock file on server.',
+                            'Unable to delete bot lock file on server.')
+
+    def transfer_logs(self):
         # transfer logs from bot to server for current run
         self.run_rsync_cmd1(f"{self.hb_dir}/..", f"log/", self.server_log_dir,
                             f"{self.bot_log_dir}/bot_log_transfer.log",
@@ -355,19 +366,10 @@ class HbProc(object):
                             'Bot moved log dir to proper place on server',
                             'Bot could not move log data to proper place on server')
 
-        # remove empty directories in server Data and Software directories
-        self.run_server_cmd(f"cd Software; find . -type d -empty -delete",
-                            'Successfully cleaned up Software dir on server',
-                            'Could not clean up Software dir on server.')
-
         # move log directory up 1 level on server and cleanup
         self.run_server_cmd(f"cd {self.server_log_dir}; mv log/* .; rm -fr log",
                             'Bot moved LOG dir to proper place on server',
                             'Bot could not move LOG data to proper place on server')
-
-        # remove a lock file on server so server knows bot is finished screwing off.
-        self.run_server_cmd(f'rm -f .botlog', 'Deleted bot lock file on server.',
-                            'Unable to delete bot lock file on server.')
 
     def run_hb_proc(self):
         # set timer when process starts
