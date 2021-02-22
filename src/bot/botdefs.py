@@ -27,6 +27,7 @@ import uuid
 
 v_botdefs = "bot71-20200601"
 
+
 # Identify running platform using a Python2 kludge for mocking Enums.
 # ALPHA represents local (developer) testing on private platforms; TEST
 # represent Numurus testing; FLOAT represents active, Float production.
@@ -55,8 +56,8 @@ bot_cfg_file = nepi_home + "/cfg/bot/config.json"  # Bot Cfg File
 bot_db_file = nepi_home + "/db/float.db"  # Bot DB File
 bot_devnuid_file = nepi_home + "/devinfo/devnuid.txt"
 bot_devsshkeys_file = nepi_home + "/devinfo/devsshkeys.txt"
-# TODO: fix in code
 bot_hb_dir = nepi_home + "/hb"
+
 
 # This is another Python2 way of doing Enums.  We don't seem to have the
 # retro implementation from Python3, so use either a forced "class" or
@@ -73,7 +74,7 @@ def enum(**values):
 try:
     lockpass = str(uuid.uuid1())
 except Exception as e:
-    lockpass = "NumurusLockPass2020"
+    lockpass = "NumurusLockPass2021"
 
 # Define Global Convenience Booleans for debugging, logging, timing,
 # tracking, and locking.
@@ -88,5 +89,5 @@ locking = False
 msgs_incoming = list()
 msgs_outgoing = list()
 
-udp_ipv4_overhead = 28
-upd_ipv6_overhead = 48
+udp_packet_trace = 0  # trace the packetizing and sending of the messages
+msg_gen_trace = 0  # trace the original message generation and packing
