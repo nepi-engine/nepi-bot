@@ -368,7 +368,9 @@ class BotDB(object):
 
         if self.cfg.tracking:
             self.log.track(_lev + 1, "Returning Result Set.", True)
-            self.log.track(_lev + 13, "Results: " + str(results), True)
+            result_str=str(results)[:80]
+            self.log.track(_lev + 13, f"Partial Results: {result_str}", True)
+            del result_str
 
         return [True, None, None], results
 

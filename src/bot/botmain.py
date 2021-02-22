@@ -92,13 +92,13 @@ nepi_args = nbparser.parse_args()
 
 if nepi_args.lb is False and bool(RUN_LB_LINK) is True:
     nepi_args.lb = True
-elif nepi_args.hb is False and bool(RUN_HB_LINK) is True:
+if nepi_args.hb is False and bool(RUN_HB_LINK) is True:
     nepi_args.hb = True
-elif nepi_args.lbto == 0 and LB_PROC_TIMEOUT:
+if nepi_args.lbto == 0 and LB_PROC_TIMEOUT:
     nepi_args.lbto = LB_PROC_TIMEOUT
-elif nepi_args.hbto == 0 and HB_PROC_TIMEOUT:
+if nepi_args.hbto == 0 and HB_PROC_TIMEOUT:
     nepi_args.hbto = HB_PROC_TIMEOUT
-elif nepi_args.tr == 0 and BOT_TRACE:
+if nepi_args.tr == 0 and BOT_TRACE:
     nepi_args.tr = True
 
 testiplink = False

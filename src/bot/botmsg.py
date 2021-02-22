@@ -182,9 +182,11 @@ class BotMsg(object):
     def encode_data_msg(self, _lev, _rec, dev_id_bytes, db):
 
         if self.cfg.tracking:
+            partial_results = str(_rec)[:80]
             self.log.track(_lev, "Entering 'encode_data_msg()' Class Method.", True)
             self.log.track(_lev + 1, "_lev: " + str(_lev), True)
-            self.log.track(_lev + 13, "_rec: " + str(_rec), True)
+            self.log.track(_lev + 13, f"_rec: {partial_results}", True)
+            del partial_results
 
         try:
             ## Set NEPI Message

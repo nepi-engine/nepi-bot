@@ -206,10 +206,10 @@ class BotLog(object):
             # self.track(_lev+1, "max_msg_size: " +
             #            str(self.cfg.max_msg_size), True)
 
-    def track(self, lev, msg, new):
+    def track(self, lev, msg, new=True):
         yesdbg = True
         yeslog = True
-        # Completely outside loggin/debugging bounds.
+        # Completely outside logging/debugging bounds.
         if (lev < 0) or (lev > 23):
             return
 

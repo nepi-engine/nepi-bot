@@ -76,17 +76,17 @@ class LbProc(object):
             sql = "DELETE FROM data WHERE rec_state = 2"
             success = self.db.update(2, sql)
             if success[0]:
-                self.log.track(0, "Deleting SENT metadata records from database.")
+                self.log.track(0, "Deleted SENT metadata records from database.", True)
             else:
-                self.log.track(0, "Unable to delete SENT metadata records from database.")
+                self.log.track(0, "Unable to delete SENT metadata records from database.", True)
 
             # remove sent status records from database
             sql = "DELETE FROM status WHERE rec_state = 2"
             success = self.db.update(2, sql)
             if success[0]:
-                self.log.track(0, "Deleting SENT status records from database.")
+                self.log.track(0, "Deleted SENT status records from database.", True)
             else:
-                self.log.track(0, "Unable to delete SENT status records from database.")
+                self.log.track(0, "Unable to delete SENT status records from database.", True)
 
         if self.cfg.tracking:
             self.log.track(0, "Recalculate Archived PIPO Ratings.", True)
@@ -818,7 +818,7 @@ class LbProc(object):
 
         if self.cfg.tracking:
             self.log.track(1, "Final Message Complete.", True)
-            self.log.track(2, "Buf Len: " + str(len(str(self.sm.buf))), True)
+            #self.log.track(2, "Buf Len: " + str(len(str(self.sm.buf))), True)
             # TODO Check hex encoding
             # log.track(2, "Buf Msg: " + str(sm.buf).encode("hex"), True)
             # log.track(2, "Buf Msg: " + str(binascii.hexlify(str.encode(sm.buf))), True)

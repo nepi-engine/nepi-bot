@@ -92,7 +92,7 @@ class MessageSplitter:
             file_pktrace = open(f"sampledatafile{msg_num}_pkthdr.txt", "w")
 
         msg_len = len(msg)
-        print(msg_num)
+        self.log.track(1, f"{msg_num=}", True)
 
         # msg_total_pkts = math.ceil(msg_len/self.maxpktsize)
         msg_total_pkts = int(msg_len / self.maxpktsize + .9999)
@@ -113,7 +113,8 @@ class MessageSplitter:
                     this_msg,
                 )
                 packetlist.append(udp_packet)
-                file_pktrace.write(f"{msg_num:10d}{msg_total_pkts:10d}{msg_index:10d}{this_msg_len:10d}\n")
+                if self.trace:
+                    file_pktrace.write(f"{msg_num:10d}{msg_total_pkts:10d}{msg_index:10d}{this_msg_len:10d}\n")
                 msg_index += 1
             except Exception as e:
                 return list()
