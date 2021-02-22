@@ -361,6 +361,7 @@ class HbProc(object):
         self.run_rsync_cmd1(f"{self.hb_dir}/..", f"log/", self.server_log_dir,
                             f"{self.bot_log_dir}/bot_log_transfer.log",
                             'Bot LOG file transfer successful.', 'Bot LOG file transfer failed.')
+
         # move log directory up 1 level on server and cleanup
         self.run_server_cmd(f"cd {self.server_log_dir}; mv log/* .; rm -fr log",
                             'Bot moved log dir to proper place on server',
