@@ -52,6 +52,7 @@ from botcomm import BotComm
 from botmsg import BotMsg
 import bothbproc
 from botpipo import BotPIPO
+from botreports import HbRpt, LbRpt
 
 v_botmain = "bot71-20200601"
 
@@ -170,6 +171,7 @@ except Exception as e:
     sys.exit(1)
 try:
     success = lbproc.lb_process_data()
+    lb_conn_list = success[1]
 except Exception as e:
     log.track(1, "ERROR: Problem processing LB Data. NEPI-BOT continuing.", True)
 
@@ -1262,6 +1264,21 @@ try:
         log.track(0, "Unsuccessful database closure.", True)
 except Exception as e:
     log.track(0, 'Unsuccessful database closure.', True)
+
+########################################################################
+# Generate the summary reports for Edge and Server
+########################################################################
+
+
+# TODO: remove hardcoded names
+
+lbrpt=LbRpt('../../log/lb_execution_status.json', lb_conn_list)
+lbrpt.create_lb_report()
+
+if hbproc:
+    hbrpt = HbRpt('../../log/hb_execution_status.json')
+    hbrpt.create_hb_report()
+
 
 ########################################################################
 # Copy the Bot Log files to the server before exiting if HB active.

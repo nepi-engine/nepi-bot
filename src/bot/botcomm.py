@@ -361,7 +361,9 @@ class BotComm(object):
                 "TCP4:" + LOCALHOST + ":" + LOCALPORT + ",nodelay",
             ]
             proc_ssh = subprocess.Popen(args_sshcmd)
+
             proc_socat = subprocess.Popen(args_socatcmd)
+            time.sleep(4)
             procs.append(proc_ssh)
             procs.append(proc_socat)
 
@@ -610,8 +612,9 @@ class BotComm(object):
     # -------------------------------------------------------------------
     # Send a Message.
     # -------------------------------------------------------------------
-    def send(self, _lev, _msg, _num):
+    def send(self, _lev, _msg, _num, _br):
         global retcode, sf, sep, sft, om, sfs
+        br=_br
         if self.cfg.tracking:
             self.log.track(_lev, "Send Message on Established Connection.", True)
             self.log.track(_lev + 13, "_lev: " + str(_lev), True)
@@ -706,6 +709,7 @@ class BotComm(object):
                     t1 = time.perf_counter()
                     packets_to_send = self.smsg.splitmsg(msg)
                     t2 = time.perf_counter()
+                    br.update_pktsent(len(packets_to_send))
                     if self.cfg.tracking:
                         self.log.track(_lev, f"{str(len(packets_to_send))} UDP packets to send.", True)
                     for i in packets_to_send:

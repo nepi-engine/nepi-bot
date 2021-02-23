@@ -29,6 +29,7 @@ from bothelp import (
     getAllFileNames,
     deleteDataProduct,
 )
+import botreports
 
 v_botlbproc = "bot71-20210205"
 
@@ -67,6 +68,7 @@ class LbProc(object):
         self.msgs_incoming = botdefs.msgs_incoming
         self.msgs_outgoing = botdefs.msgs_outgoing
         self.nepi_home = botdefs.nepi_home
+        self.rpt_items = []
         self.log.track(self.lev, "Created LbProc Class Object.", True)
 
     def lb_process_data(self):
@@ -479,6 +481,10 @@ class LbProc(object):
         bc = BotComm(self.cfg, self.log, "ethernet", 1, self.db)
         success = bc.getconn(0)
 
+        br = botreports.LbConnItem('lb_ip', 'success')
+        self.rpt_items.append(br)
+        br.update_timestart()
+
         ########################################################################
         # Create the Float Message.
         ########################################################################
@@ -538,6 +544,8 @@ class LbProc(object):
                         3, new_stat_results[0], self.dev_id_bytes, self.db
                     )
                     if success[0]:
+                        br.update_msgsent(1)
+                        br.update_statsent(1)
                         if self.cfg.tracking:
                             self.log.track(
                                 1, "Latest Active SR Successfully Packed.", True
@@ -614,6 +622,8 @@ class LbProc(object):
                     self.log.track(1, "Active Data Products FOUND in Database.", True)
                     self.log.track(2, "Total: " + str(len(meta_rows)), True)
                     for row in meta_rows:
+                        br.update_msgsent(1)
+                        br.update_datasent(1)
                         self.log.track(
                             14,
                             "rowid=["
@@ -703,6 +713,8 @@ class LbProc(object):
                             success = self.sm.encode_status_msg(
                                 3, assoc_statrec[0], self.dev_id_bytes, self.db
                             )
+                            br.update_msgsent(1)
+                            br.update_statsent(1)
                             if success[0]:
                                 if self.cfg.tracking:
                                     self.log.track(
@@ -761,6 +773,8 @@ class LbProc(object):
                 success = self.sm.encode_data_msg(
                     3, row, self.dev_id_bytes, self.db
                 )  # stat_timestamp, next_index
+                br.update_msgsent(1)
+                br.update_datasent(1)
                 if success[0]:
                     if self.cfg.tracking:
                         self.log.track(
@@ -799,7 +813,7 @@ class LbProc(object):
                     if success[0]:
                         self.log.track(0, "Sending: ", True)
                         for item in self.msgs_outgoing:
-                            send_success, cnc_msg = bc.send(1, item, 5)
+                            send_success, cnc_msg = bc.send(1, item, 5, br)
                             if send_success[0]:
                                 self.log.track(0, "send returned Success", True)
                                 bcsuccess = 1  # Added as gap fix for no scuttle
@@ -854,6 +868,7 @@ class LbProc(object):
                 success = self.sm.encode_gen_msg(
                     0, ident, value, 1, self.dev_id_bytes, self.db
                 )
+                br.update_gensent(1)
             except Exception as e:
                 if self.cfg.tracking:
                     self.log.track(
@@ -931,9 +946,13 @@ class LbProc(object):
             if msg_routing == 0:
                 try:
                     if msg_type == "cfg_msg":
+                        br.update_msgrecv(1)
+                        br.update_cfgrecv(1)
                         for i in msg_stack.keys():
                             resetCfgValue(self.cfg, self.log, 2, str(i), msg_stack[i])
                     elif msg_type == "gen_msg":
+                        br.update_msgrecv(1)
+                        br.update_genrecv(1)
                         for i in msg_stack.items():
                             if i == "ping":
                                 self.sm.encode_gen_msg(
@@ -998,6 +1017,8 @@ class LbProc(object):
             elif msg_routing == 1:
                 try:
                     if msg_type == "cfg_msg":
+                        br.update_msgrecv(1)
+                        br.update_cfgrecv(1)
                         fname = "/".join(
                             (
                                 self.cfg.lb_cfg_dir_path,
@@ -1007,6 +1028,8 @@ class LbProc(object):
                         with open(fname, "w") as f:
                             f.write(dev_msg_fmt)
                     elif msg_type == "gen_msg":
+                        br.update_msgrecv(1)
+                        br.update_genrecv(1)
                         fname = (
                                 self.nepi_home
                                 + f"/lb/dt-msg/gen_msg_{svr_comm_index:010d}.json"
@@ -1038,7 +1061,8 @@ class LbProc(object):
             if success[0]:
                 self.log.track(0, "Sending: ", True)
                 for item in self.msgs_outgoing:
-                    send_success, cnc_msg = bc.send(1, item, 5)
+                    br.update_msgsent(1)
+                    send_success, cnc_msg = bc.send(1, item, 5, br)
                     if send_success[0]:
                         self.log.track(0, "send returned Success", True)
                         bcsuccess = 1  # Added as gap fix for no scuttle
@@ -1104,6 +1128,8 @@ class LbProc(object):
             if msg_routing == 0:
                 try:
                     if msg_type == "cfg_msg":
+                        br.update_msgrecv(1)
+                        br.update_cfgrecv(1)
                         for i in msg_stack.keys():
                             resetCfgValue(self.cfg, self.log, 2, str(i), msg_stack[i])
                     elif msg_type == "gen_msg":
@@ -1165,6 +1191,9 @@ class LbProc(object):
             elif msg_routing == 1:
                 try:
                     if msg_type == "cfg_msg":
+                        br.update_msgrecv(1)
+                        br.update_cfgrecv(1)
+                        
                         fname = (
                                 botdefs.nepi_home
                                 + self.cfg.lb_cfg_dir
@@ -1173,6 +1202,8 @@ class LbProc(object):
                         with open(fname, "w") as f:
                             f.write(dev_msg_fmt)
                     elif msg_type == "gen_msg":
+                        br.update_msgrecv(1)
+                        br.update_genrecv(1)
                         fname = (
                                 botdefs.nepi_home
                                 + f"/lb/dt-msg/gen_msg_{svr_comm_index:010d}.json"
@@ -1204,7 +1235,8 @@ class LbProc(object):
             if success[0]:
                 self.log.track(0, "Sending: ", True)
                 for item in self.msgs_outgoing:
-                    send_success, cnc_msg = bc.send(1, item, 5)
+                    br.update_msgsent(1)
+                    send_success, cnc_msg = bc.send(1, item, 5, br)
                     if send_success[0]:
                         self.log.track(0, "send returned Success", True)
                         bcsuccess = 1  # Added as gap fix for no scuttle
@@ -1404,5 +1436,7 @@ class LbProc(object):
             if self.cfg.tracking:
                 self.log.track(1, "NO Message = NO Housekeeping to be Done.", True)
 
+        br.update_timestop()
+        return 0, self.rpt_items
         # save botcomm_index to db and close db
         #success = self.db.close(0)
