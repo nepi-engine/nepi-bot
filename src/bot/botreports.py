@@ -106,21 +106,22 @@ class LbConnItem:
 
 class LbRpt:
     def __init__(self, _outfname, _lb_conn_list):
-        self.outfname = _outfname
+        self.outfname = os.path.abspath(nepi_home + '/log/' + _outfname)
         self.lb_conn_list = _lb_conn_list
 
     def create_lb_report(self):
 
-        try:
-            os.chdir(os.path.abspath(nepi_home + '/' + 'src/bot'))
-        except:
-            pass
+        # try:
+        #     os.chdir(os.path.abspath(nepi_home + '/' + 'src/bot'))
+        # except:
+        #     pass
 
         d = OrderedDict()
         d["connections"] = []
         for i in self.lb_conn_list:
             if i:
-                d["connections"].append(i)
+                info = i.generate_stats()
+                d["connections"].append(info)
 
         if not len(d["connections"]):
             return
@@ -251,15 +252,17 @@ class HbConnItem:
 
 class HbRpt:
     def __init__(self, _outfile):
-        self.filename = _outfile
+        self.filename = os.path.abspath(nepi_home + '/log/' + _outfile)
 
     def create_hb_report(self):
 
         # aggregate do data
         do_data = HbConnItem('hb_ip', 'success', 'do')
         sw_data = HbConnItem('hb_ip', 'success', 'sw')
-        do_stats = do_data.parse_rsync_file('../../log/bot_do_transfer.log')
-        sw_stats = sw_data.parse_rsync_file('../../log/bot_sw_transfer.log')
+        do_infile=os.path.abspath(nepi_home + '/log/bot_do_transfer.log')
+        sw_infile = os.path.abspath(nepi_home + '/log/bot_sw_transfer.log')
+        do_stats = do_data.parse_rsync_file(do_infile)
+        sw_stats = sw_data.parse_rsync_file(sw_infile)
 
         d = OrderedDict()
         d["connections"] = []

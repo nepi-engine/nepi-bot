@@ -1272,11 +1272,11 @@ except Exception as e:
 
 # TODO: remove hardcoded names
 
-lbrpt=LbRpt('../../log/lb_execution_status.json', lb_conn_list)
+lbrpt=LbRpt('lb_execution_status.json', lb_conn_list)
 lbrpt.create_lb_report()
 
 if hbproc:
-    hbrpt = HbRpt('../../log/hb_execution_status.json')
+    hbrpt = HbRpt('hb_execution_status.json')
     hbrpt.create_hb_report()
 
 

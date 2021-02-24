@@ -361,9 +361,7 @@ class BotComm(object):
                 "TCP4:" + LOCALHOST + ":" + LOCALPORT + ",nodelay",
             ]
             proc_ssh = subprocess.Popen(args_sshcmd)
-
             proc_socat = subprocess.Popen(args_socatcmd)
-            time.sleep(4)
             procs.append(proc_ssh)
             procs.append(proc_socat)
 
@@ -405,7 +403,7 @@ class BotComm(object):
                     if self.cfg.tracking:
                         self.log.track(_lev + 2, str(enum) + ": " + str(emsg), True)
                     # TODO reexamine - need 2 sec delay before sending/receiving messages on open socket
-                    time.sleep(2)
+                    time.sleep(4)
             else:
                 if self.cfg.tracking:
                     self.log.track(_lev + 1, "IP Connection ALREADY Exists.", True)
