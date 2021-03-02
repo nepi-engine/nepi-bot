@@ -83,8 +83,8 @@ os.mkdir(lb_folder + '/dt-msg')
 
 hb_folder = script_build_folder + '/hb'
 os.mkdir(hb_folder)
-os.makedirs(hb_folder + '/clone/do')
-os.makedirs(hb_folder + '/clone/dt')
+os.makedirs(hb_folder + '/do')
+os.makedirs(hb_folder + '/dt')
 
 os.mkdir(script_build_folder + '/log')
 
