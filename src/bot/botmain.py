@@ -164,6 +164,7 @@ sm = BotMsg(cfg, log, db, 1)
 log.track(1, "Launching botmain.py version " + v_botmain, True)
 
 lbproc = None
+lb_conn_list = []
 try:
     lbproc = LbProc(cfg, log, 23, dev_id_str, dev_id_bytes, nepi_args, db, pipo, sm, v_botmain)
 except Exception as e:
