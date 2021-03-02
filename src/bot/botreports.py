@@ -128,7 +128,7 @@ class LbRpt:
 
         try:
             x = Path.cwd()
-            print(f"{x=}")
+            print(f"x={x}")
 
             result = json.dumps(d, indent=2)
 

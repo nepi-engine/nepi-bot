@@ -92,7 +92,7 @@ class MessageSplitter:
             file_pktrace = open(f"sampledatafile{msg_num}_pkthdr.txt", "w")
 
         msg_len = len(msg)
-        self.log.track(1, f"{msg_num=}", True)
+        self.log.track(1, f"msg_num={msg_num}", True)
 
         # msg_total_pkts = math.ceil(msg_len/self.maxpktsize)
         msg_total_pkts = int(msg_len / self.maxpktsize + .9999)
