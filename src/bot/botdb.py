@@ -164,7 +164,7 @@ class BotDB(object):
                 int(_statjson.get("pitch_angle", 0)),
                 int(_statjson.get("temperature", 0)),
                 int(_statjson.get("power_state", 0)),
-                bytes(_statjson.get("device_status", "")),
+                bytes(_statjson.get("device_status", b'')),
             )
             sql_statement = """\
             INSERT INTO status \
