@@ -1061,7 +1061,6 @@ class LbProc(object):
             if success[0]:
                 self.log.track(0, "Sending: ", True)
                 for item in self.msgs_outgoing:
-                    br.update_msgsent(1)
                     send_success, cnc_msg = bc.send(1, item, 5, br)
                     if send_success[0]:
                         self.log.track(0, "send returned Success", True)
@@ -1193,7 +1192,7 @@ class LbProc(object):
                     if msg_type == "cfg_msg":
                         br.update_msgrecv(1)
                         br.update_cfgrecv(1)
-                        
+
                         fname = (
                                 botdefs.nepi_home
                                 + self.cfg.lb_cfg_dir
@@ -1235,7 +1234,6 @@ class LbProc(object):
             if success[0]:
                 self.log.track(0, "Sending: ", True)
                 for item in self.msgs_outgoing:
-                    br.update_msgsent(1)
                     send_success, cnc_msg = bc.send(1, item, 5, br)
                     if send_success[0]:
                         self.log.track(0, "send returned Success", True)
