@@ -41,7 +41,7 @@ procs = []
 LOCALPORT = "8000"
 LOCALHOST = "127.0.0.1"
 retcode = None
-send_delay_secs = 0  # amount of time to wait between sending messages to the server
+send_delay_secs = 0.05  # amount of time to wait between sending messages to the server
 
 
 # from botcfg import BotCfg
@@ -355,9 +355,14 @@ class BotComm(object):
                 str(LOCALPORT + ":localhost:" + LOCALPORT),
                 str(self.remote_id_str + "@" + self.cfg.lb_ip.host),
             ]
+            #args_socatcmd = [
+            #    "socat",
+            #    str("UDP4-LISTEN:" + LOCALPORT + ",fork,reuseaddr"),
+            #    "TCP4:" + LOCALHOST + ":" + LOCALPORT + ",nodelay",
+            #]
             args_socatcmd = [
                 "socat",
-                str("UDP4-LISTEN:" + LOCALPORT + ",fork,reuseaddr"),
+                str("UDP4-RECVFROM:" + LOCALPORT + ",fork,reuseaddr"),
                 "TCP4:" + LOCALHOST + ":" + LOCALPORT + ",nodelay",
             ]
             proc_ssh = subprocess.Popen(args_sshcmd)
