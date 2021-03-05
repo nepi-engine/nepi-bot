@@ -231,7 +231,7 @@ class LbProc(object):
                         1, "INSERT Status Record into DB 'status' Table.", True
                     )
 
-                success, status_rowid = self.db.pushstat(2, status_json)
+                success, status_rowid, status_id = self.db.pushstat(2, status_json)
                 if not success[0]:
                     if self.cfg.tracking:
                         self.log.track(2, "Status Record Insertion Failed.", True)
@@ -262,7 +262,7 @@ class LbProc(object):
                     self.log.track(
                         2, "Have at Least 1 New Status Record for Uplink Msg.", True
                     )
-                    self.log.track(3, "ID: " + str(haveNewStatus), True)
+                    self.log.track(3, "Row ID: " + str(status_rowid) + " Status ID: " + str(status_id), True)
 
             # -------------------------------------------------------------------
             # Calculate Trigger Score
@@ -404,10 +404,9 @@ class LbProc(object):
                     3,
                     meta_json,
                     info,
-                    status_rowid,
+                    status_id,
                     trigger,
                     meta_file_path,
-                    status_rowid,
                 )
 
                 if not success[0]:
@@ -659,14 +658,17 @@ class LbProc(object):
                         1, "Process Meta Data Product ID #" + str(metaID), True
                     )
                     self.log.track(2, "Get Associated Status Record.", True)
-                    self.log.track(3, "Status FK: " + str(statusFK), True)
+                    self.log.track(3, "Status ID: " + str(statusFK), True)
 
                 # If not already packed in this Message, get it out of the 'status'
                 # Table in DB. Then, pack this Status Record in the uplink Message
                 # and save the Status Record's timestamp.
                 # if not stat_sent_flag:
+                #sql = (
+                #        "SELECT rowid, * FROM status WHERE rowid = '" + str(statusFK) + "'"
+                #)
                 sql = (
-                        "SELECT rowid, * FROM status WHERE rowid = '" + str(statusFK) + "'"
+                        "SELECT rowid,* FROM status WHERE sys_status_id = '" + str(statusFK) + "'"
                 )
                 success, assoc_statrec = self.db.getResults(3, sql, False)
                 if success[0]:

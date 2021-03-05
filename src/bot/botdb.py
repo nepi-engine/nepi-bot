@@ -48,6 +48,7 @@ class BotDB(object):
         self.cfg = _cfg
         self.log = _log
         self.bot_comm_index = 0
+        self.next_status_id = 0
         if self.cfg.tracking:
             self.log.track(_lev, "Created DB Class Object: ", True)
             self.log.track(_lev + 13, "^dbc: " + str(self.dbc), True)
@@ -131,6 +132,25 @@ class BotDB(object):
             self.log.track(1, f"packet_msg_index set to {self.packet_msg_index}.", True)
         return self.packet_msg_index
 
+    def get_next_status_id(self):
+        if self.cfg.tracking:
+            self.log.track(1, "Getting value of next_status_id from DB.", True)
+        _sql = (
+            "UPDATE counters SET next_status_id = (next_status_id + 1) WHERE ROWID = 1;"
+        )
+        _sql2 = "SELECT next_status_id FROM counters WHERE ROWID = 1;"
+        cursor = self.dbc.cursor()
+        cursor.execute(str(_sql))
+        cursor.execute(str(_sql2))
+        results = cursor.fetchone()
+        self.dbc.commit()
+        if self.cfg.tracking:
+            self.log.track(1 + 1, "SQL Executed.", True)
+        self.next_status_id = int(results[0])
+        if self.cfg.tracking:
+            self.log.track(1, f"next_status_id set to {self.next_status_id}.", True)
+        return self.next_status_id
+
     def pushstat(self, _lev, _statjson):
         # INSERT a 'status' record into the Float DB.  This Module is
         # designed to insert the exact number of columns by picking
@@ -153,7 +173,10 @@ class BotDB(object):
             tempdt = parse(_statjson["timestamp"])
             tempts = tempdt.timestamp()
 
+            status_id = self.get_next_status_id()
+
             data_tuple = (
+                int(status_id),
                 float(tempts),
                 int(_statjson.get("navsat_fix_time_offset", 0)),
                 float(_statjson.get("latitude", 0.0)),
@@ -168,8 +191,9 @@ class BotDB(object):
             )
             sql_statement = """\
             INSERT INTO status \
-            VALUES (0,0,0,0,?,?,?,?,?,?,?,?,?,?,?)\
+            VALUES (0,?,0,0,?,?,?,?,?,?,?,?,?,?,?)\
             """
+
         except Exception as e:
             enum = "DB002"
             emsg = "pushstat(): [" + str(e) + "]"
@@ -201,7 +225,7 @@ class BotDB(object):
                 self.log.errtrack(str(enum), str(emsg))
             return [False, str(enum), str(emsg)], None
 
-        return [True, None, None], lastrowid
+        return [True, None, None], lastrowid, status_id
 
     # -------------------------------------------------------------------
     # INSERT a 'Data' record into the Float DB. This Module is designed
@@ -211,14 +235,14 @@ class BotDB(object):
     # mandatory "standard" and optional "change" files are included.
     # def pushmeta(self, _lev, _datajson, _state, _status, _trigger, _numerator, _stdsize, _chgsize, _norm, _pipo, _metafile, _stdfile, _chgfile):
     def pushdata(
-        self, _lev, _datajson, _info, _status, _trigger, _metafile, _status_rowid
+        self, _lev, _datajson, _info, _status_id, _trigger, _metafile
     ):
         if self.cfg.logging:
             self.log.track(_lev, "Entering DB 'pushdata()' Module.", True)
             self.log.track(_lev + 1, "Log Level:    " + str(_lev), True)
             self.log.track(_lev + 13, "Data JSON:    " + str(_datajson), True)
             self.log.track(_lev + 1, "State:        " + str(_info[3]), True)
-            self.log.track(_lev + 1, "Status ID:    " + str(_status_rowid), True)
+            self.log.track(_lev + 1, "Status ID:    " + str(_status_id), True)
             self.log.track(_lev + 1, "Trigger:      " + str(_trigger), True)
             self.log.track(_lev + 1, "Numerator:    " + str(_info[0]), True)
             self.log.track(_lev + 1, "Std Size:     " + str(_info[1]), True)
@@ -270,7 +294,7 @@ class BotDB(object):
                 filecontent = b""
 
             data_tuple = (
-                _status_rowid,
+                _status_id,
                 float(_datajson.get("timestamp", 0.0)),
                 str(_datajson.get("type", "")),
                 int(_datajson.get("instance", 0)),
@@ -624,7 +648,8 @@ class BotDB(object):
                 cursor.execute(
                     """CREATE TABLE counters (
                     "bot_comm_index" INTEGER,
-                    "packet_msg_index" INTEGER
+                    "packet_msg_index" INTEGER,
+                    "next_status_id" INTEGER
                     )
                     """
                 )
@@ -642,7 +667,7 @@ class BotDB(object):
             if self.cfg.tracking:
                 self.log.track(_lev + 1, "Instantiate the 'counters' Table.", True)
             try:
-                cursor.execute("INSERT INTO counters VALUES (1, 1);")
+                cursor.execute("INSERT INTO counters VALUES (1, 1, 1);")
             except Exception as e:
                 enum = "DB107"
                 emsg = "reset(): [" + str(e) + "]"
