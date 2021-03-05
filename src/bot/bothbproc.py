@@ -373,11 +373,11 @@ class HbProc(object):
         #     self.log.track(self.lev, f"Changed directory to: {self.hb_dir}.", True)
 
         # transfer do files from bot to server
-        self.run_rsync_cmd1(f"{self.hb_dir}", f"do/", self.server_do_dir, f"{self.bot_log_dir}/bot_do_transfer.log",
+        self.run_rsync_cmd1(f"{self.hb_dir}", "do/", self.server_do_dir, f"{self.bot_log_dir}/bot_do_transfer.log",
                             'Bot DO file transfer successful.', 'Bot DO file transfer failed.')
 
         # move do directory up 1 level on server and cleanup
-        self.run_server_cmd(f"cd {self.server_do_dir}; mv do/* .; rm -fr do",
+        self.run_server_cmd(f"cd {self.server_do_dir}; cp -r do/* .; rm -fr do",
                             'Bot moved DO dir to proper place on server',
                             'Bot could not move DO data to proper place on server')
 
