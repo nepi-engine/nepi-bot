@@ -41,8 +41,8 @@ procs = []
 LOCALPORT = "8000"
 LOCALHOST = "127.0.0.1"
 retcode = None
-send_delay_secs = 0.05  # amount of time to wait between sending messages to the server
-
+packet_delay_secs = 0.05  # amount of time to wait between sending packets to the server
+message_delay_secs = 0.0  # amount of time to wait between sending messages to the server
 
 # from botcfg import BotCfg
 # from botlog import BotLog
@@ -717,12 +717,13 @@ class BotComm(object):
                         self.log.track(_lev, f"{str(len(packets_to_send))} UDP packets to send.", True)
                     for i in packets_to_send:
                         retval = self.con.sendall(i)
-                        time.sleep(send_delay_secs)
+                        time.sleep(packet_delay_secs)
                     t3 = time.perf_counter()
                     if self.cfg.tracking:
                         self.log.track(_lev, "Message Sent Stats:")
                         self.log.track(_lev + 1,
                                        f"msglen: {msg_len}, packets: {len(packets_to_send)}, split_time: {t2 - t1:.3f}, send_time: {t3 - t2:.3f}")
+                    time.sleep(message_delay_secs)
                 except Exception as e:
                     enum = "BC162"
                     emsg = "IP Data Not Sent."
