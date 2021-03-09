@@ -621,8 +621,6 @@ class LbProc(object):
                     self.log.track(1, "Active Data Products FOUND in Database.", True)
                     self.log.track(2, "Total: " + str(len(meta_rows)), True)
                     for row in meta_rows:
-                        br.update_msgsent(1)
-                        br.update_datasent(1)
                         self.log.track(
                             14,
                             "rowid=["
