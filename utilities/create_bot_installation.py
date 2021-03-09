@@ -58,7 +58,7 @@ if args.update_from is not None:
     with open(old_install_dir + '/devinfo/devnuid.txt', 'r') as f:
         old_nuid = f.read()
     if old_nuid != args.nuid[0]:
-        response = input(f'Warning: existing NUID ({old_nuid}) does not match new NUID ({args.nuid[0]}) -- this is probably not what you want to do. Press \'y\' to continue anyway')
+        response = input(f'Warning: existing NUID ({old_nuid}) does not match new NUID ({args.nuid[0]}) -- this is probably not what you want to do. Press \'y\' to continue anyway: ')
         if response != 'y':
             sys.exit(1)
 
@@ -179,7 +179,7 @@ if args.install_binary is not None:
 
     response = 'y'
     if os.path.isdir(install_dir):
-        response = input(f'Warning: {install_dir} already exists... enter \'y\' to overwrite, any other key to cancel')
+        response = input(f'Warning: {install_dir} already exists... enter \'y\' to overwrite, any other key to cancel: ')
         if response == 'y':
             shutil.rmtree(install_dir)
     if response == 'y':
@@ -192,7 +192,7 @@ if args.install_script is not None:
 
     response = 'y'
     if os.path.isdir(install_dir):
-        response = input(f'Warning: {install_dir} already exists... enter \'y\' to overwrite, any other key to cancel')
+        response = input(f'Warning: {install_dir} already exists... enter \'y\' to overwrite, any other key to cancel: ')
         if response == 'y':
             shutil.rmtree(install_dir)
     if response == 'y':
