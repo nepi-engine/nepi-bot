@@ -16,6 +16,8 @@ from threading import Timer
 
 import botdefs
 import bothelp
+from nepi_edge_sw_mgr import NepiEdgeSwMgr
+
 from datetime import datetime
 from pathlib import Path
 import os
@@ -39,12 +41,14 @@ class HbProc(object):
         self.server_do_dir = 'Data'  # where the dirs and files under nepi_home/hb/do go.
         self.server_log_dir = 'NEPI-logs'
         self.server_dt_dir = 'dt'  # not used yet
-        self.server_sw_dir = 'Software'
+        self.sw_dir = 'Software'
         # self.bot_do_dir = os.path.abspath('/'.join([botdefs.nepi_home, self.cfg.hb_dir_outgoing]))
         # self.bot_dt_dir = os.path.abspath('/'.join([botdefs.nepi_home, self.cfg.hb_dir_incoming]))
         self.bot_log_dir = os.path.abspath('/'.join([botdefs.nepi_home, "log"]))
         # self.bot_log_dir=self.cfg.log_dir
         self.time_skew = 5  # number of seconds allowable diff in timestamps
+
+        self.sw_mgr = NepiEdgeSwMgr()
 
         if self.cfg.tracking:
             self.log.track(self.lev, "Created HbProc Class Object.", True)
@@ -322,21 +326,21 @@ class HbProc(object):
             Path(f"{self.cfg.hb_dir_incoming}").mkdir(
                 mode=0o755, parents=True, exist_ok=True
             )
-            Path(f"{self.cfg.hb_dir_incoming}/{self.server_sw_dir}").mkdir(
+            Path(f"{self.cfg.hb_dir_incoming}/{self.sw_dir}").mkdir(
                 mode=0o755, parents=True, exist_ok=True
             )
 
             if self.cfg.tracking:
                 self.log.track(
                     self.lev,
-                    f"Created {self.cfg.hb_dir_outgoing} {self.cfg.hb_dir_incoming} {self.cfg.hb_dir_incoming}/{self.server_sw_dir} dirs.",
+                    f"Created {self.cfg.hb_dir_outgoing} {self.cfg.hb_dir_incoming} {self.cfg.hb_dir_incoming}/{self.sw_dir} dirs.",
                     True,
                 )
         except Exception as e:
             if self.cfg.tracking:
                 self.log.track(
                     self.lev,
-                    f"Unable to create local {self.cfg.hb_dir_outgoing} {self.cfg.hb_dir_incoming} {self.cfg.hb_dir_incoming}/{self.server_sw_dir} directories.",
+                    f"Unable to create local {self.cfg.hb_dir_outgoing} {self.cfg.hb_dir_incoming} {self.cfg.hb_dir_incoming}/{self.sw_dir} directories.",
                     True,
                 )
         if bothelp.exit_event_hb.is_set():
@@ -352,9 +356,9 @@ class HbProc(object):
                             'Unable to write bot lock file on server.')
 
         # make required directories on server if they do not exist.
-        self.run_server_cmd(f'mkdir -p {self.server_log_dir} {self.server_do_dir} {self.server_sw_dir}',
-                            f'Created {self.server_log_dir} {self.server_do_dir} {self.server_sw_dir} dirs on server.',
-                            f'Could not create {self.server_log_dir} {self.server_do_dir} {self.server_sw_dir} dirs on server.')
+        self.run_server_cmd(f'mkdir -p {self.server_log_dir} {self.server_do_dir} {self.sw_dir}',
+                            f'Created {self.server_log_dir} {self.server_do_dir} {self.sw_dir} dirs on server.',
+                            f'Could not create {self.server_log_dir} {self.server_do_dir} {self.sw_dir} dirs on server.')
 
     # transfer files from nepibot to server
     def transfer_files(self):
@@ -390,7 +394,7 @@ class HbProc(object):
 
         # transfer software files from server to bot
         self.run_rsync_cmd2(f"{self.hb_dir}/dt",
-                            f"{self.dev_id_str}@{self.cfg.hb_ip.host}:{self.server_sw_dir}/",
+                            f"{self.dev_id_str}@{self.cfg.hb_ip.host}:{self.sw_dir}/",
                             ".",
                             f"{self.bot_log_dir}/bot_sw_transfer.log",
                             'Bot SW transfer succeeded.', 'Bot SW transfer failed.')
@@ -416,6 +420,39 @@ class HbProc(object):
                             'Bot could not move log data to proper place on server')
 
 
+    def run_sw_mgr(self):
+        os.chdir(f"{self.hb_dir}/dt")
+        # Check whether any "Software" was transferred from server
+        if len(os.listdir(f"./{self.sw_dir}")) == 0:
+            if self.cfg.tracking:
+                self.log.track(
+                    self.lev,
+                    "Empty software folder: Will not start the software manager",
+                    True,
+                )
+        else:
+            if self.cfg.tracking:
+                self.log.track(
+                    self.lev,
+                    "Non-empty Software folder: Starting the software manager",
+                    True,
+                )
+            try:
+                self.sw_mgr.process_sw_folder(f"{self.sw_dir}", results_path='../../log')
+            except Exception as e:
+                self.log.track(
+                    self.lev + 2,
+                    f"Software manager encountered an error: {e}",
+                    True,
+                )
+
+            # Clear the local software folder
+            self.run_local_cmd(f"rm -rf ./{self.sw_dir}/*",
+                               f"Removed empty directories in {self.hb_dir}/do",
+                               f"Unable to remove empty directories in {self.hb_dir}/do")
+
+
+
     def run_hb_proc(self):
         # set timer when process starts
         # if self.nepi_args.hbto > 0:
@@ -426,5 +463,6 @@ class HbProc(object):
         #         self.log.track(self.lev, f"Current working directory is: {self.original_dir}.", True)
         self.check_hb_dirs()
         self.transfer_files()
+        self.run_sw_mgr()
 
         return True
