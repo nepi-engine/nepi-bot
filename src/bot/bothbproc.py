@@ -159,7 +159,6 @@ class HbProc(object):
             args_rsync = [
                 "rsync",
                 f"--log-file={logfile}",
-                "--remove-source-files",
                 # f"--modify-window={self.time_skew}",
                 "--stats",
                 "-rvatiRLzte",
@@ -182,7 +181,7 @@ class HbProc(object):
                         f"{msg_failed} [{rsync_cmd.returncode}]",
                         True,
                     )
-                return True
+                return False
             else:
                 if self.cfg.tracking:
                     self.log.track(
@@ -190,55 +189,7 @@ class HbProc(object):
                         f"{msg_success}",
                         True,
                     )
-                return False
-        except Exception as e:
-            if self.cfg.tracking:
-                self.log.track(
-                    self.lev,
-                    f"{msg_failed} (rc={rsync_cmd.returncode})",
-                    True,
-                )
-        return True
-
-    # execute rsync command on bot from bot to server. Do not remove source files.
-    # TODO: consolidate with run_rsync_cmd1 later
-    def run_rsync_cmd1a(self, work_dir, src_dir, dst_dir, logfile, msg_success, msg_failed):
-        rsync_cmd = None
-        try:
-            os.chdir(work_dir)
-            args_rsync = [
-                "rsync",
-                f"--log-file={logfile}",
-                "--stats",
-                "-rvatiRLzte",
-                f"ssh -p {self.cfg.hb_ip.port} -o StrictHostKeyChecking=no -o GlobalKnownHostsFile=/dev/null -o UserKnownHostsFile=/dev/null -i {self.ssh_key_file}",
-                f"{src_dir}",
-                f"{self.dev_id_str}@{self.cfg.hb_ip.host}:{dst_dir}",
-            ]
-            print(f"{' '.join(args_rsync)}")
-            rsync_cmd = subprocess.run(
-                args_rsync,
-                universal_newlines=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-            )
-            if rsync_cmd.returncode != 0:
-                self.gen_msg_contents += f"{msg_failed} [{rsync_cmd.returncode}]"
-                if self.cfg.tracking:
-                    self.log.track(
-                        self.lev,
-                        f"{msg_failed} [{rsync_cmd.returncode}]",
-                        True,
-                    )
                 return True
-            else:
-                if self.cfg.tracking:
-                    self.log.track(
-                        self.lev,
-                        f"{msg_success}",
-                        True,
-                    )
-                return False
         except Exception as e:
             if self.cfg.tracking:
                 self.log.track(
@@ -246,7 +197,7 @@ class HbProc(object):
                     f"{msg_failed} (rc={rsync_cmd.returncode})",
                     True,
                 )
-        return True
+            return False
 
     # execute rsync command on bot from server to bot
     def run_rsync_cmd2(self, work_dir, src_dir, dst_dir, logfile, msg_success, msg_failed):
@@ -256,7 +207,6 @@ class HbProc(object):
             args_rsync = [
                 "rsync",
                 f"--log-file={logfile}",
-                "--remove-source-files",
                 # f"--modify-window={self.time_skew}",
                 "--stats",
                 "-rvatiRLzte",
@@ -280,15 +230,15 @@ class HbProc(object):
                         f"{msg_failed} [{rsync_cmd.returncode}]",
                         True,
                     )
-                    return True
-                else:
-                    if self.cfg.tracking:
-                        self.log.track(
-                            self.lev,
-                            f"{msg_success}",
-                            True,
-                        )
-                    return False
+                return False
+            else:
+                if self.cfg.tracking:
+                    self.log.track(
+                        self.lev,
+                        f"{msg_success}",
+                        True,
+                    )
+                return True
         except Exception as e:
             if self.cfg.tracking:
                 self.log.track(
@@ -296,7 +246,7 @@ class HbProc(object):
                     f"{msg_failed} (rc={rsync_cmd.returncode})",
                     True,
                 )
-            return True
+            return False
 
     # double check hb directory structure on nepibot and server
     def check_hb_dirs(self):
@@ -377,7 +327,7 @@ class HbProc(object):
         #     self.log.track(self.lev, f"Changed directory to: {self.hb_dir}.", True)
 
         # transfer do files from bot to server
-        self.run_rsync_cmd1(f"{self.hb_dir}", "do/", self.server_do_dir, f"{self.bot_log_dir}/bot_do_transfer.log",
+        rsync_success = self.run_rsync_cmd1(f"{self.hb_dir}", "do/", self.server_do_dir, f"{self.bot_log_dir}/bot_do_transfer.log",
                             'Bot DO file transfer successful.', 'Bot DO file transfer failed.')
 
         # move do directory up 1 level on server and cleanup
@@ -385,24 +335,24 @@ class HbProc(object):
                             'Bot moved DO dir to proper place on server',
                             'Bot could not move DO data to proper place on server')
 
-        # remove empty directories from bot DO
-        # self.run_local_cmd(f"cd {self.hb_dir}/do", f"Removed empty directories in {self.hb_dir}/do",
-        #                    f"Unable to remove empty directories in {self.hb_dir}/do")
-        self.run_local_cmd(f"cd {self.hb_dir}/do; find -L . -type d -empty -delete",
-                           f"Removed empty directories in {self.hb_dir}/do",
-                           f"Unable to remove empty directories in {self.hb_dir}/do")
+        # remove all DO files/symlinks, as long as rsync was successful -- Don't follow symlinks as that could provide a quick way
+        # to accidentally brick the device. Instead, users must do their own clean-up
+        if rsync_success is True:
+            self.run_local_cmd(f"cd {self.hb_dir}/do; rm -rf ./*",
+                               f"Removed empty directories in {self.hb_dir}/do",
+                               f"Unable to remove empty directories in {self.hb_dir}/do")
 
         # transfer software files from server to bot
-        self.run_rsync_cmd2(f"{self.hb_dir}/dt",
+        rsync_success = self.run_rsync_cmd2(f"{self.hb_dir}/dt",
                             f"{self.dev_id_str}@{self.cfg.hb_ip.host}:{self.sw_dir}/",
                             ".",
                             f"{self.bot_log_dir}/bot_sw_transfer.log",
                             'Bot SW transfer succeeded.', 'Bot SW transfer failed.')
-
-        # remove empty directories in server Software directories
-        self.run_server_cmd(f"cd Software; find . -type d -empty -delete",
-                            'Successfully cleaned up Software dir on server',
-                            'Could not clean up Software dir on server.')
+        # remove files from server, as long as rsync was successful
+        if rsync_success is True:
+            self.run_server_cmd(f"cd Software; rm -rf ./*",
+                                'Successfully cleaned up Software dir on server',
+                                'Could not clean up Software dir on server.')
 
         # remove a lock file on server so server knows bot is finished screwing off.
         self.run_server_cmd(f'rm -f .botlog', 'Deleted bot lock file on server.',
@@ -410,7 +360,7 @@ class HbProc(object):
 
     def transfer_logs(self):
         # transfer logs from bot to server for current run
-        self.run_rsync_cmd1a(f"{self.hb_dir}/..", f"log/", self.server_log_dir,
+        self.run_rsync_cmd1(f"{self.hb_dir}/..", f"log/", self.server_log_dir,
                              f"{self.bot_log_dir}/bot_log_transfer.log",
                              'Bot LOG file transfer successful.', 'Bot LOG file transfer failed.')
 
