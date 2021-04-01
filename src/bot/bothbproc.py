@@ -423,7 +423,8 @@ class HbProc(object):
     def run_sw_mgr(self):
         os.chdir(f"{self.hb_dir}/dt")
         # Check whether any "Software" was transferred from server
-        if len(os.listdir(f"./{self.sw_dir}")) == 0:
+        local_sw_dir = f"./{self.sw_dir}"
+        if (os.path.isdir(local_sw_dir)) is False or (len(os.listdir(f"./{self.sw_dir}")) == 0):
             if self.cfg.tracking:
                 self.log.track(
                     self.lev,
