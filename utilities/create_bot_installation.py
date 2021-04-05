@@ -127,6 +127,7 @@ devinfo_folder = script_build_folder + '/devinfo'
 os.mkdir(devinfo_folder)
 with open(devinfo_folder + '/devnuid.txt', 'w') as f:
     f.write(args.nuid[0])
+shutil.copy2('./change_identity.py', devinfo_folder + '/change_identity.py')
 
 ssh_keys_folder = build_folder + '/ssh_keys'
 os.mkdir(ssh_keys_folder)
