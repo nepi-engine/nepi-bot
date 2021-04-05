@@ -131,14 +131,17 @@ with open(devinfo_folder + '/devnuid.txt', 'w') as f:
 ssh_keys_folder = build_folder + '/ssh_keys'
 os.mkdir(ssh_keys_folder)
 ssh_key_filename = ssh_keys_folder + '/id_rsa_' + args.nuid[0]
+public_ssh_key_filename = ssh_key_filename + '.pub'
 if args.ssh_priv_key is None:
     # TODO: Ensure key adheres to our security standard
     subprocess.call(['ssh-keygen', '-f' + ssh_key_filename])
 else:
     shutil.copyfile(args.ssh_priv_key[0], ssh_key_filename)
+    shutil.copyfile(os.path.dirname(args.ssh_priv_key[0]) + '/id_rsa_' + args.nuid[0] + '.pub', public_ssh_key_filename)
     with open(ssh_keys_folder + '/README.txt', 'w') as f:
         f.write('SSH private key copied from ' + args.ssh_priv_key[0])
 shutil.copyfile(ssh_key_filename, devinfo_folder + '/' + 'devsshkeys.txt')
+shutil.copyfile(public_ssh_key_filename, devinfo_folder + '/' + os.path.basename(public_ssh_key_filename))
 
 # Now copy all of the above to the binary distributable as it is identical in both cases
 shutil.copytree(script_build_folder, binary_build_folder)
