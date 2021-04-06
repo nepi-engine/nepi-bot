@@ -378,7 +378,7 @@ class HbProc(object):
             if self.cfg.tracking:
                 self.log.track(
                     self.lev,
-                    "Empty software folder: Will not start the software manager",
+                    "Empty software folder: Starting software manager anyway to allow it to clean up",
                     True,
                 )
         else:
@@ -388,19 +388,19 @@ class HbProc(object):
                     "Non-empty Software folder: Starting the software manager",
                     True,
                 )
-            try:
-                self.sw_mgr.process_sw_folder(f"{self.sw_dir}", results_path='../../log')
-            except Exception as e:
-                self.log.track(
-                    self.lev + 2,
-                    f"Software manager encountered an error: {e}",
-                    True,
-                )
+        try:
+            self.sw_mgr.process_sw_folder(f"{self.sw_dir}", results_path='../../log')
+        except Exception as e:
+            self.log.track(
+                self.lev + 2,
+                f"Software manager encountered an error: {e}",
+                True,
+            )
 
-            # Clear the local software folder
-            self.run_local_cmd(f"rm -rf ./{self.sw_dir}/*",
-                               f"Removed empty directories in {self.hb_dir}/do",
-                               f"Unable to remove empty directories in {self.hb_dir}/do")
+        # Clear the local software folder
+        self.run_local_cmd(f"rm -rf ./{self.sw_dir}/*",
+                           f"Removed empty directories in {self.hb_dir}/do",
+                           f"Unable to remove empty directories in {self.hb_dir}/do")
 
 
 
