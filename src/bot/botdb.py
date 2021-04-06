@@ -1,99 +1,32 @@
 ########################################################################
 ##
-##  Module: botdb.py
-##  ----------------
+# Module: botdb.py
+# ----------------
 ##
-##  (c) Copyright 2019 by Numurus LLC
+# (c) Copyright 2019 by Numurus LLC
 ##
-##  This document, and all information therein, is the property of
-##  Numurus LLC.  It is confidential and must not be made public or
-##  copied in any form.  It is loaned subject to return upon demand
-##  and is not to be used directly or indirectly in any way detrimental
-##  to our interests.
-##
-##  Revision History
-##  ----------------
-##  
-##  Revision:   1.14 2019/05/09  09:05:00
-##  Comment:    Added formal/robust Connection closure.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.13 2019/04/15  11:00:00
-##  Comment:    Upgrade to new Node Type'code' Conversion Table.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.12 2019/04/12  11:20:00
-##  Comment:    Changed Reporting levels to 12/24.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.11 2019/04/10  08:00:00
-##  Comment:    Add 'eligible' Table to manage Cloud tracking.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.10 2019/04/04  08:00:00
-##  Comment:    General updates/fixes to support 5/1 Data Products.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.9 2019/04/03  08:15:00
-##  Comment:    Remove 'admin' Table Mgmt; Fix Err Mgmt.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.8 2019/04/02  13:30:00
-##  Comment:    Fix getconn() success return codes.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.7 2019/03/22  14:30:00
-##  Comment:    Fix getconn() success return codes.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.6 2019/03/14  10:20:00
-##  Comment:    Added S/W Rev increment management.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.5 2019/02/21  12:20:00
-##  Comment:    Added 'admin' Table management.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.4 2019/02/19  09:30:00
-##  Comment:    Added SELECT and UPDATE method functionality.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.3 2019/02/13  11:30:00
-##  Comment:    Upgrade to new debugging/logging model; plus test.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.2 2019/02/04  08:06:00
-##  Comment:    Constructor; database creation.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
-##
-##  Revision:   1.1 2019/01/13  12:00:00
-##  Comment:    Module Instantiation.
-##  Developer:  John benJohn, Leonardo, New Jersey
-##  Platform:   Ubuntu 16.05; Python 2.7.12
+# This document, and all information therein, is the property of
+# Numurus LLC.  It is confidential and must not be made public or
+# copied in any form.  It is loaned subject to return upon demand
+# and is not to be used directly or indirectly in any way detrimental
+# to our interests.
 ##
 ########################################################################
-
+import datetime
 import os
 import sqlite3
+from dateutil.parser import parse
+from regex import regex
+import bothelp
 
-v_botdb = "bot61-20190620"
+v_botdb = "bot71-20200601"
+sqlite3_db_current_ver = 15
 
-#-------------------------------------------------------------------
+# -------------------------------------------------------------------
+
+
 def dict_factory(cursor, row):
-#-------------------------------------------------------------------
+    # -------------------------------------------------------------------
     # This code will help extract a group of dictionaries based on
     # the SELECT statement from the SQLite database and dump it into
     # JSON for use.
@@ -102,57 +35,122 @@ def dict_factory(cursor, row):
         d[col[0]] = row[idx]
     return d
 
+
 ########################################################################
-##  The Float Database Class
+# The Nepibot Database Class
 ########################################################################
+
 
 class BotDB(object):
-
     def __init__(self, _cfg, _log, _lev):
         self.dbc = None
         self.dbr = None
         self.cfg = _cfg
         self.log = _log
+        self.bot_comm_index = 0
+        self.next_status_id = 0
         if self.cfg.tracking:
-            self.log.track(_lev, 'Created DB Class Object: ', True)
-            self.log.track(_lev+13, '^dbc: ' + str(self.dbc), True)
-            self.log.track(_lev+13, '^dbr: ' + str(self.dbr), True)
-            self.log.track(_lev+13, '^log: ' + str(self.log), True)
-            self.log.track(_lev+13, '^cfg: ' + str(self.cfg), True)
-            self.log.track(_lev+13, '_lev: ' + str(_lev), True)
+            self.log.track(_lev, "Created DB Class Object: ", True)
+            self.log.track(_lev + 13, "^dbc: " + str(self.dbc), True)
+            self.log.track(_lev + 13, "^dbr: " + str(self.dbr), True)
+            self.log.track(_lev + 13, "^log: " + str(self.log), True)
+            self.log.track(_lev + 13, "^cfg: " + str(self.cfg), True)
+            self.log.track(_lev + 13, "_lev: " + str(_lev), True)
 
     def getconn(self, _lev):
         # Establish a connection. SQLite either creates or opens a file
         # (in this case, the 'dbfile' passed to the SQLite class method
         # above).  If the file is there, we assume that it is a legit
-        # Float Database.  If not there, the DB requires instantiation.
+        # Nepibot Database.  If not there, the DB requires instantiation.
         if self.cfg.tracking:
             self.log.track(_lev, "Entering DB 'getconn()' Method.", True)
-            self.log.track(_lev+1, "Establish DB Connection.", True)
+            self.log.track(_lev + 1, "Establish DB Connection.", True)
 
         if os.path.isfile(self.cfg.db_file):
             if self.cfg.tracking:
-                self.log.track(_lev+2, "DB File Found: " + str(self.cfg.db_file), True)
+                self.log.track(
+                    _lev + 2, "DB File Found: " + str(self.cfg.db_file), True
+                )
         else:
             if self.cfg.tracking:
-                self.log.track(_lev+2, "DB File NOT Found: " + str(self.cfg.db_file), True)
-            success = self.reset(_lev+2)
+                self.log.track(
+                    _lev + 2, "DB File NOT Found: " + str(self.cfg.db_file), True
+                )
+            success = self.reset(_lev + 2)
             if not success[0]:
                 return success, None
 
         try:
             self.dbc = sqlite3.connect(self.cfg.db_file)
             if self.cfg.tracking:
-                self.log.track(_lev+1, "DB Connection Established.", True)
-            return [ True, None, None ], self.dbc
+                self.log.track(_lev + 1, "DB Connection Established.", True)
+            return [True, None, None], self.dbc
         except Exception as e:
             enum = "DB001"
             emsg = "getconn(): [" + str(e) + "]"
             if self.cfg.tracking:
                 self.log.errtrack(str(enum), str(emsg))
-            return [ False, str(enum), str(emsg) ], None
+            return [False, str(enum), str(emsg)], None
 
-    #-------------------------------------------------------------------
+    # -------------------------------------------------------------------
+
+    def get_botcomm_index(self):
+        if self.cfg.tracking:
+            self.log.track(1, "Getting value of bot_comm_index from DB.", True)
+        _sql = (
+            "UPDATE counters SET bot_comm_index = bot_comm_index + 1 WHERE ROWID = 1;"
+        )
+        _sql2 = "SELECT bot_comm_index FROM counters WHERE ROWID = 1;"
+        cursor = self.dbc.cursor()
+        cursor.execute(str(_sql))
+        cursor.execute(str(_sql2))
+        results = cursor.fetchone()
+        self.dbc.commit()
+        if self.cfg.tracking:
+            self.log.track(1 + 1, "SQL Executed.", True)
+        self.bot_comm_index = int(results[0])
+        if self.cfg.tracking:
+            self.log.track(1, f"bot_comm_index set to {self.bot_comm_index}.", True)
+        return self.bot_comm_index
+
+    def get_packet_msg_index(self):
+        if self.cfg.tracking:
+            self.log.track(1, "Getting value of packet_msg_index from DB.", True)
+        _sql = (
+            "UPDATE counters SET packet_msg_index = (packet_msg_index % 65000 + 1) WHERE ROWID = 1;"
+        )
+        _sql2 = "SELECT packet_msg_index FROM counters WHERE ROWID = 1;"
+        cursor = self.dbc.cursor()
+        cursor.execute(str(_sql))
+        cursor.execute(str(_sql2))
+        results = cursor.fetchone()
+        self.dbc.commit()
+        if self.cfg.tracking:
+            self.log.track(1 + 1, "SQL Executed.", True)
+        self.packet_msg_index = int(results[0])
+        if self.cfg.tracking:
+            self.log.track(1, f"packet_msg_index set to {self.packet_msg_index}.", True)
+        return self.packet_msg_index
+
+    def get_next_status_id(self):
+        if self.cfg.tracking:
+            self.log.track(1, "Getting value of next_status_id from DB.", True)
+        _sql = (
+            "UPDATE counters SET next_status_id = (next_status_id + 1) WHERE ROWID = 1;"
+        )
+        _sql2 = "SELECT next_status_id FROM counters WHERE ROWID = 1;"
+        cursor = self.dbc.cursor()
+        cursor.execute(str(_sql))
+        cursor.execute(str(_sql2))
+        results = cursor.fetchone()
+        self.dbc.commit()
+        if self.cfg.tracking:
+            self.log.track(1 + 1, "SQL Executed.", True)
+        self.next_status_id = int(results[0])
+        if self.cfg.tracking:
+            self.log.track(1, f"next_status_id set to {self.next_status_id}.", True)
+        return self.next_status_id
+
     def pushstat(self, _lev, _statjson):
         # INSERT a 'status' record into the Float DB.  This Module is
         # designed to insert the exact number of columns by picking
@@ -160,97 +158,104 @@ class BotDB(object):
         # retrieved from the Data Folder and subjected to a json.load.
         if self.cfg.tracking:
             self.log.track(_lev, "Entering DB 'pushstat()' Module.", True)
-            self.log.track(_lev+1, "_lev: " + str(_lev), True)
-            self.log.track(_lev+13, "_JSON: " + str(_statjson), True)
-            self.log.track(_lev+1, "Format SQL INSERT Statement.", True)
+            self.log.track(_lev + 1, "_lev: " + str(_lev), True)
+            self.log.track(_lev + 13, "_JSON: " + str(_statjson), True)
+            self.log.track(_lev + 1, "Format SQL INSERT Statement.", True)
 
-        #---------------------------------------------------------------
+        # ---------------------------------------------------------------
         # Create the SQL statement for inserting the Status Record into
         # the 'float.db' database.  This includes a combination of JSON
         # values from the SDK's Status File in the Data Folder PLUS a
         # handfull of seeded control values for columns (fields) that
         # will be used later.
         try:
-            sql = "INSERT INTO status VALUES (0,0,0,NULL,NULL,%.15f,'%s','%s',0,%.15f,%.15f,%15f,%.15f,%.15f,%.15f,%.15f,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,NULL,NULL)" % (
-                float(_statjson['timestamp']),
-                str(_statjson['serial_num']),
-                str(_statjson["sw_rev"]),
-                float(_statjson["navsat_fix_time"]),
-                float(_statjson["latitude"]),
-                float(_statjson["longitude"]),
-                float(_statjson["heading"]),
-                float(_statjson["batt_charge"]),
-                float(_statjson["bus_voltage"]),
-                float(_statjson["temperature"]),
-                int(_statjson["trig_wake_count"]),
-                int(_statjson["wake_event_type"]),
-                int(_statjson["wake_event_id"]),
-                int(_statjson["task_index"]),
-                int(_statjson["trig_cfg_index"]),
-                int(_statjson["rule_cfg_index"]),
-                int(_statjson["sensor_cfg_index"]),
-                int(_statjson["node_cfg_index"]),
-                int(_statjson["geofence_cfg_index"]),
-                int(_statjson["state_flags"])
+            # convert timestamp from iso string to float
+            tempdt = parse(_statjson["timestamp"])
+            tempts = tempdt.timestamp()
+
+            status_id = self.get_next_status_id()
+
+            data_tuple = (
+                int(status_id),
+                float(tempts),
+                int(_statjson.get("navsat_fix_time_offset", 0)),
+                float(_statjson.get("latitude", 0.0)),
+                float(_statjson.get("longitude", 0.0)),
+                int(_statjson.get("heading", 0)),
+                int(_statjson.get("heading_ref", 0)),
+                int(_statjson.get("roll_angle", 0)),
+                int(_statjson.get("pitch_angle", 0)),
+                int(_statjson.get("temperature", 0)),
+                int(_statjson.get("power_state", 0)),
+                bytes(_statjson.get("device_status", b'')),
             )
+            sql_statement = """\
+            INSERT INTO status \
+            VALUES (0,?,0,0,?,?,?,?,?,?,?,?,?,?,?)\
+            """
+
         except Exception as e:
             enum = "DB002"
             emsg = "pushstat(): [" + str(e) + "]"
             if self.cfg.tracking:
                 self.log.errtrack(str(enum), str(emsg))
-            return [ False, str(enum), str(emsg) ], None
+            return [False, str(enum), str(emsg)], None
 
-        #---------------------------------------------------------------
+        # ---------------------------------------------------------------
         # Perform the actual INSERT and 'commit()' the new record to the
         # 'float.db' database.
         if self.cfg.tracking:
-            self.log.track(_lev+1, "INSERT Status Record into DB.", True)
-            self.log.track(_lev+14, "SQL: " + str(sql), True)
-        
+            self.log.track(_lev + 1, "INSERT Status Record into DB.", True)
+            self.log.track(_lev + 14, "SQL: " + str(sql_statement), True)
+            # self.log.track(_lev + 14, "DATA: " + str(data_tuple, sep="|"))
+
         try:
             cursor = self.dbc.cursor()
-            cursor.execute(str(sql))
+            cursor.execute(sql_statement, data_tuple)
+            # cursor.execute(str(sql))
             lastrowid = cursor.lastrowid
             if self.cfg.tracking:
-                self.log.track(_lev+14, "Successful.", True)
-                self.log.track(_lev+14, "Row ID: " + str(lastrowid), True)
+                self.log.track(_lev + 14, "Successful.", True)
+                self.log.track(_lev + 14, "Row ID: " + str(lastrowid), True)
             self.dbc.commit()
         except Exception as e:
             enum = "DB003"
             emsg = "pushstat(): [" + str(e) + "]"
             if self.cfg.tracking:
                 self.log.errtrack(str(enum), str(emsg))
-            return [ False, str(enum), str(emsg) ], None
+            return [False, str(enum), str(emsg)], None
 
-        return [ True, None, None ], lastrowid
+        return [True, None, None], lastrowid, status_id
 
-    #-------------------------------------------------------------------
+    # -------------------------------------------------------------------
     # INSERT a 'Data' record into the Float DB. This Module is designed
     # to insert the exact number of columns by picking apart the
     # 'datajson' JSON-formatted 'Meta' record as retrieved from the
     # Data Folder and subjected to a json.load.  In addition, the
     # mandatory "standard" and optional "change" files are included.
-    #def pushmeta(self, _lev, _datajson, _state, _status, _trigger, _numerator, _stdsize, _chgsize, _norm, _pipo, _metafile, _stdfile, _chgfile):
-    def pushmeta(self, _lev, _datajson, _info, _status, _trigger, _metafile):
+    # def pushmeta(self, _lev, _datajson, _state, _status, _trigger, _numerator, _stdsize, _chgsize, _norm, _pipo, _metafile, _stdfile, _chgfile):
+    def pushdata(
+        self, _lev, _datajson, _info, _status_id, _trigger, _metafile
+    ):
         if self.cfg.logging:
-            self.log.track(_lev, "Entering DB 'popdata()' Module.", True)
-            self.log.track(_lev+1, "Log Level:    " + str(_lev), True)
-            self.log.track(_lev+13, "Data JSON:    " + str(_datajson), True)
-            self.log.track(_lev+1, "State:        " + str(_info[3]), True)
-            self.log.track(_lev+1, "Status ID:    " + str(_status), True)
-            self.log.track(_lev+1, "Trigger:      " + str(_trigger), True)
-            self.log.track(_lev+1, "Numerator:    " + str(_info[0]), True)
-            self.log.track(_lev+1, "Std Size:     " + str(_info[1]), True)
-            self.log.track(_lev+1, "Chg Size:     " + str(_info[2]), True)
-            self.log.track(_lev+1, "Normalize:    " + str(_info[4]), True)
-            self.log.track(_lev+1, "PIPO Rating:  " + str(_info[5]), True)
-            self.log.track(_lev+1, "MetaFile:     " + str(_metafile), True)
-            self.log.track(_lev+1, "StdFile:      " + str(_info[6]), True)
-            self.log.track(_lev+1, "ChgFile:      " + str(_info[7]), True)
-            self.log.track(_lev+1, "Chg Eligible: " + str(_info[3]), True)
-            self.log.track(_lev+13, "StdJSON:      " + str(_info[8]), True)
-            self.log.track(_lev+13, "ChgJSON:      " + str(_info[9]), True)
-            self.log.track(_lev+1, "Format SQL INSERT Statement.", True)
+            self.log.track(_lev, "Entering DB 'pushdata()' Module.", True)
+            self.log.track(_lev + 1, "Log Level:    " + str(_lev), True)
+            self.log.track(_lev + 13, "Data JSON:    " + str(_datajson), True)
+            self.log.track(_lev + 1, "State:        " + str(_info[3]), True)
+            self.log.track(_lev + 1, "Status ID:    " + str(_status_id), True)
+            self.log.track(_lev + 1, "Trigger:      " + str(_trigger), True)
+            self.log.track(_lev + 1, "Numerator:    " + str(_info[0]), True)
+            self.log.track(_lev + 1, "Std Size:     " + str(_info[1]), True)
+            self.log.track(_lev + 1, "Chg Size:     " + str(_info[2]), True)
+            self.log.track(_lev + 1, "Normalize:    " + str(_info[4]), True)
+            self.log.track(_lev + 1, "PIPO Rating:  " + str(_info[5]), True)
+            self.log.track(_lev + 1, "MetaFile:     " + str(_metafile), True)
+            self.log.track(_lev + 1, "StdFile:      " + str(_info[6]), True)
+            self.log.track(_lev + 1, "ChgFile:      " + str(_info[7]), True)
+            self.log.track(_lev + 1, "Chg Eligible: " + str(_info[3]), True)
+            self.log.track(_lev + 13, "StdJSON:      " + str(_info[8]), True)
+            self.log.track(_lev + 13, "ChgJSON:      " + str(_info[9]), True)
+            self.log.track(_lev + 1, "Format SQL INSERT Statement.", True)
 
         chg_channels = 0
         chg_dtype = ""
@@ -259,169 +264,178 @@ class BotDB(object):
         try:
             if _info[9]:
                 chg_channels = int(_info[9]["channel_count"])
-                chg_dtype    = str(_info[9]["dt"])
-                chg_deltas   = str(_info[9]["deltas"])
+                chg_dtype = str(_info[9]["dt"])
+                chg_deltas = str(_info[9]["deltas"])
         except Exception as e:
             enum = "DB104"
-            emsg = "pushmeta(): [" + str(e) + "]"
+            emsg = "pushdata(): [" + str(e) + "]"
             if self.cfg.tracking:
                 self.log.errtrack(str(enum), str(emsg))
-            return [ False, str(enum), str(emsg) ], None
+            return [False, str(enum), str(emsg)], None
 
-        #---------------------------------------------------------------
+        # ---------------------------------------------------------------
         # Create the SQL statement for inserting the Data Record into
         # the 'float.db' database.  This includes a combination of JSON
         # values from the SDK's Meta File in the Data Folder PLUS a
         # handfull of seeded control values for columns (fields) that
         # will be used later and specific values passed to this function
         # as arguments.
+
         try:
-            sql = "INSERT INTO meta VALUES (%i,0,%i,%.15f,%.15f,%.15f,'%s',%i,%.15f,%.15f,%.15f,%.15f,'%s','%s','%s',%i,%i,%i,'%s','%s',%i,%i,%i,%i,%i,%i,%i,'%s','%s',%i,'%s','%s',%i)" % (
-                _info[3],
-                _status,
-                _info[0],
-                _trigger,
-                _info[5],
-                str(_datajson['node_type']),
-                int(_datajson['instance']),
-                float(_datajson['timestamp']),
-                float(_datajson["heading"]),
-                float(_datajson["quality"]),
-                float(_datajson["node_id_score"]),
-                _metafile,
-                str(_datajson["data_file"]),
-                str(_datajson["change_file"]),
-                _info[1],
-                _info[2],
-                _info[4],
-                _info[6],
-                _info[7],
-                _info[3],
-                int(float(_datajson["pitch"])),
-                int(float(_datajson["roll"])),
-                int(_info[8]["channels"]),
-                int(_info[8]["rows"]),
-                int(_info[8]["cols"]),
-                int(_info[8]["samples"]),
-                str(_info[8]["dtype"]),
-                str(_info[8]["data"]),
-                int(chg_channels),
-                str(chg_dtype),
-                str(chg_deltas),
-                int(_info[10])
+            try:
+                filepath = regex.match(r".*/", _metafile)
+                filename = filepath.group() + _datajson.get("data_file", "")
+                with open(filename, mode="rb") as file:
+                    filecontent = file.read()
+                payload_data = _datajson.get("data_file")
+                payload_fname, payload_fname_ext = os.path.splitext(payload_data)
+            except Exception as e:
+                payload_fname_ext = ""
+                filecontent = b""
+
+            data_tuple = (
+                _status_id,
+                float(_datajson.get("timestamp", 0.0)),
+                str(_datajson.get("type", "")),
+                int(_datajson.get("instance", 0)),
+                int(_datajson.get("date_time_offset", 0)),
+                int(_datajson.get("latitude_offset", 0)),
+                int(_datajson.get("longitude_offset", 0)),
+                int(_datajson.get("heading_offset", 0)),
+                int(_datajson.get("roll_offset", 0)),
+                int(_datajson.get("pitch_offset", 0)),
+                str(_datajson.get("data_file", "")),
+                str(payload_fname_ext),
+                bytes(filecontent),
+                float(_info[0]),
+                int(0),
+                float(_info[5]),
+                float(1.0),
+                float(_datajson.get("quality_score", 1.0)),
+                float(_datajson.get("type_score", 1.0)),
+                float(_datajson.get("event_score", 1.0)),
+                str(""),
+                str(""),
+                int(0),
             )
+
+            sql_statement = """\
+            INSERT INTO data \
+            VALUES (0,?,0,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"""
+
         except Exception as e:
             enum = "DB004"
-            emsg = "pushmeta(): [" + str(e) + "]"
+            emsg = "pushdata(): [" + str(e) + "]"
             if self.cfg.tracking:
                 self.log.errtrack(str(enum), str(emsg))
-            return [ False, str(enum), str(emsg) ], None
+            return [False, str(enum), str(emsg)], None
 
-        #---------------------------------------------------------------
+        # ---------------------------------------------------------------
         # Perform the actual INSERT and 'commit()' the new 'meta' record
         # to the 'float.db' database.
         if self.cfg.tracking:
-            self.log.track(_lev+13, "SQL: " + str(sql), True)
-            self.log.track(_lev, "Perform the 'Meta' Record INSERT.", True)
+            # self.log.track(_lev + 13, "SQL: " + str(sql), True)
+            self.log.track(_lev, "Perform the 'Data' Record INSERT.", True)
 
         try:
             cursor = self.dbc.cursor()
-            cursor.execute(str(sql))
+            cursor.execute(sql_statement, data_tuple)
             lastrowid = cursor.lastrowid
             if self.cfg.tracking:
-                self.log.track(_lev+1, "Data Row ID: " + str(lastrowid), True)
+                self.log.track(_lev + 1, "Data Row ID: " + str(lastrowid), True)
             self.dbc.commit()
         except Exception as e:
             enum = "DB005"
-            emsg = "pushmeta(): [" + str(e) + "]"
+            emsg = "pushdata(): [" + str(e) + "]"
             if self.cfg.tracking:
                 self.log.errtrack(str(enum), str(emsg))
-            return [ False, str(enum), str(emsg) ], None
+            return [False, str(enum), str(emsg)], None
 
-        return [ True, None, None ], lastrowid
+        return [True, None, None], lastrowid
 
-
-    #-------------------------------------------------------------------
+    # -------------------------------------------------------------------
     def getResults(self, _lev, _sql, _jflag):
-    #-------------------------------------------------------------------
+        # -------------------------------------------------------------------
         if self.cfg.tracking:
             self.log.track(_lev, "Entering DB getResults() Module.", True)
-            self.log.track(_lev+1, "_lev:   " + str(_lev), True)
-            self.log.track(_lev+13, "_sql:   " + str(_sql), True)
-            self.log.track(_lev+1, "_jflag: " + str(_jflag), True)
+            self.log.track(_lev + 1, "_lev:   " + str(_lev), True)
+            self.log.track(_lev + 13, "_sql:   " + str(_sql), True)
+            self.log.track(_lev + 1, "_jflag: " + str(_jflag), True)
 
         try:
             if _jflag:
                 rowfac = self.dbc.row_factory
                 self.dbc.row_factory = dict_factory
                 if self.cfg.tracking:
-                    self.log.track(_lev+1, "Changed Row Factory.", True)
-            
+                    self.log.track(_lev + 1, "Changed Row Factory.", True)
+
             cursor = self.dbc.cursor()
             if self.cfg.tracking:
-                self.log.track(_lev+1, "Got Cursor.", True)
+                self.log.track(_lev + 1, "Got Cursor.", True)
             cursor.execute(str(_sql))
             if self.cfg.tracking:
-                self.log.track(_lev+1, "SQL Executed.", True)
+                self.log.track(_lev + 1, "SQL Executed.", True)
             results = cursor.fetchall()
             if self.cfg.tracking:
-                self.log.track(_lev+1, "Fetched Rows.", True)
+                self.log.track(_lev + 1, "Fetched Rows.", True)
 
             if _jflag:
                 self.dbc.row_factory = rowfac
                 if self.cfg.tracking:
-                    self.log.track(_lev+1, "Changed Row Factory Back.", True)
+                    self.log.track(_lev + 1, "Changed Row Factory Back.", True)
         except Exception as e:
             enum = "DB006"
             emsg = "getResults(): [" + str(e) + "]"
             if self.cfg.tracking:
                 self.log.errtrack(str(enum), str(emsg))
-            return [ False, str(enum), str(emsg) ], None
+            return [False, str(enum), str(emsg)], None
 
         if self.cfg.tracking:
-            self.log.track(_lev+1, "Returning Result Set.", True)
-            self.log.track(_lev+13, "Results: " + str(results), True)
+            self.log.track(_lev + 1, "Returning Result Set.", True)
+            result_str=str(results)[:80]
+            self.log.track(_lev + 13, f"Partial Results: {result_str}", True)
+            del result_str
 
-        return [ True, None, None ], results
+        return [True, None, None], results
 
-    #-------------------------------------------------------------------
+    # -------------------------------------------------------------------
     def update(self, _lev, _sql):
-    #-------------------------------------------------------------------
+        # -------------------------------------------------------------------
         if self.cfg.tracking:
             self.log.track(_lev, "Entering DB update() Module.", True)
-            self.log.track(_lev+13, "_lev: " + str(_lev), True)
-            self.log.track(_lev+13, "_sql: " + str(_sql), True)
+            self.log.track(_lev + 13, "_lev: " + str(_lev), True)
+            self.log.track(_lev + 13, "_sql: " + str(_sql), True)
 
         try:
             cursor = self.dbc.cursor()
             if self.cfg.tracking:
-                self.log.track(_lev+13, "Got Cursor.", True)
+                self.log.track(_lev + 13, "Got Cursor.", True)
             cursor.execute(str(_sql))
             if self.cfg.tracking:
-                self.log.track(_lev+13, "SQL Executed.", True)
+                self.log.track(_lev + 13, "SQL Executed.", True)
             self.dbc.commit()
             if self.cfg.tracking:
-                self.log.track(_lev+13, "Update Committed.", True)
+                self.log.track(_lev + 13, "Update Committed.", True)
         except Exception as e:
             enum = "DB007"
             emsg = "update(): [" + str(e) + "]"
             if self.cfg.tracking:
                 self.log.errtrack(str(enum), str(emsg))
-            return [ False, str(enum), str(emsg) ]
+            return [False, str(enum), str(emsg)]
 
-        return [ True, None, None ]
+        return [True, None, None]
 
-    #-------------------------------------------------------------------
+    # -------------------------------------------------------------------
     def reset(self, _lev):
-    #-------------------------------------------------------------------
-    # WARNING!  A call to this method WILL completely destroy and, then,
-    # re-instantiate the ENTIRE Float DB.  This is used primarily during
-    # development and testing, but can also be activated if a 'command
-    # and control' message is sent from "the Cloud" during deployment
-    # (e.g., when a complete Float reset is deemed necessary).
+        # -------------------------------------------------------------------
+        # WARNING!  A call to this method WILL completely destroy and, then,
+        # re-instantiate the ENTIRE Float DB.  This is used primarily during
+        # development and testing, but can also be activated if a 'command
+        # and control' message is sent from "the Cloud" during deployment
+        # (e.g., when a complete Float reset is deemed necessary).
         if self.cfg.tracking:
             self.log.track(_lev, "Entering DB reset() Module.", True)
-            self.log.track(_lev+1, "_lev: " + str(_lev), True)
+            self.log.track(_lev + 1, "_lev: " + str(_lev), True)
 
         try:
             # If the Float Database file exists, delete it.  If we can't
@@ -431,19 +445,19 @@ class BotDB(object):
             # notifying "the Cloud" of the condition).
             if os.path.isfile(self.cfg.db_file):
                 if self.cfg.tracking:
-                    self.log.track(_lev+1, "DB File Exists; Remove it.", True)
+                    self.log.track(_lev + 1, "DB File Exists; Remove it.", True)
                 try:
                     os.remove(self.cfg.db_file)
-                    self.log.track(_lev+2, "Removed DB File.", True)
+                    self.log.track(_lev + 2, "Removed DB File.", True)
                 except Exception as e:
                     enum = "DB101"
-                    emsg = "reset(): [" + str(e)  + "]"
+                    emsg = "reset(): [" + str(e) + "]"
                     if self.cfg.tracking:
                         self.log.errtrack(str(enum), str(emsg))
-                    return [ False, str(enum), str(emsg) ]
+                    return [False, str(enum), str(emsg)]
             else:
                 if self.cfg.tracking:
-                    self.log.track(_lev+1, "DB File does not exist; Continue.", True)
+                    self.log.track(_lev + 1, "DB File does not exist; Continue.", True)
 
             # Create the 'Database Directory' in case there wasn't one
             # to begin with.  This should never happen and requires
@@ -454,207 +468,385 @@ class BotDB(object):
             # existing - a condition which is benign.
             dir = os.path.dirname(self.cfg.db_file)
             if self.cfg.tracking:
-                self.log.track(_lev+1, "Check DB Directory.", True)
-                self.log.track(_lev+2, "Dir: " + str(dir), True)
+                self.log.track(_lev + 1, "Check DB Directory.", True)
+                self.log.track(_lev + 2, "Dir: " + str(dir), True)
 
             if not os.path.isdir(str(dir)):
                 if self.cfg.tracking:
-                    self.log.track(_lev+2, "DB Directory doesn't exist.", True)
+                    self.log.track(_lev + 2, "DB Directory doesn't exist.", True)
                 try:
                     os.makedirs(str(dir))
                     if self.cfg.tracking:
-                        self.log.track(_lev+2, "Created Dir: " + str(dir), True)
+                        self.log.track(_lev + 2, "Created Dir: " + str(dir), True)
                 except Exception as e:
                     enum = "DB102"
-                    emsg = "reset(): [" + str(e)  + "]"
+                    emsg = "reset(): [" + str(e) + "]"
                     if self.cfg.tracking:
                         self.log.errtrack(str(enum), str(emsg))
-                    return [ False, str(enum), str(emsg) ]
+                    return [False, str(enum), str(emsg)]
             else:
                 if self.cfg.tracking:
-                    self.log.track(_lev+2, "DB Directory Exists.", True)
+                    self.log.track(_lev + 2, "DB Directory Exists.", True)
 
-            #-----------------------------------------------------------
+            # -----------------------------------------------------------
             # Open a first connection with the DB (creates the DB file).
             if self.cfg.tracking:
-                self.log.track(_lev+1, "Connect with New Database.", True)
+                self.log.track(_lev + 1, "Connect with New Database.", True)
 
-            try:        
+            try:
                 self.dbr = sqlite3.connect(self.cfg.db_file)
             except Exception as e:
                 enum = "DB103"
-                emsg = "reset(): [" + str(e)  + "]"
+                emsg = "reset(): [" + str(e) + "]"
                 if self.cfg.tracking:
                     self.log.errtrack(str(enum), str(emsg))
-                return [ False, str(enum), str(emsg) ]
+                return [False, str(enum), str(emsg)]
 
-            #-----------------------------------------------------------
+            # -----------------------------------------------------------
             # Get a cursor object for upcoming Table and Index creation
             # activity.
             if self.cfg.tracking:
-                self.log.track(_lev+1, "Get the DB Cursor.", True)
+                self.log.track(_lev + 1, "Get the DB Cursor.", True)
 
             try:
                 cursor = self.dbr.cursor()
-            except:
+            except Exception as e:
                 enum = "DB104"
-                emsg = "reset(): [" + str(e)  + "]"
+                emsg = "reset(): [" + str(e) + "]"
                 if self.cfg.tracking:
                     self.log.errtrack(str(enum), str(emsg))
-                return [ False, str(enum), str(emsg) ]
+                return [False, str(enum), str(emsg)]
 
-            #-----------------------------------------------------------
-            # Create the 'status' Table.
+            # -----------------------------------------------------------
+            # Create the 'adapters' Table.
+            # -----------------------------------------------------------
+
             if self.cfg.tracking:
-                self.log.track(_lev+1, "Create the 'status' Table.", True)
+                self.log.track(_lev + 1, "Create the 'adapters' Table.", True)
 
             try:
-                cursor.execute("""CREATE TABLE status
-                    (state TINYINT,
-                    base BOOLEAN,
-                    meta_state INTEGER,
-                    reserved1 BLOB,
-                    reserved2 BLOB,
-                    timestamp DOUBLE PRECISION,
-                    serial_num TEXT,
-                    sw_rev TEXT,
-                    sw_rev_increment TINYINT, 
-                    navsat_fix_time DOUBLE PRECISION,
-                    latitude DOUBLE PRECISION,
-                    longitude DOUBLE PRECISION,
-                    heading DOUBLE PRECISION,
-                    batt_charge DOUBLE PRECISION,
-                    bus_voltage DOUBLE PRECISION,
-                    temperature DOUBLE PRECISION,
-                    trig_wake_count SMALLINT,
-                    wake_event_type TINYINT,
-                    wake_event_id SMALLINT,
-                    task_index SMALLINT,
-                    trig_cfg_index SMALLINT,
-                    rule_cfg_index SMALLINT,
-                    sensor_cfg_index SMALLINT,
-                    node_cfg_index SMALLINT,
-                    geofence_cfg_index SMALLINT,
-                    state_flags SMALLINT,
-                    reserved3 BLOB,
-                    reserved4 BLOB) 
-                    """)
-            except:
-                enum = "DB105"
-                emsg = "reset(): [" + str(e)  + "]"
-                if self.cfg.tracking:
-                    self.log.errtrack(str(enum), str(emsg))
-                return [ False, str(enum), str(emsg) ]
-
-            #-----------------------------------------------------------
-            # Create the 'meta' Table.
-            if self.cfg.tracking:
-                self.log.track(_lev+1, "Create the 'meta' Table.", True)
-
-            try:
-                cursor.execute("""CREATE TABLE meta
-                    (state TINYINT,
-                    base BOOLEAN,
-                    status BIGINT,
-                    numerator DOUBLE PRECISION,
-                    trigger DOUBLE PRECISION,
-                    pipo DOUBLE PRECISION,
+                cursor.execute(
+                    """CREATE TABLE adapters (
+                    name TEXT,
+                    enabled INTEGER,
                     type TEXT,
-                    instance SMALLINT,
-                    timestamp DOUBLE PRECISION,
-                    heading DOUBLE PRECISION,
-                    quality DOUBLE PRECISION,
-                    score DOUBLE PRECISION,
-                    metafile STRING,
-                    stdfile STRING,
-                    chgfile STRING,
-                    stdsize INTEGER,
-                    chgsize INTEGER,
-                    norm DOUBLE PRECISION,
-                    std TEXT,
-                    chg TEXT,
-                    chg_eligible BOOLEAN,
-                    pitch INTEGER,
-                    roll INTEGER,
-                    channels INTEGER,
-                    rows INTEGER,
-                    columns INTEGER,
-                    samples INTEGER,
-                    dtype TEXT,
-                    data TEXT,
-                    chg_channels INTEGER,
-                    chg_dtype TEXT,
-                    chg_deltas TEXT,
-                    node_code INTEGER)
-                    """)
-            except  Exception as e:
-                enum = "DB106"
-                emsg = "reset(): [" + str(e)  + "]"
+                    host TEXT,
+                    port TEXT,
+                    baud INTEGER,
+                    tout INTEGER,
+                    open_attm INTEGER,
+                    open_tout INTEGER,
+                    protocol INTEGER,
+                    max_msg_size INTEGER,
+                    packet_size INTEGER,
+                    pipo_scor_wt REAL,
+                    pipo_qual_wt REAL,
+                    pipo_size_wt REAL,
+                    pipo_time_wt REAL,
+                    pipo_trig_wt REAL,
+                    purge_rating REAL
+                    )
+                    """
+                )
+            except Exception as e:
+                enum = "DB105"
+                emsg = "reset(): [" + str(e) + "]"
                 if self.cfg.tracking:
                     self.log.errtrack(str(enum), str(emsg))
-                return [ False, str(enum), str(emsg) ]
+                return [False, str(enum), str(emsg)]
 
-            #-----------------------------------------------------------
-            # Create the 'node' Table.
-            #-----------------------------------------------------------
+            # -----------------------------------------------------------
+            # Create the 'sys_config' Table.
+            # -----------------------------------------------------------
+
             if self.cfg.tracking:
-                self.log.track(_lev+1, "Create the 'node' Table.", True)
+                self.log.track(_lev + 1, "Create the 'sys_config' Table.", True)
 
             try:
-                cursor.execute("""CREATE TABLE node
+                cursor.execute(
+                    """CREATE TABLE sys_config (
+                    type INTEGER NOT NULL,
+                    devclass TEXT,
+                    logging INTEGER,
+                    locking INTEGER,
+                    comms INTEGER,
+                    fs_pct_used_warning INTEGER,
+                    sys_status_file TEXT,
+                    lb_data_dir TEXT,
+                    lb_cfg_dir TEXT,
+                    lb_req_dir TEXT,
+                    lb_resp_dir TEXT,
+                    hb_data_dir TEXT,
+                    data_zlib INTEGER,
+                    data_msgpack INTEGER,
+                    db_dir TEXT,
+                    db_name TEXT,
+                    db_deletes INTEGER,
+                    log_dir TEXT,
+                    log_clear INTEGER,
+                    bot_main_log_name INTEGER,
+                    lb_conn_log_name TEXT,
+                    conn_log INTEGER,
+                    hb_conn_log_name TEXT,
+                    packet_log INTEGER,
+                    packet_log_name TEXT,
+                    pipo_scor_wt REAL,
+                    pipo_qual_wt REAL,
+                    pipo_size_wt REAL,
+                    pipo_time_wt REAL,
+                    pipo_trig_wt REAL,
+                    purge_rating REAL,
+                    lb_encrypted INTEGER,
+                    lb_conn_order TEXT,
+                    hb_conn_order INTEGER
+                    )
+                    """
+                )
+            except Exception as e:
+                enum = "DB106"
+                emsg = "reset(): [" + str(e) + "]"
+                if self.cfg.tracking:
+                    self.log.errtrack(str(enum), str(emsg))
+                return [False, str(enum), str(emsg)]
+
+            # -----------------------------------------------------------
+            # Create the 'config' Table.
+            # -----------------------------------------------------------
+
+            if self.cfg.tracking:
+                self.log.track(_lev + 1, "Create the 'config' Table.", True)
+
+            try:
+                cursor.execute(
+                    """CREATE TABLE "config" (
+                    "rec_state"	INTEGER,
+                    "timestamp"	REAL,
+                    "comm_index" INTEGER,
+                    "subsystem"	INTEGER,
+                    "identifier" TEXT,
+                    "identifier_dt"	INTEGER,
+                    "payload" BLOB,
+                    "payload_dt" INTEGER
+                    )
+                    """
+                )
+            except Exception as e:
+                enum = "DB107"
+                emsg = "reset(): [" + str(e) + "]"
+                if self.cfg.tracking:
+                    self.log.errtrack(str(enum), str(emsg))
+                return [False, str(enum), str(emsg)]
+
+            # -----------------------------------------------------------
+            # Create the 'counters' Table.
+            # -----------------------------------------------------------
+
+            if self.cfg.tracking:
+                self.log.track(_lev + 1, "Create the 'counters' Table.", True)
+
+            try:
+                cursor.execute(
+                    """CREATE TABLE counters (
+                    "bot_comm_index" INTEGER,
+                    "packet_msg_index" INTEGER,
+                    "next_status_id" INTEGER
+                    )
+                    """
+                )
+            except Exception as e:
+                enum = "DB107"
+                emsg = "reset(): [" + str(e) + "]"
+                if self.cfg.tracking:
+                    self.log.errtrack(str(enum), str(emsg))
+                return [False, str(enum), str(emsg)]
+
+            # -----------------------------------------------------------
+            # Instantiate the 'counters' Table.
+            # -----------------------------------------------------------
+
+            if self.cfg.tracking:
+                self.log.track(_lev + 1, "Instantiate the 'counters' Table.", True)
+            try:
+                cursor.execute("INSERT INTO counters VALUES (1, 1, 1);")
+            except Exception as e:
+                enum = "DB107"
+                emsg = "reset(): [" + str(e) + "]"
+                if self.cfg.tracking:
+                    self.log.errtrack(str(enum), str(emsg))
+                return [False, str(enum), str(emsg)]
+
+            # -----------------------------------------------------------
+            # Create the 'data' Table.
+            # -----------------------------------------------------------
+
+            if self.cfg.tracking:
+                self.log.track(_lev + 1, "Create the 'data' Table.", True)
+
+            try:
+                cursor.execute(
+                    """CREATE TABLE "data" (
+                    "rec_state"	INTEGER,
+                    "sys_status_ref_id"	INTEGER,
+                    "comm_index"	INTEGER,
+                    "timestamp" REAL,
+                    "type"	TEXT,
+                    "instance"	INTEGER,
+                    "date_time_offset"	INTEGER,
+                    "latitude_offset"	INTEGER,
+                    "longitude_offset"	INTEGER,
+                    "heading_offset"	INTEGER,
+                    "roll_offset"	INTEGER,
+                    "pitch_offset"	INTEGER,
+                    "payload_fname"	TEXT,
+                    "payload_fname_ext"	TEXT,
+                    "payload"	BLOB,
+                    "numerator"	REAL,
+                    "trigger"	INTEGER,
+                    "pipo"	REAL,
+                    "quality"	REAL,
+                    "quality_score" REAL,
+                    "type_score" REAL,
+                    "event_score" REAL,
+                    "metafile"	TEXT,
+                    "metafile_ext"	TEXT,
+                    "chg_eligible"	INTEGER
+                    )
+                    """
+                )
+            except Exception as e:
+                enum = "DB108"
+                emsg = "reset(): [" + str(e) + "]"
+                if self.cfg.tracking:
+                    self.log.errtrack(str(enum), str(emsg))
+                return [False, str(enum), str(emsg)]
+
+            # -----------------------------------------------------------
+            # Create the 'general' Table.
+            # -----------------------------------------------------------
+
+            if self.cfg.tracking:
+                self.log.track(_lev + 1, "Create the 'general' Table.", True)
+
+            try:
+                cursor.execute(
+                    """CREATE TABLE "general" (
+                    "rec_state"	INTEGER,
+                    "timestamp"	REAL,
+                    "comm_index"	INTEGER,
+                    "subsystem"	INTEGER,
+                    "identifier"	TEXT,
+                    "identifier_dt"	INTEGER,
+                    "payload"	BLOB,
+                    "payload_dt"	INTEGER
+                    )
+                    """
+                )
+            except Exception as e:
+                enum = "DB109"
+                emsg = "reset(): [" + str(e) + "]"
+                if self.cfg.tracking:
+                    self.log.errtrack(str(enum), str(emsg))
+                return [False, str(enum), str(emsg)]
+
+            # -----------------------------------------------------------
+            # Create the 'status' Table.
+            # -----------------------------------------------------------
+
+            if self.cfg.tracking:
+                self.log.track(_lev + 1, "Create the 'status' Table.", True)
+
+            try:
+                cursor.execute(
+                    """CREATE TABLE status (
+                    rec_state INTEGER,
+                    sys_status_id INTEGER,
+                    comm_index INTEGER,
+                    meta_state INTEGER,
+                    timestamp REAL,
+                    navsat_fix_time_offset INTEGER,
+                    latitude REAL,
+                    longitude REAL,
+                    heading INTEGER,
+                    heading_true_north INTEGER,
+                    roll_angle INTEGER,
+                    pitch_angle INTEGER,
+                    temperature INTEGER,
+                    power_state INTEGER,
+                    device_status BLOB
+                    )
+                    """
+                )
+            except Exception as e:
+                enum = "DB110"
+                emsg = "reset(): [" + str(e) + "]"
+                if self.cfg.tracking:
+                    self.log.errtrack(str(enum), str(emsg))
+                return [False, str(enum), str(emsg)]
+
+            # -----------------------------------------------------------
+            # Create the 'node' Table.
+            # -----------------------------------------------------------
+            if self.cfg.tracking:
+                self.log.track(_lev + 1, "Create the 'node' Table.", True)
+
+            try:
+                cursor.execute(
+                    """CREATE TABLE node
                     (node_type TEXT,
                     node_code TINYINT,
                     node_instance TINYINT,
                     node_index TINYINT,
                     node_stage TINYINT)
-                    """)
-            except  Exception as e:
+                    """
+                )
+            except Exception as e:
                 enum = "DB107"
-                emsg = "reset(): [" + str(e)  + "]"
+                emsg = "reset(): [" + str(e) + "]"
                 if self.cfg.tracking:
                     self.log.errtrack(str(enum), str(emsg))
-                return [ False, str(enum), str(emsg) ]
+                return [False, str(enum), str(emsg)]
 
-            #-----------------------------------------------------------
+            # -----------------------------------------------------------
             # Instantiate the 'node' Table.
-            #-----------------------------------------------------------
-            cmds = [ "INSERT INTO node VALUES ('BAT', 1, 0, 0, 0);",
-                    "INSERT INTO node VALUES ('THR', 2, 0, 0, 0);",
-                    "INSERT INTO node VALUES ('IMU', 3, 0, 0, 0);",
-                    "INSERT INTO node VALUES ('GPS', 5, 0, 0, 0);",
-                    "INSERT INTO node VALUES ('CAM', 9, 0, 0, 0);",
-                    "INSERT INTO node VALUES ('ESR', 10, 0, 0, 0);",
-                    "INSERT INTO node VALUES ('ESP', 11, 0, 0, 0);",
-                    "INSERT INTO node VALUES ('EBI', 12, 0, 0, 0);",
-                    "INSERT INTO node VALUES ('ECH', 13, 0, 0, 0);",
-                    "INSERT INTO node VALUES ('ERD', 14, 0, 0, 0);",
-                    "INSERT INTO node VALUES ('EPR', 15, 0, 0, 0);",
-                    "INSERT INTO node VALUES ('EPC', 16, 0, 0, 0);",
-                    "INSERT INTO node VALUES ('CTP', 17, 0, 0, 0);",
-                    "INSERT INTO node VALUES ('CRS', 18, 0, 0, 0);",
-                    "INSERT INTO node VALUES ('CBD', 19, 0, 0, 0);",
-                    "INSERT INTO node VALUES ('CAV', 20, 0, 0, 0);",
-                    "INSERT INTO node VALUES ('CCA', 21, 0, 0, 0);",
-                    "INSERT INTO node VALUES ('CRB', 22, 0, 0, 0);",
-                    "INSERT INTO node VALUES ('CGS', 23, 0, 0, 0);",
-                    "INSERT INTO node VALUES ('CGP', 24, 0, 0, 0);",
-                    "INSERT INTO node VALUES ('UGP', 25, 0, 0, 0);",
-                    "INSERT INTO node VALUES ('NBD', 26, 0, 0, 0);",
-                    "INSERT INTO node VALUES ('NLG', 27, 0, 0, 0);",
-                    "INSERT INTO node VALUES ('FTH', 28, 0, 0, 0);",
-                    "INSERT INTO node VALUES ('FCF', 29, 0, 0, 0);",
-                    "INSERT INTO node VALUES ('FTM', 30, 0, 0, 0);",
-                    "INSERT INTO node VALUES ('FWN', 31, 0, 0, 0);",
-                    "INSERT INTO node VALUES ('FRS', 32, 0, 0, 0);",
-                    "INSERT INTO node VALUES ('FBB', 33, 0, 0, 0);",
-                    "INSERT INTO node VALUES ('FSG', 34, 0, 0, 0);",
-                    "INSERT INTO node VALUES ('FPK', 35, 0, 0, 0);",
-                    "INSERT INTO node VALUES ('FOF', 36, 0, 0, 0);",
-                    "INSERT INTO node VALUES ('FDN', 37, 0, 0, 0);",
-                    "INSERT INTO node VALUES ('RCH', 38, 0, 0, 0);",
-                    "INSERT INTO node VALUES ('CLA', 39, 0, 0, 0);",
-                    "INSERT INTO node VALUES ('SIN', 40, 0, 0, 0);",
-                    "INSERT INTO node VALUES ('SBD', 42, 0, 0, 0);"
+            # -----------------------------------------------------------
+            cmds = [
+                "INSERT INTO node VALUES ('bat', 1, 0, 0, 0);",
+                "INSERT INTO node VALUES ('thr', 2, 0, 0, 0);",
+                "INSERT INTO node VALUES ('imu', 3, 0, 0, 0);",
+                "INSERT INTO node VALUES ('gps', 5, 0, 0, 0);",
+                "INSERT INTO node VALUES ('cam', 9, 0, 0, 0);",
+                "INSERT INTO node VALUES ('esr', 10, 0, 0, 0);",
+                "INSERT INTO node VALUES ('esp', 11, 0, 0, 0);",
+                "INSERT INTO node VALUES ('ebi', 12, 0, 0, 0);",
+                "INSERT INTO node VALUES ('ech', 13, 0, 0, 0);",
+                "INSERT INTO node VALUES ('erd', 14, 0, 0, 0);",
+                "INSERT INTO node VALUES ('epr', 15, 0, 0, 0);",
+                "INSERT INTO node VALUES ('epc', 16, 0, 0, 0);",
+                "INSERT INTO node VALUES ('ctp', 17, 0, 0, 0);",
+                "INSERT INTO node VALUES ('crs', 18, 0, 0, 0);",
+                "INSERT INTO node VALUES ('cbd', 19, 0, 0, 0);",
+                "INSERT INTO node VALUES ('cav', 20, 0, 0, 0);",
+                "INSERT INTO node VALUES ('cca', 21, 0, 0, 0);",
+                "INSERT INTO node VALUES ('crb', 22, 0, 0, 0);",
+                "INSERT INTO node VALUES ('cgs', 23, 0, 0, 0);",
+                "INSERT INTO node VALUES ('cgp', 24, 0, 0, 0);",
+                "INSERT INTO node VALUES ('ugp', 25, 0, 0, 0);",
+                "INSERT INTO node VALUES ('nbd', 26, 0, 0, 0);",
+                "INSERT INTO node VALUES ('nlg', 27, 0, 0, 0);",
+                "INSERT INTO node VALUES ('fth', 28, 0, 0, 0);",
+                "INSERT INTO node VALUES ('fcf', 29, 0, 0, 0);",
+                "INSERT INTO node VALUES ('ftm', 30, 0, 0, 0);",
+                "INSERT INTO node VALUES ('fwn', 31, 0, 0, 0);",
+                "INSERT INTO node VALUES ('frs', 32, 0, 0, 0);",
+                "INSERT INTO node VALUES ('fbb', 33, 0, 0, 0);",
+                "INSERT INTO node VALUES ('fsg', 34, 0, 0, 0);",
+                "INSERT INTO node VALUES ('fpk', 35, 0, 0, 0);",
+                "INSERT INTO node VALUES ('fof', 36, 0, 0, 0);",
+                "INSERT INTO node VALUES ('fdn', 37, 0, 0, 0);",
+                "INSERT INTO node VALUES ('rch', 38, 0, 0, 0);",
+                "INSERT INTO node VALUES ('cla', 39, 0, 0, 0);",
+                "INSERT INTO node VALUES ('sin', 40, 0, 0, 0);",
+                "INSERT INTO node VALUES ('sbd', 42, 0, 0, 0);",
             ]
 
             if self.cfg.tracking:
@@ -668,33 +860,32 @@ class BotDB(object):
                         self.log.track(4, str(sql), True)
                 except Exception as e:
                     enum = "DB116"
-                    emsg = "reset(): [" + str(e)  + "]"
+                    emsg = "reset(): [" + str(e) + "]"
                     if self.cfg.tracking:
                         self.log.errtrack(str(enum), str(emsg))
-                    return [ False, str(enum), str(emsg) ], None
+                    return [False, str(enum), str(emsg)], None
 
-            #-----------------------------------------------------------
+            # -----------------------------------------------------------
             # Close the Database.
-            #-----------------------------------------------------------
+            # -----------------------------------------------------------
 
-            success = self.close(_lev+1)
-            
+            success = self.close(_lev + 1)
+
             return success
 
         except Exception as e:
             if self.cfg.tracking:
                 enum = "DB108"
-                emsg = "reset(): [" + str(e)  + "]"
+                emsg = "reset(): [" + str(e) + "]"
                 if self.cfg.tracking:
                     self.log.errtrack(str(enum), str(emsg))
-                return [ False, str(enum), str(emsg) ]
+                return [False, str(enum), str(emsg)]
 
-    #-------------------------------------------------------------------
     def close(self, _lev):
-    #-------------------------------------------------------------------
+        # -------------------------------------------------------------------
         if self.cfg.tracking:
             self.log.track(_lev, "Close the DB Connection.", True)
-            self.log.track(_lev+13, "_lev: " + str(_lev), True)
+            self.log.track(_lev + 13, "_lev: " + str(_lev), True)
 
         rtrn = True
         enum = None
@@ -703,29 +894,28 @@ class BotDB(object):
         if self.dbr:
             try:
                 self.dbr.close()
-                
+
                 if self.cfg.tracking:
-                    self.log.track(_lev+1, "Reset Connection Closed.", True)
+                    self.log.track(_lev + 1, "Reset Connection Closed.", True)
             except Exception as e:
                 rtrn = False
                 enum = "DB198"
                 emsg = "close(): [" + str(e) + "]"
                 if self.cfg.tracking:
-                    self.log.track(_lev+1, str(enum) + ": " + str(emsg), True)
-                    
+                    self.log.track(_lev + 1, str(enum) + ": " + str(emsg), True)
+
         if self.dbc:
             try:
                 self.dbc.close()
                 self.dbc = None
-                
+
                 if self.cfg.tracking:
-                    self.log.track(_lev+1, "Main Connection Closed.", True)
+                    self.log.track(_lev + 1, "Main Connection Closed.", True)
             except Exception as e:
                 rtrn = False
                 enum = "DB199"
                 emsg = "close(): [" + str(e) + "]"
                 if self.cfg.tracking:
-                    self.log.track(_lev+1, str(enum) + ": " + str(emsg), True)
-    
-        return [ rtrn, enum, emsg ]
+                    self.log.track(_lev + 1, str(enum) + ": " + str(emsg), True)
 
+        return [rtrn, enum, emsg]

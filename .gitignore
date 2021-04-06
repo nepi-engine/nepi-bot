@@ -1,2 +1,4 @@
-.DS_Store
-node_modules
+dist
+*venv*
+bot_version.txt
+rsync_src_package_to_target.sh

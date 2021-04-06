@@ -1,0 +1,12 @@
+wheel
+Cython
+pyinstaller
+protobuf
+regex
+pylocker
+python-dateutil
+pyserial
+# numpy v1.19.5 causes a difficult-to-diagnose Illegal instruction fault during pyinstaller build (only on Jetson-TX2). Probably will be fixed in next version.
+# https://github.com/numpy/numpy/issues/18131
+numpy == 1.19.4
+pyyaml >= 5.1
