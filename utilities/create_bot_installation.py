@@ -7,15 +7,16 @@ See the help menu (-h or --help) for usage.
 Prior to running this script, you must ensure that the dependencies called out in dev-requirements.txt are met.
 The easiest and safest way to accomplish that is to set up a virtual environment and install dependencies there.
 From the root of this repository:
-    $ python -m virtualenv dev_venv
+    $ python3 -m virtualenv dev_venv
     $ source ./dev_venv/bin/activate
-    $ pip install -m dev-requirements.txt
+    $ pip3 install -r dev-requirements.txt
 will create the virtual environment and prepare your system to run this script. The dev_venv contents SHOULD NOT
 be checked into the repository -- these are particular to your system. After you've created this virtual env.,
 only step 2 ($ source ./dev_venv/bin/activate) is necessary in future sessions.
 
 You must also add the nepi_edge_sw_mgr.py "package" in such a way that it can be found. The best way to do that
 is to add a .pth file in the site-packages file of your virtualenv:
+
     $ cd $(python -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")
     $ echo /abs/path/to/nepi_edge_sw_mgr_submodule > nepi_edge_sw_mgr.pth
 
@@ -32,6 +33,7 @@ The private key will be included in the distributables, while the public key sho
 of the provisioning step. When prompted for the SSH key phrase during key generation, leave the key phrase blank...
 A future iteration of this script will do that for you automatically.
 """
+
 
 import os
 import shutil
