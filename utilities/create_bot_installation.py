@@ -14,12 +14,6 @@ will create the virtual environment and prepare your system to run this script. 
 be checked into the repository -- these are particular to your system. After you've created this virtual env.,
 only step 2 ($ source ./dev_venv/bin/activate) is necessary in future sessions.
 
-You must also add the nepi_edge_sw_mgr.py "package" in such a way that it can be found. The best way to do that
-is to add a .pth file in the site-packages file of your virtualenv:
-
-    $ cd $(python -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")
-    $ echo /abs/path/to/nepi_edge_sw_mgr_submodule > nepi_edge_sw_mgr.pth
-
 This script should be run from the utilities directory. The output will be placed in a dist folder at the root of
 this repository. The subdirectories therein are differentiated by NUID and a build timestamp, so you may build
 for multiple NUIDs and multiple versions of the repo with the same NUID without overwriting prior build artifacts
@@ -41,6 +35,7 @@ from datetime import datetime
 import subprocess
 import argparse
 import sys
+from distutils.sysconfig import get_python_lib
 
 parser = argparse.ArgumentParser(description='Create script and binary distributables for the current nepi-bot repo')
 parser.add_argument('-n','--nuid', required=True, nargs=1, help='Provide the NUID for the output distributables')
@@ -72,6 +67,12 @@ if args.update_from is not None:
     args.ssh_priv_key = [old_install_dir + '/devinfo/devsshkeys.txt']
     args.config_file = [old_install_dir + '/cfg/bot/config.json']
     args.database_file = [old_install_dir + '/db/nepibot.db']
+
+# Ensure dependencies can be found by adding .pth files as necessary
+nepi_edge_swr_mgr_path_file = os.path.join(get_python_lib(), 'nepi_edge_sw_mgr.pth')
+nepi_edge_sw_mgr_submodule_path = os.path.join(os.getcwd(),'..','src/nepi_edge_sw_mgr')
+with open(nepi_edge_swr_mgr_path_file,'w') as f:
+    f.write(nepi_edge_sw_mgr_submodule_path)
 
 # First, create the distributables folder structure
 now_str = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
