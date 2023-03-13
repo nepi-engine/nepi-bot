@@ -2,18 +2,30 @@
 
 NOTE: Only successfully tested on Ubuntu 18.04 and 20.04
 
-## Step A) Clone, Build and Configure NEPI-BOT on Edge Device
-### Cloning
-Clone the NEPI-BOT repo on your linux device where you want it installed. Make sure to use the –recursive git option as shown below. NOTE: An SSH Key has be set up with your device and Bitbucket account.
+## Clone, Build and Configure NEPI-BOT on Edge Device
+### Getting Source Code on the Target
+There are two approaches for deploying source code to the target: Cloning this Git repo directly to the target or cloning this Git repo to a development host, then pushing to the target via Rsync script. Typically, direct cloning is best for Desktop installs while rsync is best for installation on embedded target hardware. Select whichever option makes the most sense for your system.
+#### Cloning
+Clone the NEPI-BOT repo on your Linux target device. Make sure to use the –recursive git option as shown below. NOTE: An SSH Key has be set up with your device and Bitbucket account.
 
 ```
 
 git clone git@bitbucket.org:numurus/nepi-bot.git --recursive
 
 ```
-### Installing Dependencies
+#### Pushing via Rsync
+From development host, follow previous clone step. Then run the top-level rsync script.
 
-1) Ensure that “socat” software is installed on your device
+```
+cd nepi-bot && ./rsync_src_package_to_target.sh
+```
+You can set the NEPI_SSH_KEY and NEPI_TARGET_IP environment variables prior to running the script as necessary. The source code will be pushed to 
+/home/nepi/nepi-bot
+on the target device.
+
+### Installing Target Dependencies
+
+1. Ensure that “socat” software is installed on your target device
 
 ```
 
@@ -21,9 +33,7 @@ sudo apt-get install socat
 
 ```
 
-
-
-2) Ensure that “protobuf-compiler” and “cmake” is installed
+1. Ensure that “protobuf-compiler” and “cmake” are installed
 
 ```
 
@@ -35,12 +45,9 @@ sudo apt install cmake
 
 ```
 
-
-
-3) Ensure that “python3.6+” ,“pip3”, and “virtualenv” software is installed on your device
+1. Ensure that “python3.6+” ,“pip3”, and “virtualenv” software is installed on your device
 
 ```
-
 python3 --version
 
 sudo apt install python3-pip
@@ -54,11 +61,11 @@ Setup a virtual python environment and install required python modules using the
 
 ```
 
-cd ./utilities
+cd /opt/nepi/nepi-bot/utilities
 
-python3 -m virtualenv dev_venv
+python3 -m virtualenv venv
 
-source ./dev_venv/bin/activate
+source ./venv/bin/activate
 
 cd ..
 
@@ -66,36 +73,13 @@ pip3 install -r dev-requirements.txt
 
 ```
 
-
-
 >Note: Once you start the virtual environment in the terminal, follow the rest of the NEPI-BOT installation steps in the same terminal.
-### Runtime Dependencies
 
-Add the nepi_edge_sw_mgr.py "package" in such a way that it can be found. Run the following commands while you are in the same terminal that you started a **virtual env**:
-
-```
-
-cd $(python -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")
-
-echo “installation folder”/nepi-bot/src/nepi_edge_sw_mgr > nepi_edge_sw_mgr.pth
-
-```
-
-
-
-***EXAMPLE:***
-
-```
-
-echo /home/engineering/repositories/nepi-bot/src/nepi_edge_sw_mgr > nepi_edge_sw_mgr.pth
-
-```
 ### NEPI-BOT Creation
 1) Build/install NEPI-BOT binary software using the “create_bot_istallation.py” python script in the utilities folder you should be in already. You will need to provide a 10 digit NEPI Unique ID (NUID) as an argument when launching the script. This NUID and the public key created during the installation will be used later to register your NEPI-EDGE device in the NEPI-REMOTE application running on a remote server or Cloud.
 
 ```
-
-cd ../../../../utilities
+cd /opt/nepi/nepi-bot/utilities
 
 python3 ./create_bot_installation.py -n ##########
 
@@ -109,9 +93,16 @@ python3 ./create_bot_installation.py -n 7777777777
 
 ```
 
-
-
 > Note: Replace ########## with a 10 digit ID. Suggest using a random number generator to create it. The output distribution will be placed in a dist folder at the root of this repository in a folder named “dist/nuid_##########/installDate/”. The subdirectories therein are differentiated by NUID and a build timestamp, so you may build for multiple NUIDs and multiple versions of the repo with the same NUID without overwriting prior build artifacts in the dist folder.
+
+> Note: To install nepi-bot (either binary form or script form) to a permanent filesystem location, you can provide the 
+  --install_binary <path/to/binary/install/folder> OR
+  --install_script <path/to/script/install/folder>
+
+  ***EXAMPLE:***
+  ```
+  python3 ./create_bot_installation.py -n 7777777777 --install_binary /opt/nepi/nepi_link/nepi-bot
+  ```
 
 
 
