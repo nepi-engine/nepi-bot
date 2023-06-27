@@ -1,7 +1,7 @@
 wheel
 Cython
 pyinstaller
-protobuf
+protobuf == 3.14.0
 regex
 pylocker
 python-dateutil
