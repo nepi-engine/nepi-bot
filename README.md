@@ -79,7 +79,7 @@ pip3 install -r dev-requirements.txt
 1) Build/install NEPI-BOT binary software using the “create_bot_istallation.py” python script in the utilities folder you should be in already. You will need to provide a 10 digit NEPI Unique ID (NUID) as an argument when launching the script. This NUID and the public key created during the installation will be used later to register your NEPI-EDGE device in the NEPI-REMOTE application running on a remote server or Cloud.
 
 ```
-cd /opt/nepi/nepi-bot/utilities
+cd /home/nepi/nepi-bot/utilities
 
 python3 ./create_bot_installation.py -n ##########
 
@@ -101,7 +101,7 @@ python3 ./create_bot_installation.py -n 7777777777
 
   ***EXAMPLE:***
   ```
-  python3 ./create_bot_installation.py -n 7777777777 --install_binary /opt/nepi/nepi_link/nepi-bot
+  python3 ./create_bot_installation.py -n 7777777777 --install_binary /opt/nepi/nepi-bot
   ```
 
 
@@ -110,13 +110,13 @@ python3 ./create_bot_installation.py -n 7777777777
 
 ```
 
-cd “installation folder”/nepi-bot/dist/"nuid_##########"/"installDate"/ssh_keys
+cat /home/nepi/nepi-bot/dist/nuid_<##########>/<installDate>/ssh_keys/id_rsa_<##########>.pub
 
 cat id_rsa_"##########".pub
 
 ```
 
->Note: Replace values in quotes with your specific installation values; Make sure to access the .pub file.
+>Note: Replace values in brackets < > with your specific installation values; Make sure to access the .pub file.
 
 
 
@@ -124,7 +124,7 @@ cat id_rsa_"##########".pub
 
 ```
 
-cd /home/engineering/repositories/nepi-bot/dist/nuid_7777777777/2022_06_21_09_39_04/ssh_keys
+cd /home/nepi/nepi-bot/dist/nuid_7777777777/2022_06_21_09_39_04/ssh_keys
 
 cat id_rsa_7777777777.pub
 
