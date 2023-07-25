@@ -101,10 +101,10 @@ python3 ./create_bot_installation.py -n 7777777777
 
   ***EXAMPLE:***
   ```
-  python3 ./create_bot_installation.py -n 7777777777 --install_binary /opt/nepi/nepi-bot
+  python3 ./create_bot_installation.py -n 7777777777 --install_binary /opt/nepi/nepi_link/nepi-bot
   ```
 
-
+> Note: /opt/nepi/nepi_link/nepi-bot is the preferred install location for best automatic interoperability with the rest of the NEPI s/w.
 
 2) Access the public key created during your NEPI-BOT installation.
 
