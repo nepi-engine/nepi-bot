@@ -54,7 +54,7 @@
     "lb_ip": {
         "enabled": 1,
         "type": "ethernet",
-        "host": "3dx.nepi.io",
+        "host": "nepi.io",
         "port": "2222",
         "tout": 3,
         "open_attm": 2,
@@ -91,7 +91,7 @@
     "hb_ip": {
         "enabled": 0,
         "type": "ethernet",
-        "host": "3dx.nepi.io",
+        "host": "nepi.io",
         "port": "2222",
         "tout": 3,
         "open_attm": 2,
