@@ -363,10 +363,11 @@ class BotComm(object):
             args_socatcmd = [
                 "socat",
                 str("UDP4-RECVFROM:" + LOCALPORT + ",fork,reuseaddr"),
-                "TCP4:" + LOCALHOST + ":" + LOCALPORT + ",nodelay",
+                "TCP4:" + LOCALHOST + ":" + LOCALPORT + ",nodelay"
             ]
             proc_ssh = subprocess.Popen(args_sshcmd)
-            proc_socat = subprocess.Popen(args_socatcmd)
+            # Avoid runaway logs by devnull'ing the socat process (since it forks subprocesses)
+            proc_socat = subprocess.Popen(args_socatcmd, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT) 
             procs.append(proc_ssh)
             procs.append(proc_socat)
 
