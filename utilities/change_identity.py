@@ -43,7 +43,7 @@ for f in public_key_filelist:
     os.remove(f)
 
 # Create the new SSH keys
-subprocess.call(['ssh-keygen', '-f', './id_rsa'])
+subprocess.call(['ssh-keygen', '-f', './id_rsa', '-N', ''])
 shutil.move('./id_rsa', PRIV_SSH_KEY_FILENAME)
 public_key_filename = './id_rsa_' + args.nuid[0] + '.pub'
 shutil.move('./id_rsa.pub', public_key_filename)
@@ -51,8 +51,6 @@ shutil.move('./id_rsa.pub', public_key_filename)
 # That's it
 print("Identity change complete: New nuid = " + args.nuid[0])
 # Print the public key in case the device is being registered right now
-print_public_key = input('Enter \'p\' to print the public SSH key here for device registration, any other key to exit: \n')
-if (print_public_key == 'p'):
-    print('Here is your new public key:')
-    with open(public_key_filename, 'r') as f:
-        print(f.read())
+print('Here is your new public key:')
+with open(public_key_filename, 'r') as f:
+    print(f.read())
