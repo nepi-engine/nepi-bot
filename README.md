@@ -61,7 +61,7 @@ Setup a virtual python environment and install required python modules using the
 
 ```
 
-cd /opt/nepi/nepi-bot/utilities
+cd ./utilities
 
 python3 -m virtualenv venv
 
@@ -69,7 +69,7 @@ source ./venv/bin/activate
 
 cd ..
 
-pip3 install -r dev-requirements.txt
+pip install -r dev-requirements.txt
 
 ```
 
@@ -79,9 +79,9 @@ pip3 install -r dev-requirements.txt
 1) Build/install NEPI-BOT binary software using the “create_bot_istallation.py” python script in the utilities folder you should be in already. You will need to provide a 10 digit NEPI Unique ID (NUID) as an argument when launching the script. This NUID and the public key created during the installation will be used later to register your NEPI-EDGE device in the NEPI-REMOTE application running on a remote server or Cloud.
 
 ```
-cd /home/nepi/nepi-bot/utilities
+cd ./utilities
 
-python3 ./create_bot_installation.py -n ##########
+python ./create_bot_installation.py -n ##########
 
 ```
 
