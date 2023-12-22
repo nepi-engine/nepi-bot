@@ -22,147 +22,143 @@ Contact Information:
 - mailto:nepi@numurus.com
 
 -->
-# Setting Up NEPI-BOT on an Edge Device
+# NEPI-BOT #
+This repository provides the NEPI-BOT application, which serves as the edge-side facilitator of NEPI-CONNECT, allowing edge devices to connect to a NEPI-CONNECT site-local or cloud instance. 
 
-NOTE: Only successfully tested on Ubuntu 18.04 and 20.04
+See [NEPI-CONNECT User Manual](https://numurus.com/wp-content/uploads/Users-Manual-NEPI-Connect.pdf) for general NEPI-CONNECT details
 
-## Clone, Build and Configure NEPI-BOT on Edge Device
-### Getting Source Code on the Target
-There are two approaches for deploying source code to the target: Cloning this Git repo directly to the target or cloning this Git repo to a development host, then pushing to the target via Rsync script. Typically, direct cloning is best for Desktop installs while rsync is best for installation on embedded target hardware. Select whichever option makes the most sense for your system.
-#### Cloning
-Clone the NEPI-BOT repo on your Linux target device. Make sure to use the –recursive git option as shown below. NOTE: An SSH Key has be set up with your device and Bitbucket account.
-
+### Organization of the repository ####
+Source code is primarily organized as a collection of python source files and an accompanying set Git submodules within this top-level repo. You can clone and initialize all at once with
+```
+$ git clone --recurse-submodules <this-repo-URL>
 ```
 
-git clone git@bitbucket.org:numurus/nepi-bot.git --recursive
-
+or in stages with
 ```
+$ git clone <this-repo-URL>
+$ cd <this-repo>
+$ git submodule init
+$ git submodule update
+```
+
+## Run-time Environment ##
+The NEPI-BOT application runs on any suitably-prepared python-enabled system. Typically it runs on an embedded (edge) device, though in some development, test, and production applications it may be useful to run it on a Desktop system.
+
+> At present, Numurus only tests NEPI-BOT on Ubuntu 18.04 and 20.04-based systems
+
+## Build and Configure NEPI-BOT on Edge Device
+### Deploying Source Code to the Target
+There are two approaches for deploying source code to the target: Cloning this Git repo directly to the target device as described above or cloning this Git repo to a development host, then pushing to the target via the included rsync script. Typically, direct cloning is best for Desktop installs while rsync is best for installation on embedded target hardware. Select whichever option makes the most sense for your system.
+
 #### Pushing via Rsync
 From development host, follow previous clone step. Then run the top-level rsync script.
 
 ```
-cd nepi-bot && ./rsync_src_package_to_target.sh
+$ cd nepi-bot
+$ ./rsync_src_package_to_target.sh
 ```
-You can set the NEPI_SSH_KEY and NEPI_TARGET_IP environment variables prior to running the script as necessary. The source code will be pushed to 
-/home/nepi/nepi-bot
-on the target device.
+You can set various script parameters (e.g., the NEPI_SSH_KEY and NEPI_TARGET_IP) as necessary prior to running the rsync script -- see the rsync script for details. 
+
+By default, the source code will be pushed to 
+/mnt/nepi_storage/nepi_src/nepi-bot
+on the target device. From there it can be built and then installed elsewhere on the target filesystem as described below.
 
 ### Installing Target Dependencies
 
-1. Ensure that “socat” software is installed on your target device
+This repository includes an installer script, _install_dependencies.sh_, to install and configure build-time and runtime dependencies on the target device, assuming that the target device provides a bash interpretter and the aptitude package installer. You can install all dependencies, set up python virtual environment, etc. by running the script
+```
+$ ./install_dependencies.sh
+```
+For convenience, the top-level dependencies are listed here:
+- socat
+- protobuf-compiler
+- cmake
+- python 3.6+
+- pip3
+- virtualenv
 
+Other python dependencies are installed in a python virtualenv (virtualenv setup is handled by _install_dependencies.sh_)
+
+### Build environment setup ###
+Before building NEPI-BOT, you must activate the Python virtual environment
+```
+$ source ./utilities/venv/bin/activate
 ```
 
-sudo apt-get install socat
-
-```
-
-1. Ensure that “protobuf-compiler” and “cmake” are installed
-
-```
-
-sudo apt install software-properties-common -y
-
-sudo apt install protobuf-compiler
-
-sudo apt install cmake
-
-```
-
-1. Ensure that “python3.6+” ,“pip3”, and “virtualenv” software is installed on your device
-
-```
-python3 --version
-
-sudo apt install python3-pip
-
-pip3 install virtualenv
-
-```
-### Virtual Environment Setup
-
-Setup a virtual python environment and install required python modules using the provide install utility. Open a terminal in your “nepi-bot” software folder you installed using git and run.
-
-```
-
-cd ./utilities
-
-python3 -m virtualenv venv
-
-source ./venv/bin/activate
-
-cd ..
-
-pip install -r dev-requirements.txt
-
-```
-
->Note: Once you start the virtual environment in the terminal, follow the rest of the NEPI-BOT installation steps in the same terminal.
+>Note: Once you source virtual environment in the terminal, follow the rest of the NEPI-BOT build and install steps in the same terminal.
 
 ### NEPI-BOT Creation
-1) Build/install NEPI-BOT binary software using the “create_bot_istallation.py” python script in the utilities folder you should be in already. You will need to provide a 10 digit NEPI Unique ID (NUID) as an argument when launching the script. This NUID and the public key created during the installation will be used later to register your NEPI-EDGE device in the NEPI-REMOTE application running on a remote server or Cloud.
+1) Build/install NEPI-BOT binary software using the “create_bot_istallation.py” python script in the utilities folder. You can provide a 10 digit NEPI Unique ID (NUID) as an argument when launching the script, or you can provide the default "UNSET" value and update it later at a convenient time using a provided utility script. This NUID and the public key created during the installation will be used later to register your NEPI-EDGE device in the NEPI-REMOTE application running on a remote server or Cloud.
 
 ```
-cd ./utilities
-
-python ./create_bot_installation.py -n ##########
-
+$ cd ./utilities
+$ python ./create_bot_installation.py -n <10-digit number or 'UNSET'>
 ```
 
 ***EXAMPLE:***
 
 ```
-
-python3 ./create_bot_installation.py -n 7777777777
-
+$ python ./create_bot_installation # NUID will be UNSET
+```
+or
+```
+$ python ./create_bot_installation.py -n 7777777777
 ```
 
-> Note: Replace ########## with a 10 digit ID. Suggest using a random number generator to create it. The output distribution will be placed in a dist folder at the root of this repository in a folder named “dist/nuid_##########/installDate/”. The subdirectories therein are differentiated by NUID and a build timestamp, so you may build for multiple NUIDs and multiple versions of the repo with the same NUID without overwriting prior build artifacts in the dist folder.
+> Note: When choosing an NUID, we suggest using a random number generator to create it. The output distribution will be placed in a dist folder at the root of this repository in a folder named “dist/nuid_##########/installDate/”. The subdirectories therein are differentiated by NUID and a build timestamp, so you may build for multiple NUIDs and multiple versions of the repo with the same NUID without overwriting prior build artifacts in the dist folder.
 
-> Note: To install nepi-bot (either binary form or script form) to a permanent filesystem location, you can provide the 
+> Note: To install NEPI-BOT (either binary form or script form) to a permanent filesystem location, you can provide the 
   --install_binary <path/to/binary/install/folder> OR
   --install_script <path/to/script/install/folder>
 
   ***EXAMPLE:***
   ```
-  python3 ./create_bot_installation.py -n 7777777777 --install_binary /opt/nepi/nepi_link/nepi-bot
+  $ python ./create_bot_installation.py -n 7777777777 --install_binary /opt/nepi/nepi_link/nepi-bot
   ```
 
-> Note: /opt/nepi/nepi_link/nepi-bot is the preferred install location for best automatic interoperability with the rest of the NEPI s/w.
+> Note: **/opt/nepi/nepi_link/nepi-bot is the strongly preferred install location for best automatic interoperability with the rest of the NEPI s/w.**
 
-2) Access the public key created during your NEPI-BOT installation.
+#### Setting or Updating the NUID ####
+A valid 10-digit NUID can be set or updated after NEPI-BOT is built and installed using the _change_identity.py_ script that is installed along with the NEPI-BOT instance:
 
+***EXAMPLE:***
 ```
+$ cd /opt/nepi/nepi_link/nepi-bot/devinfo
+$ ./change_identity.py -n 1234567890 
+```
+This will overwrite the NUID (including special UNSET value) and update SSH keys.
+> **Note: Running this script will invalidate any previous NEPI-CONNECT registration for the current NUID**
 
-cat /home/nepi/nepi-bot/dist/nuid_<##########>/<installDate>/ssh_keys/id_rsa_<##########>.pub
+### NEPI-Bot Registration ###
+Before the NEPI-BOT instance can communicate with the NEPI-CONNECT instance, you must register the device through the NEPI-CONNECT instance. You may also need to modify the top-level NEPI-BOT configuration file to specify the correct network address for the NEPI-CONNECT instance.
 
-cat id_rsa_"##########".pub
-
+#### Obtaining the public key ####
+In order to register a new NEPI-CONNECT device through the NEPI-CONNECT instance, you must provide the device public key at registration time. You can display the value of this key with
+```
+$ cd ./dist/nuid_<NUID>/<installDate>/ssh_keys
+$ cat id_rsa_<NUID>.pub
 ```
 
 >Note: Replace values in brackets < > with your specific installation values; Make sure to access the .pub file.
 
-
-
 ***EXAMPLE:***
 
 ```
-
-cd /home/nepi/nepi-bot/dist/nuid_7777777777/2022_06_21_09_39_04/ssh_keys
-
-cat id_rsa_7777777777.pub
-
+$ cd /home/nepi/nepi-bot/dist/nuid_7777777777/2022_06_21_09_39_04/ssh_keys
+$ cat id_rsa_7777777777.pub
 ```
 
->Note: Copy the ssh key displayed. This key will be used in the next section to register your NEPI-BOT enabled device in a NEPI-REMOTE Portal installation.__
+>Note: Copy the ssh key displayed. This key will be used in the next section to register your NEPI-BOT enabled device in a NEPI-REMOTE Portal installation.
 
+#### Setting up for a custom NEPI-CONNECT instance
+If using a NEPI-CONNECT instance other than the Numurus https://nepi.io portal, you must edit the top-level NEPI-BOT configuration file. If you've installed to the recommended /opt/nepi/nepi_link/nepi-bot folder, this file is at
+/opt/nepi/nepi_link/nepi-bot/cfg/bot/config.json
 
+Edit the "host" field in the _hb_ip_ (and _lb_ip_ if configuring for LB over IP) with your custom instance's IPv4 address or internet-resolvable hostname and save the edited file.
 
-## Step B) Register Your NEPI-BOT Enabled Device in a NEPI-REMOTE Portal
+#### Registering your NEPI-BOT Enabled Device in a NEPI-CONNECT instance
 
-
-
-1) Open a web browser and navigate to https://nepi.io/ (or a custom NEPI-REMOTE installation), and enter your NEPI-REMOTE account credentials to login.
+1) Open a web browser and navigate to https://nepi.io (or a custom NEPI-REMOTE installation), and enter your NEPI-REMOTE account credentials to login.
 
 2) On the Fleet Portal tab, select the **“Add Device”** button to the right under the map view.
 
@@ -171,8 +167,15 @@ cat id_rsa_7777777777.pub
 4) Select Add Device button at the bottom
 
 
-
->Note: All NEPI communications are device initiated, so you won’t see any data until you provide NEPI-BOT data to upload and run the NEPI-BOT application on the edge device as explained in the next section.__
+>Note: All NEPI communications are device initiated, so no interaction between NEPI-BOT and NEPI-CONNECT occurs until you provide NEPI-BOT data to upload and run the NEPI-BOT application on the edge device as explained in the next section.
 
 ## Next Steps
-Clone the NEPI-EDGE-SDK repository and follow the instructions  included in the README.md file to use NEPI-EDGE-SDK in conjunction with your NEPI-BOT.
+Now you are ready to populate LB and HB data, launch NEPI-BOT, view transmitted data in NEPI-CONNECT, etc. If you have not yet done so, take a look at the [NEPI Remote System Interfacing API](https://numurus.com/wp-content/uploads/API-Manual-NEPI-Engine-Remote-System-Interfacing.pdf)
+
+### Standard usage:
+- Use the ROS API of the _nepi_link_ros_bridge_ ROS node from the repository of the same name to control NEPI-BOT programmatically or interactively
+- Use the NEPI RUI's "Connect" app to control NEPI-BOT interactively
+
+### Custom usage:
+- Clone the nepi_edge_sdk_link repository and follow the instructions included in the README.md file to use nepi_edge_sdk_link libraries/modules in your own custom apps to control your NEPI-BOT instance.
+- Use the NEPI-BOT file-based interface to setup NEPI-CONNECT sessions and launch NEPI-BOT directly at the device command line to service those sessions.
