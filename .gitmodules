@@ -1,6 +1,6 @@
 [submodule "nepi-protobuf"]
 	path = nepi-protobuf
-	url = git@bitbucket.org:numurus/nepi-protobuf.git
+	url = git@github.com:numurus-nepi/nepi-protobuf.git
 [submodule "src/nepi_edge_sw_mgr"]
 	path = src/nepi_edge_sw_mgr
-	url = git@bitbucket.org:numurus/nepi_edge_sw_mgr.git
+	url = git@github.com:numurus-nepi/nepi_edge_sw_mgr.git

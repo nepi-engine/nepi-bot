@@ -1,4 +1,28 @@
 #!/usr/bin/env python
+#
+# NEPI Dual-Use License
+# Project: nepi-bot
+#
+# This license applies to any user of NEPI Engine software
+#
+# Copyright (C) 2023 Numurus, LLC <https://www.numurus.com>
+# see https://github.com/numurus-nepi/nepi-bot
+#
+# This software is dual-licensed under the terms of either a NEPI software developer license
+# or a NEPI software commercial license.
+#
+# The terms of both the NEPI software developer and commercial licenses
+# can be found at: www.numurus.com/licensing-nepi-engine
+#
+# Redistributions in source code must retain this top-level comment block.
+# Plagiarizing this software to sidestep the license obligations is illegal.
+#
+# Contact Information:
+# ====================
+# - https://www.numurus.com/licensing-nepi-engine
+# - mailto:nepi@numurus.com
+#
+#
 
 """Create script and binary distributables for nepi-bot
 
@@ -44,7 +68,7 @@ import sys
 from distutils.sysconfig import get_python_lib
 
 parser = argparse.ArgumentParser(description='Create script and binary distributables for the current nepi-bot repo')
-parser.add_argument('-n','--nuid', required=True, nargs=1, help='Provide the NUID for the output distributables')
+parser.add_argument('-n','--nuid', required=False, nargs=1, help='Provide the NUID for the output distributables or leave blank to use the default UNSET value')
 parser.add_argument('-s', '--ssh_priv_key', required=False, nargs=1, help='File with the private key to be deployed to this instance. Keys will be generated if this arg is not present')
 parser.add_argument('-c', '--config_file', required=False, nargs=1, help='Config file (config.json) for this instance. If not supplied, the config file checked into the repo will be used')
 parser.add_argument('-d', '--database_file', required=False, nargs=1, help='Database file (nepibot.db) for this instance. If not supplied, nepi-bot will construct a new database the first time it is run')
@@ -73,6 +97,10 @@ if args.update_from is not None:
     args.ssh_priv_key = [old_install_dir + '/devinfo/devsshkeys.txt']
     args.config_file = [old_install_dir + '/cfg/bot/config.json']
     args.database_file = [old_install_dir + '/db/nepibot.db']
+
+# Set a default UNSET
+if not args.nuid:
+    args.nuid = ['UNSET']
 
 # Ensure dependencies can be found by adding .pth files as necessary
 nepi_edge_swr_mgr_path_file = os.path.join(get_python_lib(), 'nepi_edge_sw_mgr.pth')
@@ -143,8 +171,14 @@ os.mkdir(ssh_keys_folder)
 ssh_key_filename = ssh_keys_folder + '/id_rsa_' + args.nuid[0]
 public_ssh_key_filename = ssh_key_filename + '.pub'
 if args.ssh_priv_key is None:
-    # TODO: Ensure key adheres to our security standard
-    subprocess.call(['ssh-keygen', '-f' + ssh_key_filename])
+    if args.nuid[0] != "UNSET":
+        # TODO: Ensure key adheres to our security standard
+        subprocess.call(['ssh-keygen', '-f' + ssh_key_filename])
+    else:
+        with open(ssh_key_filename, 'w') as f:
+            f.write('UNSET')
+        with open(public_ssh_key_filename, 'w') as f:
+            f.write('UNSET')
 else:
     shutil.copyfile(args.ssh_priv_key[0], ssh_key_filename)
     shutil.copyfile(os.path.dirname(args.ssh_priv_key[0]) + '/id_rsa_' + args.nuid[0] + '.pub', public_ssh_key_filename)
