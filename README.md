@@ -12,7 +12,9 @@ This repository provides the NEPI-BOT application, which serves as the edge-side
 See [NEPI-CONNECT User Manual](https://numurus.com/wp-content/uploads/Users-Manual-NEPI-Connect.pdf) for general NEPI-CONNECT details
 
 ### Organization of the repository ####
-Source code is primarily organized as a collection of python source files and an accompanying set Git submodules within this top-level repo. You can clone and initialize all at once with
+This repository is included in _nepi_engine_ws_ as a git submodule. Most users will want to refer to that master repository's README before proceeding here.
+
+Within this repository source code is primarily organized as a collection of python source files and an accompanying set Git submodules. You can clone and initialize all at once with
 ```
 $ git clone --recurse-submodules <this-repo-URL>
 ```
@@ -32,20 +34,12 @@ The NEPI-BOT application runs on any suitably-prepared python-enabled system. Ty
 
 ## Build and Configure NEPI-BOT on Edge Device
 ### Deploying Source Code to the Target
-There are two approaches for deploying source code to the target: Cloning this Git repo directly to the target device as described above or cloning this Git repo to a development host, then pushing to the target via the included rsync script. Typically, direct cloning is best for Desktop installs while rsync is best for installation on embedded target hardware. Select whichever option makes the most sense for your system.
+Refer to the _nepi_engine_ws_ README for full nepi-engine source code deployment instructions. The rest of these instructions assume that you have deployed nepi-bot source code to
+/mnt/nepi_storage/nepi_src/nepi_engine_ws/src/nepi-bot
+on the target device. From there it can be built and then installed elsewhere on the target filesystem as described below. You may also prefer to use the unified _nepi_engine_build_complete.sh_ build script within _nepi_engine_ws_.
 
-#### Pushing via Rsync
-From development host, follow previous clone step. Then run the top-level rsync script.
-
-```
-$ cd nepi-bot
-$ ./rsync_src_package_to_target.sh
-```
-You can set various script parameters (e.g., the NEPI_SSH_KEY and NEPI_TARGET_IP) as necessary prior to running the rsync script -- see the rsync script for details. 
-
-By default, the source code will be pushed to 
-/mnt/nepi_storage/nepi_src/nepi-bot
-on the target device. From there it can be built and then installed elsewhere on the target filesystem as described below.
+### Initial Build-system Setup ###
+Before building this project, you must set up the build environment, which includes installing a few dependencies and preparing a Python virtual environment.
 
 ### Installing Target Dependencies
 
@@ -68,6 +62,8 @@ Before building NEPI-BOT, you must activate the Python virtual environment
 ```
 $ source ./utilities/venv/bin/activate
 ```
+
+>Note: If using the unified _nepi_engine_build_complete.sh_ build script, the virtualenv will be activated automatically as part of the build process.
 
 >Note: Once you source virtual environment in the terminal, follow the rest of the NEPI-BOT build and install steps in the same terminal.
 
